@@ -29,49 +29,62 @@ export const useWordSelection = (): UseWordSelectionReturn => {
     // Check adjacency if selection exists AND we are in chunk mode
     if (selection && granularity === 'chunk') {
       if (index >= selection.start && index <= selection.end) {
+        // If clicking within the current selection, deselect it
         setSelection(null);
         return null;
       }
 
-      const isBefore = index < selection.start;
-      
-      let adjacent = true;
-      const checkRangeStart = isBefore ? index + 1 : selection.end + 1;
-      const checkRangeEnd = isBefore ? selection.start : index;
-      
-      // Strict Adjacency Check:
-      // We only allow expansion if there are NO other words between the selection and the new click.
-      // Whitespace and non-sentence-ending punctuation are allowed.
-      for (let i = checkRangeStart; i < checkRangeEnd; i++) {
-        const t = allTokens[i];
-        if (isWord(t)) {
-            adjacent = false; // Found another word in between -> Gap -> Not adjacent
+      // Check if the new word is adjacent to the current selection
+      let isAdjacent = (index === selection.start - 1) || (index === selection.end + 1);
+
+      // Check if the new word is in the same sentence as the current selection
+      let inSameSentence = true;
+
+      // Determine the range to check for sentence boundaries
+      let checkStart, checkEnd;
+      if (index === selection.start - 1) { // New word is before the selection
+        checkStart = index + 1;
+        checkEnd = selection.start - 1;
+      } else if (index === selection.end + 1) { // New word is after the selection
+        checkStart = selection.end + 1;
+        checkEnd = index - 1;
+      } else {
+        // Not adjacent, so definitely not in the same sentence
+        isAdjacent = false;
+        inSameSentence = false;
+      }
+
+      // Check for sentence boundaries in the range
+      if (isAdjacent && checkStart !== undefined && checkEnd !== undefined) {
+        for (let i = checkStart; i <= checkEnd; i++) {
+          if (i >= 0 && i < allTokens.length && /[.!?;]/.test(allTokens[i])) {
+            inSameSentence = false;
             break;
-        }
-        if (/[.!?]/.test(t)) { 
-            adjacent = false; // Found sentence boundary -> Not adjacent
-            break;
+          }
         }
       }
 
-      if (adjacent) {
-        // Expand selection while preserving the anchor
-        if (isBefore) {
-            newStart = index;
-            newEnd = selection.end;
+      // If both conditions are met (adjacent and in same sentence), extend the selection
+      if (isAdjacent && inSameSentence) {
+        if (index < selection.start) {
+          // New word is before the selection
+          newStart = index;
+          newEnd = selection.end;
         } else {
-            newStart = selection.start;
-            newEnd = index;
+          // New word is after the selection
+          newStart = selection.start;
+          newEnd = index;
         }
       } else {
-        // Start new selection
+        // Reset selection and start new single-word chunk
         newStart = index;
         newEnd = index;
       }
     }
 
     const selectedTokens = allTokens.slice(newStart, newEnd + 1);
-    const textToTranslate = selectedTokens.join("");
+    // Join tokens with space to form the phrase to translate
+    const textToTranslate = selectedTokens.join(" ");
 
     const newSelection = {
       start: newStart,

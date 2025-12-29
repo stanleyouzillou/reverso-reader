@@ -23,7 +23,9 @@ interface ReaderSurfaceProps {
   sidebarCollapsed?: boolean;
 }
 
-export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({ sidebarCollapsed = false }) => {
+export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
+  sidebarCollapsed = false,
+}) => {
   // 1. Global Store & Layout State
   const {
     mode,
@@ -45,7 +47,7 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({ sidebarCollapsed =
     openTranslation,
     closeTranslation,
     toggleSave,
-    addToHistory: addToHistoryInline
+    addToHistory: addToHistoryInline,
   } = useInlineTranslation();
   const {
     fontFamily,
@@ -57,6 +59,23 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({ sidebarCollapsed =
     readingMode,
   } = useReaderSettings();
   const containerRef = useRef<HTMLDivElement>(null);
+  // Track the abort controller for pending requests
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Debounce timer reference
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeouts and abort controllers on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // 2. Data Ingestion
   const {
@@ -104,7 +123,7 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({ sidebarCollapsed =
   }, [mode, dualModeOption, clearSelection]);
 
   // Orchestrator: Handle Word Click
-  const handleWordClick = async (index: number) => {
+  const handleWordClick = (index: number) => {
     if (mode === "clean") return;
 
     // Pause Audio Mode if active
@@ -112,75 +131,120 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({ sidebarCollapsed =
       setKaraokeActive(false);
     }
 
-    // 1. Calculate Selection
+    // 1. Calculate Selection (Optimistic UI: Update highlight immediately)
     const newSelection = handleWordSelection(index, allTokens);
     if (!newSelection) return;
 
-    // 2. Fetch Translation with Context
-    // Extract the full sentence context for the selected phrase
-    let contextSentence = "";
-    // Find sentence boundaries around the selection
-    let start = newSelection.start;
-    let end = newSelection.end;
-
-    // Scan backwards for sentence start
-    while (start > 0 && !/[.!?]/.test(allTokens[start - 1])) {
-      start--;
-    }
-    // Scan forwards for sentence end
-    while (end < allTokens.length - 1 && !/[.!?]/.test(allTokens[end])) {
-      end++;
+    // 2. Debounced Translation Request (250ms delay)
+    // Clear any existing debounce timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
 
-    contextSentence = allTokens
-      .slice(start, end + 1)
-      .join("")
-      .trim();
-
-    const result = await translateText(newSelection.text, contextSentence);
-
-    if (result) {
-      // 3. Update Selection State with Result
-      setSelection((prev) => {
-        if (!prev || prev.text !== newSelection.text) return prev;
-        return {
-          ...prev,
-          translation: result.text,
-          loading: false,
-        };
-      });
-
-      // 4. Update Persistent Spans
-      setTranslatedSpans((prev) => {
-        const { start, end } = newSelection;
-        const filtered = prev.filter(
-          (span) =>
-            !(span.start >= start && span.start <= end) &&
-            !(span.end >= start && span.end <= end) &&
-            !(start >= span.start && end <= span.end)
-        );
-        return [...filtered, { start, end, translation: result.text }];
-      });
-
-      // 5. Add to History
-      const vocabItem = {
-        word: newSelection.text,
-        translation: result.text,
-        level: metadata.level,
-        status: WordStatus.Learning,
-        context: getContext(newSelection.start, newSelection.end),
-        timestamp: Date.now(),
-      };
-
-      addToHistory(vocabItem);
-
-      // 6. Set as selected dictionary word
-      useStore.getState().setSelectedDictionaryWord(vocabItem);
-    } else {
-      setSelection((prev) =>
-        prev ? { ...prev, loading: false, translation: "Error" } : null
-      );
+    // Abort any previous pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
+
+    // Create new abort controller for this request
+    const newAbortController = new AbortController();
+    abortControllerRef.current = newAbortController;
+
+    // Set debounce timer for API call
+    debounceTimerRef.current = setTimeout(async () => {
+      try {
+        // 3. Fetch Translation with Context
+        // Extract the full sentence context for the selected phrase
+        let contextSentence = "";
+        // Find sentence boundaries around the selection
+        let sentenceStart = newSelection.start;
+        let sentenceEnd = newSelection.end;
+
+        // Scan backwards for sentence start
+        while (
+          sentenceStart > 0 &&
+          !/[.!?;]/.test(allTokens[sentenceStart - 1])
+        ) {
+          sentenceStart--;
+        }
+        // Scan forwards for sentence end
+        while (
+          sentenceEnd < allTokens.length - 1 &&
+          !/[.!?;]/.test(allTokens[sentenceEnd])
+        ) {
+          sentenceEnd++;
+        }
+
+        contextSentence = allTokens
+          .slice(sentenceStart, sentenceEnd + 1)
+          .join("")
+          .trim();
+
+        // Format the context for the translation API
+        const contextForApi = `Translate this phrase as it appears in context: "${contextSentence}"`;
+
+        const result = await translateText(newSelection.text, contextForApi);
+
+        if (result && !newAbortController.signal.aborted) {
+          // 4. Update Selection State with Result
+          setSelection((prev) => {
+            if (!prev || prev.text !== newSelection.text) return prev;
+            return {
+              ...prev,
+              translation: result.text,
+              loading: false,
+            };
+          });
+
+          // 5. Update Persistent Spans
+          setTranslatedSpans((prev) => {
+            const { start, end } = newSelection;
+            // Remove any spans that overlap with the new selection
+            // This ensures visual clarity and prevents duplicate translations
+            const filtered = prev.filter(
+              (span) =>
+                // Keep spans that don't overlap at all
+                span.end < start || span.start > end
+            );
+            return [...filtered, { start, end, translation: result.text }];
+          });
+
+          // 6. Add to History
+          const vocabItem = {
+            word: newSelection.text,
+            translation: result.text,
+            level: metadata.level,
+            status: WordStatus.Learning,
+            context: contextSentence,
+            position: newSelection.start,
+            timestamp: Date.now(),
+          };
+
+          addToHistory(vocabItem);
+
+          // 7. Set as selected dictionary word and switch mode
+          const store = useStore.getState();
+          store.setSelectedDictionaryWord(vocabItem);
+          store.setSidebarMode("dictionary");
+        } else if (!newAbortController.signal.aborted) {
+          setSelection((prev) =>
+            prev ? { ...prev, loading: false, translation: "Error" } : null
+          );
+        }
+      } catch (error: any) {
+        if (!newAbortController.signal.aborted) {
+          console.error("Translation error:", error);
+          setSelection((prev) =>
+            prev ? { ...prev, loading: false, translation: "Error" } : null
+          );
+        }
+      } finally {
+        // Clean up the abort controller if this was the active one
+        if (abortControllerRef.current === newAbortController) {
+          abortControllerRef.current = null;
+        }
+      }
+    }, 250); // 250ms debounce
   };
 
   // Orchestrator: Handle Sentence Play

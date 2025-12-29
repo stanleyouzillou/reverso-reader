@@ -1,4 +1,4 @@
-import { translationRegistry } from "./translation/TranslationRegistry";
+import { translationRegistry, type TranslationProvider } from "./translation/TranslationRegistry";
 
 interface TranslationResult {
   text: string;
@@ -35,7 +35,7 @@ export class MultiTranslationService {
 
     try {
       // Get translations from multiple providers
-      const providers = ['google', 'reverso', 'gemini'];
+      const providers: TranslationProvider[] = ['google', 'reverso', 'gemini'];
       const results: string[] = [];
       let dictionaryData: any | null = null;
       
@@ -43,11 +43,11 @@ export class MultiTranslationService {
       await new Promise((resolve) => setTimeout(resolve, 300));
       
       // Try each provider and collect unique translations
-      for (const provider of providers) {
+      for (const provider of providers as const) { // Use 'as const' to ensure type safety
         try {
           const service = translationRegistry.getService(provider);
           const result = await service.translate(text, to, "en", context);
-          
+
           // Only add unique translations
           if (result.text && !results.includes(result.text)) {
             results.push(result.text);

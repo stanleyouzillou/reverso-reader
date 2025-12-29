@@ -1,8 +1,8 @@
 import React from 'react';
 import { BookOpen, Search } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { VocabItem } from '../../types';
 import { useStore } from '../../store/useStore';
+import { DefinitionCard } from '../dictionary/DefinitionCard';
 
 interface DictionaryModeProps {
   className?: string;
@@ -11,50 +11,64 @@ interface DictionaryModeProps {
 export const DictionaryMode: React.FC<DictionaryModeProps> = ({
   className = ''
 }) => {
-  const { selectedDictionaryWord, history } = useStore();
+  const { selectedDictionaryWord, history, setSelectedDictionaryWord, toggleSaved } = useStore();
+
+  const handleNavigateToSource = (position: number) => {
+    const element = document.getElementById(`token-${position}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Add a brief highlight effect
+      element.classList.add('ring-4', 'ring-blue-400', 'ring-opacity-50', 'rounded-sm');
+      setTimeout(() => {
+        element.classList.remove('ring-4', 'ring-blue-400', 'ring-opacity-50', 'rounded-sm');
+      }, 2000);
+    }
+  };
+
+  const handleAddToVocabulary = (word: string) => {
+    if (selectedDictionaryWord) {
+      toggleSaved(selectedDictionaryWord);
+      // Success feedback could be added here
+    }
+  };
 
   return (
     <div className={cn('flex flex-col h-full', className)} style={{ minHeight: 0 }}>
       {selectedDictionaryWord ? (
-        <div className="flex-1 overflow-y-auto p-4" role="tabpanel" aria-labelledby="dictionary-tab">
-          <div className="mb-6">
-            <h3 className="text-xl font-bold text-slate-800 mb-1" id="selected-word">{selectedDictionaryWord.word}</h3>
-            <p className="text-slate-600 mb-3 text-lg" id="selected-translation">{selectedDictionaryWord.translation}</p>
+        <div className="flex-1 overflow-y-auto p-6" role="tabpanel" aria-labelledby="dictionary-tab">
+          <DefinitionCard
+            word={selectedDictionaryWord.word}
+            sourceSentence={selectedDictionaryWord.context || ""}
+            sourceLanguage="en" // Should be dynamic based on article
+            targetLanguage="fr" // Should be dynamic based on user settings
+            textPosition={selectedDictionaryWord.position || 0}
+            onAddToVocabulary={handleAddToVocabulary}
+            onNavigateToSource={handleNavigateToSource}
+          />
 
-            {selectedDictionaryWord.context && (
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-base mb-4" aria-label="Context sentence">
-                <p className="italic text-slate-700">"...{selectedDictionaryWord.context}..."</p>
-              </div>
-            )}
-
-            <div className="mt-4 text-base text-slate-600">
-              <p className="font-medium mb-2">Definition:</p>
-              <p>This would contain the detailed definition of the word from a dictionary API.</p>
-            </div>
-          </div>
-
-          {history.length > 0 && (
-            <div className="pt-4 border-t border-slate-200">
-              <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4" id="recent-lookups-heading">
+          {history.length > 1 && (
+            <div className="pt-8 mt-4 border-t border-slate-100">
+              <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-6" id="recent-lookups-heading">
                 Recent Lookups
               </h4>
               <div className="space-y-3" aria-labelledby="recent-lookups-heading">
-                {history.slice(0, 5).map((item, idx) => (
+                {history.filter(item => item.word !== selectedDictionaryWord.word).slice(0, 5).map((item, idx) => (
                   <div
                     key={`${item.word}-${idx}`}
-                    className="p-3 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 cursor-pointer transition-colors"
+                    className="p-4 bg-slate-50 border border-slate-100 rounded-2xl hover:bg-white hover:shadow-md hover:border-white cursor-pointer transition-all duration-300"
                     role="button"
                     tabIndex={0}
                     aria-label={`View definition for ${item.word}`}
+                    onClick={() => setSelectedDictionaryWord(item)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
-                        // In a real implementation, this would select the word
+                        setSelectedDictionaryWord(item);
                       }
                     }}
                   >
-                    <div className="flex justify-between">
-                      <span className="font-medium text-slate-800">{item.word}</span>
-                      <span className="text-slate-600">{item.translation}</span>
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-slate-800">{item.word}</span>
+                      <span className="text-blue-500 font-medium text-sm">{item.translation}</span>
                     </div>
                   </div>
                 ))}

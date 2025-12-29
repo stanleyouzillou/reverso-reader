@@ -19,9 +19,16 @@ class TranslationService {
     const l2Language = useReaderSettings.getState().l2Language || "en-GB";
     const targetLanguage = to || l2Language;
 
-    const cacheKey = `${provider}:${text.trim().toLowerCase()}:${targetLanguage}`;
+    // Check if this is a chunk translation (multiple words)
+    const selectedWords = text.trim().split(/\s+/);
+    const isChunkTranslation = selectedWords.length > 1;
 
-    if (this.cache[cacheKey]) {
+    // Create cache key using the format "word1_word2_word3" as specified in requirements
+    // Replace spaces with underscores to create the key format
+    const cacheKey = `${provider}:${text.trim().toLowerCase().replace(/\s+/g, '_')}:${targetLanguage}`;
+
+    // Skip cache for chunk translations (2+ words)
+    if (!isChunkTranslation && this.cache[cacheKey]) {
       return this.cache[cacheKey];
     }
 
@@ -34,8 +41,12 @@ class TranslationService {
       // The service will handle 'auto' appropriately
       const result = await service.translate(text, targetLanguage, "auto", context);
 
-      this.cache[cacheKey] = { text: result.text, dictionary: result.dictionary };
-      return this.cache[cacheKey];
+      // Only cache single-word translations
+      if (!isChunkTranslation) {
+        this.cache[cacheKey] = { text: result.text, dictionary: result.dictionary };
+      }
+
+      return { text: result.text, dictionary: result.dictionary };
     } catch (error: any) {
       console.error(`Translation Service Error (${provider}):`, error);
       throw new Error(error.message || "Unknown translation error");
@@ -44,7 +55,9 @@ class TranslationService {
 
   getCached(text: string, to: string = "fr"): TranslationResult | null {
     const provider = useReaderSettings.getState().translationProvider;
-    const cacheKey = `${provider}:${text.trim().toLowerCase()}:${to}`;
+    // Create cache key using the format "word1_word2_word3" as specified in requirements
+    // Replace spaces with underscores to create the key format
+    const cacheKey = `${provider}:${text.trim().toLowerCase().replace(/\s+/g, '_')}:${to}`;
     return this.cache[cacheKey] || null;
   }
 }

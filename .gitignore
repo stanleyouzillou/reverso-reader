@@ -23,3 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 .vite
+.env
+gen-lang-client-0837335735-25993764dc5b.json

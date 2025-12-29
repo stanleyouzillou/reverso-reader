@@ -19,6 +19,7 @@ export interface VocabItem {
   level: CEFRLevel;
   status: WordStatus;
   context?: string;
+  position?: number;
   timestamp?: number;
 }
 

@@ -51,7 +51,9 @@ export const Token: React.FC<TokenProps> = ({
 
   // Check if the current token is saved
   useEffect(() => {
-    setIsSaved(saved.some(item => item.word.toLowerCase() === token.toLowerCase()));
+    setIsSaved(
+      saved.some((item) => item.word.toLowerCase() === token.toLowerCase())
+    );
   }, [saved, token]);
 
   const handleMouseEnter = useCallback(async () => {
@@ -68,7 +70,9 @@ export const Token: React.FC<TokenProps> = ({
       } else {
         setIsHoverLoading(true);
         // Get multiple translations
-        const result = await multiTranslationService.getMultipleTranslations(token);
+        const result = await multiTranslationService.getMultipleTranslations(
+          token
+        );
         if (result && !result.error && result.translations.length > 0) {
           setHoverTranslations(result.translations);
 
@@ -102,7 +106,14 @@ export const Token: React.FC<TokenProps> = ({
         setIsHoverLoading(false);
       }
     }
-  }, [translationMode, mode, token, translateText, metadata.level, addToHistory]);
+  }, [
+    translationMode,
+    mode,
+    token,
+    translateText,
+    metadata.level,
+    addToHistory,
+  ]);
 
   const handleMouseLeave = useCallback(() => {
     if (translationMode === "hover") {
@@ -154,10 +165,14 @@ export const Token: React.FC<TokenProps> = ({
         )}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onFocus={handleMouseEnter}  // Support keyboard focus
-        onBlur={handleMouseLeave}   // Support keyboard blur
-        tabIndex={0}                // Make the token focusable
-        aria-describedby={hoverTranslations.length > 0 || isHoverLoading ? `popup-${index}` : undefined}
+        onFocus={handleMouseEnter} // Support keyboard focus
+        onBlur={handleMouseLeave} // Support keyboard blur
+        tabIndex={0} // Make the token focusable
+        aria-describedby={
+          hoverTranslations.length > 0 || isHoverLoading
+            ? `popup-${index}`
+            : undefined
+        }
       >
         {token}
 
@@ -173,17 +188,27 @@ export const Token: React.FC<TokenProps> = ({
               className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs p-3 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 min-w-[200px] max-w-[300px]"
               tabIndex={-1} // Allow focus on the popup container for accessibility
             >
-              <div className="font-semibold mb-1 text-slate-700 dark:text-slate-300" tabIndex={0}>
+              <div
+                className="font-semibold mb-1 text-slate-700 dark:text-slate-300"
+                tabIndex={0}
+              >
                 {token}
               </div>
 
               {isHoverLoading ? (
                 <div className="flex items-center justify-center py-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-slate-500" aria-label="Loading translations" />
+                  <Loader2
+                    className="h-4 w-4 animate-spin text-slate-500"
+                    aria-label="Loading translations"
+                  />
                 </div>
               ) : (
                 <>
-                  <div className="space-y-1 max-h-32 overflow-y-auto" tabIndex={0} aria-label="Translations list">
+                  <div
+                    className="space-y-1 max-h-32 overflow-y-auto"
+                    tabIndex={0}
+                    aria-label="Translations list"
+                  >
                     {hoverTranslations.slice(0, 3).map((translation, idx) => (
                       <div
                         key={idx}
@@ -202,7 +227,8 @@ export const Token: React.FC<TokenProps> = ({
                         e.stopPropagation();
                         const vocabItem: VocabItem = {
                           word: token,
-                          translation: hoverTranslations[0] || "Translation not available",
+                          translation:
+                            hoverTranslations[0] || "Translation not available",
                           level: metadata.level,
                           status: WordStatus.Unknown,
                           context: "Hover translation",
@@ -210,23 +236,32 @@ export const Token: React.FC<TokenProps> = ({
                         };
                         toggleSaved(vocabItem);
                       }}
-                      className={`flex items-center gap-1 text-sm ${isSaved ? 'text-red-500' : 'text-slate-500 hover:text-red-500'}`}
+                      className={`flex items-center gap-1 text-sm ${
+                        isSaved
+                          ? "text-red-500"
+                          : "text-slate-500 hover:text-red-500"
+                      }`}
                       aria-label={isSaved ? "Unsave word" : "Save word"}
                       title={isSaved ? "Unsave word" : "Save word"}
                     >
                       {isSaved ? (
-                        <Heart className="h-4 w-4 fill-current" aria-label="Saved" />
+                        <Heart
+                          className="h-4 w-4 fill-current"
+                          aria-label="Saved"
+                        />
                       ) : (
                         <Heart className="h-4 w-4" aria-label="Save word" />
                       )}
-                      <span>{isSaved ? 'Saved' : 'Save'}</span>
+                      <span>{isSaved ? "Saved" : "Save"}</span>
                     </button>
 
                     <span
                       className="text-xs text-slate-500 dark:text-slate-400"
                       aria-label={`Showing ${hoverTranslations.length} translations`}
                     >
-                      {hoverTranslations.length > 3 ? `+${hoverTranslations.length - 3} more` : `${hoverTranslations.length} translations`}
+                      {hoverTranslations.length > 3
+                        ? `+${hoverTranslations.length - 3} more`
+                        : `${hoverTranslations.length} translations`}
                     </span>
                   </div>
                 </>
@@ -254,6 +289,7 @@ export const Token: React.FC<TokenProps> = ({
   if (mode === "clean") {
     return (
       <span
+        ref={tokenRef}
         className={cn(
           "transition-colors duration-200",
           isKaraoke && "bg-yellow-200"
@@ -265,54 +301,101 @@ export const Token: React.FC<TokenProps> = ({
   }
 
   // Determine if this token is part of a multi-word chunk that needs special rendering
-  // Logic:
-  // 1. If it's the LAST token of a selection/span, we might render the popup here (old logic).
-  // 2. BUT user wants the popup centered over the whole chunk.
-  // 3. Current architecture is token-based. Rendering a single popup over multiple tokens is hard without a parent wrapper.
-  // 4. Compromise: Render the popup on the MIDDLE token of the chunk? Or keep it on the last but position it absolute?
+  // For multi-word selections, we want to show the popup only once for the entire selection
+  // and highlight all tokens in the selection
 
-  // Let's refine the "show" logic.
-  // We want to highlight ALL words in the chunk.
-  // And show the translation once.
-
+  const isSelectionStart = isSelected && index === selection?.start;
   const isSelectionEnd = isSelected && index === selection?.end;
-  const isSpanEnd = activeSpan && index === activeSpan.end;
   const isKeyVocab =
     !isSelected && !activeSpan && keyVocab && mode === "learning";
 
-  // Calculate if we should show the translation on THIS token
-  // For multi-word selections, we want to center it.
-  // Simple heuristic: Show it on the middle token index.
-  const selectionLen = selection ? selection.end - selection.start + 1 : 0;
-  const selectionMid = selection
-    ? Math.floor(selection.start + selectionLen / 2)
-    : -1;
-  const showSelectionTranslation = isSelected && index === selectionMid;
+  // Check if this token is part of a translated span (persistent translation)
+  const translatedSpan = translatedSpans.find(
+    (span) => index >= span.start && index <= span.end
+  );
 
-  const spanLen = activeSpan ? activeSpan.end - activeSpan.start + 1 : 0;
-  const spanMid = activeSpan ? Math.floor(activeSpan.start + spanLen / 2) : -1;
-  const showSpanTranslation = activeSpan && index === spanMid;
+  // Calculate middle token for multi-word chunks to center the translation
+  const selectionMiddle = selection
+    ? Math.floor((selection.start + selection.end) / 2)
+    : -1;
+  const translatedSpanMiddle = translatedSpan
+    ? Math.floor((translatedSpan.start + translatedSpan.end) / 2)
+    : -1;
+
+  // Show the popup on the middle token of the selection/span for better visual balance
+  const showSelectionTranslation = isSelected && index === selectionMiddle;
+  const showTranslatedSpan =
+    translatedSpan && index === translatedSpanMiddle && !isSelected;
 
   // For single words (key vocab), it's just the word itself
   const showKeyVocabTranslation = isKeyVocab;
 
+  // Get translation text
   const translationText = showSelectionTranslation
     ? selection?.loading
       ? "..."
       : selection?.translation
-    : showSpanTranslation
-    ? activeSpan?.translation
+    : showTranslatedSpan
+    ? translatedSpan?.translation
     : showKeyVocabTranslation
     ? keyVocab?.translation
     : null;
 
-  const isHighlightActive = isSelected || activeSpan;
+  // Check if this token is highlighted
+  const isCurrentSelectionActive = isSelected;
+  const isTranslatedSpanActive = !!translatedSpan;
+  const isHighlightActive = isCurrentSelectionActive || isTranslatedSpanActive;
+
+  // Unified styling logic for consistent highlights
+  const isMultiToken =
+    (isCurrentSelectionActive && selection?.end > selection?.start) ||
+    (isTranslatedSpanActive && translatedSpan?.end > translatedSpan?.start);
+
+  // Determine if this token is the currently clicked word (the last added to the selection)
+  const isCurrentlyClicked = isCurrentSelectionActive && index === selection?.end;
+
+  let tokenStyling = "";
+  let tokenHighlightClass = "";
+
+  if (isHighlightActive) {
+    if (isMultiToken) {
+      const start = isCurrentSelectionActive
+        ? selection?.start
+        : translatedSpan?.start;
+      const end = isCurrentSelectionActive
+        ? selection?.end
+        : translatedSpan?.end;
+
+      if (index === start) {
+        tokenStyling =
+          "rounded-l px-1.5 mx-0 bg-emerald-500 text-white shadow-sm";
+      } else if (index === end) {
+        tokenStyling =
+          "rounded-r px-1.5 mx-0 bg-emerald-500 text-white shadow-sm";
+      } else {
+        tokenStyling = "px-0 mx-0 bg-emerald-500 text-white shadow-sm";
+      }
+    } else {
+      tokenStyling =
+        "rounded px-1.5 mx-0.5 bg-emerald-500 text-white shadow-sm";
+    }
+
+    // Apply distinct visual for just-clicked word (the currently added word to the chunk)
+    if (isCurrentlyClicked) {
+      tokenHighlightClass = "ring-2 ring-blue-300"; // Distinct visual for just-clicked word
+    }
+  } else if (keyVocab && mode === "learning") {
+    tokenStyling =
+      "bg-emerald-100 text-emerald-900 border-b-2 border-emerald-200 rounded px-1.5 mx-0.5 hover:bg-emerald-200";
+  } else {
+    tokenStyling = "hover:bg-emerald-50 rounded px-1.5 mx-0.5";
+  }
 
   // We need to render the popup if:
-  // 1. It has text to show
-  // 2. OR it's loading (for selection)
   const shouldRenderPopup =
-    translationText || (showSelectionTranslation && selection?.loading);
+    (showSelectionTranslation &&
+      (selection?.loading || selection?.translation)) ||
+    (showTranslatedSpan && translatedSpan?.translation);
 
   if (shouldRenderPopup) {
     return (
@@ -323,19 +406,17 @@ export const Token: React.FC<TokenProps> = ({
           onWordClick(index);
         }}
         className={cn(
-          "inline-flex flex-col-reverse items-center align-middle gap-0.5 mx-0.5 cursor-pointer",
+          "inline-flex flex-col-reverse items-center align-middle gap-0.5 cursor-pointer",
+          isMultiToken ? "mx-0" : "mx-0.5",
           isKaraoke && "bg-yellow-200 scale-105 rounded"
         )}
         style={{ verticalAlign: "middle" }}
       >
         <span
           className={cn(
-            "px-1.5 py-0.5 rounded text-inherit leading-none transition-colors",
-            isHighlightActive
-              ? "bg-emerald-500 text-white shadow-sm"
-              : keyVocab
-              ? "bg-emerald-100 text-emerald-900 border-b-2 border-emerald-200"
-              : "hover:bg-emerald-50"
+            "py-0.5 text-inherit leading-none transition-colors",
+            tokenStyling,
+            tokenHighlightClass // Separate visual for just-clicked word
           )}
         >
           {token}
@@ -370,7 +451,7 @@ export const Token: React.FC<TokenProps> = ({
     );
   }
 
-  // Render highlighted word without popup (for other parts of the chunk)
+  // Render highlighted word without popup (for other parts of the selection or persistent spans)
   if (isHighlightActive) {
     return (
       <span
@@ -378,8 +459,9 @@ export const Token: React.FC<TokenProps> = ({
         id={`token-${index}`}
         onClick={() => onWordClick(index)}
         className={cn(
-          "inline-block cursor-pointer transition-all duration-200 rounded px-0.5 mx-0.5",
-          "bg-emerald-500 text-white shadow-sm", // Uniform highlight style for chunk
+          "inline-block cursor-pointer transition-all duration-200",
+          tokenStyling,
+          tokenHighlightClass, // Separate visual for just-clicked word
           isKaraoke && "bg-yellow-200 text-slate-900 scale-105"
         )}
       >
@@ -393,43 +475,22 @@ export const Token: React.FC<TokenProps> = ({
       ref={tokenRef}
       id={`token-${index}`}
       onClick={(e) => {
-        if (mode !== "clean" && isWord(token)) {
-          const rect = tokenRef.current?.getBoundingClientRect();
-          if (rect) {
-            // Calculate position for the inline translation popup
-            const position = {
-              x: rect.left + rect.width / 2,
-              y: rect.top
-            };
-
-            // Call the parent handler which will manage the translation
-            onWordClick(index);
-          }
+        if (isWord(token)) {
+          onWordClick(index);
         }
       }}
       className={cn(
-        "relative inline-block cursor-pointer transition-all duration-200 rounded px-0.5 -mx-0.5",
-        "hover:bg-emerald-50 hover:text-emerald-800",
-        isHighlightActive && "bg-emerald-100 text-emerald-900",
-        isKaraoke && "bg-yellow-200 scale-105"
+        "inline-block cursor-pointer transition-all duration-200",
+        tokenStyling,
+        isKaraoke && "bg-yellow-200 text-slate-900 scale-105"
       )}
       aria-label={`Click to translate "${token}"`}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          if (mode !== "clean" && isWord(token)) {
-            const rect = tokenRef.current?.getBoundingClientRect();
-            if (rect) {
-              // Calculate position for the inline translation popup
-              const position = {
-                x: rect.left + rect.width / 2,
-                y: rect.top
-              };
-
-              // Call the parent handler which will manage the translation
-              onWordClick(index);
-            }
+        if (e.key === "Enter" || e.key === " ") {
+          if (isWord(token)) {
+            onWordClick(index);
           }
         }
       }}
