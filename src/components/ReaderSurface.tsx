@@ -17,7 +17,11 @@ import { SingleModeView } from "./reader/SingleModeView";
 import { Token } from "./reader/Token";
 import { cn } from "../lib/utils";
 
-export const ReaderSurface: React.FC = () => {
+interface ReaderSurfaceProps {
+  sidebarCollapsed?: boolean;
+}
+
+export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({ sidebarCollapsed = false }) => {
   // 1. Global Store & Layout State
   const {
     mode,

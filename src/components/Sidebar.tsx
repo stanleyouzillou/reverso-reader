@@ -6,7 +6,11 @@ import { DEMO_ARTICLE } from "../constants/demoContent";
 
 type Tab = "history" | "saved" | "learn";
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  collapsed?: boolean;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
   const [activeTab, setActiveTab] = useState<Tab>("history");
   const { history, saved, toLearn, clearHistory, addToHistory, toggleSaved } =
     useStore();
@@ -21,6 +25,77 @@ export const Sidebar: React.FC = () => {
 
   // Use a key to force re-render if needed, though React should handle this via the hook
   const listKey = `${activeTab}-${activeList.length}`;
+
+  if (collapsed) {
+    return (
+      <div className="w-12 bg-white border-l border-slate-100 flex flex-col h-full shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10">
+        {/* Collapsed sidebar with just the tabs */}
+        <div className="flex flex-col border-b border-slate-100">
+          <button
+            onClick={() => setActiveTab("history")}
+            className={cn(
+              "py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2",
+              activeTab === "history"
+                ? "text-blue-600 border-blue-600"
+                : "text-slate-400 border-transparent hover:text-slate-600"
+            )}
+            title="History"
+            aria-label="History"
+          >
+            <div className="relative">
+              <History size={16} />
+              {history.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-white" />
+              )}
+            </div>
+          </button>
+          <button
+            onClick={() => setActiveTab("saved")}
+            className={cn(
+              "py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2",
+              activeTab === "saved"
+                ? "text-blue-600 border-blue-600"
+                : "text-slate-400 border-transparent hover:text-slate-600"
+            )}
+            title="Saved"
+            aria-label="Saved"
+          >
+            <Bookmark size={16} />
+          </button>
+          <button
+            onClick={() => setActiveTab("learn")}
+            className={cn(
+              "py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2",
+              activeTab === "learn"
+                ? "text-blue-600 border-blue-600"
+                : "text-slate-400 border-transparent hover:text-slate-600"
+            )}
+            title="To Learn"
+            aria-label="To Learn"
+          >
+            <div className="relative">
+              <Lightbulb size={16} />
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-slate-900 text-white text-[8px] flex items-center justify-center rounded-full border border-white">
+                {toLearn.length}
+              </span>
+            </div>
+          </button>
+        </div>
+
+        {/* Collapsed footer stats */}
+        <div className="mt-auto p-2 border-t border-slate-100 bg-white">
+          <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-center">
+            <div className="text-[8px] text-slate-400 font-bold uppercase">
+              {DEMO_ARTICLE.metadata.wordCount}
+            </div>
+            <div className="text-xs font-bold text-slate-800">
+              W
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-80 bg-white border-l border-slate-100 flex flex-col h-full shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10">
