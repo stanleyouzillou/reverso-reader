@@ -14,6 +14,8 @@ import { useReaderSettings } from "../../hooks/useReaderSettings";
 import { useTranslationEngine } from "../../hooks/useTranslationEngine";
 import { useStore } from "../../store/useStore";
 import { multiTranslationService } from "../../services/MultiTranslationService";
+import { InlineTranslation } from "../translation/InlineTranslation";
+import { useInlineTranslation } from "../../hooks/useInlineTranslation";
 
 interface TokenProps {
   token: string;
@@ -45,6 +47,7 @@ export const Token: React.FC<TokenProps> = ({
   const [isHoverLoading, setIsHoverLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const tokenRef = useRef<HTMLSpanElement>(null);
 
   // Check if the current token is saved
   useEffect(() => {
@@ -60,8 +63,8 @@ export const Token: React.FC<TokenProps> = ({
 
       // Check for cached multi-translations first
       const cached = multiTranslationService.getCachedTranslations(token);
-      if (cached && cached.length > 0) {
-        setHoverTranslations(cached);
+      if (cached && cached.translations.length > 0) {
+        setHoverTranslations(cached.translations);
       } else {
         setIsHoverLoading(true);
         // Get multiple translations
@@ -371,6 +374,7 @@ export const Token: React.FC<TokenProps> = ({
   if (isHighlightActive) {
     return (
       <span
+        ref={tokenRef}
         id={`token-${index}`}
         onClick={() => onWordClick(index)}
         className={cn(
@@ -386,14 +390,49 @@ export const Token: React.FC<TokenProps> = ({
 
   return (
     <span
+      ref={tokenRef}
       id={`token-${index}`}
-      onClick={() => onWordClick(index)}
+      onClick={(e) => {
+        if (mode !== "clean" && isWord(token)) {
+          const rect = tokenRef.current?.getBoundingClientRect();
+          if (rect) {
+            // Calculate position for the inline translation popup
+            const position = {
+              x: rect.left + rect.width / 2,
+              y: rect.top
+            };
+
+            // Call the parent handler which will manage the translation
+            onWordClick(index);
+          }
+        }
+      }}
       className={cn(
         "relative inline-block cursor-pointer transition-all duration-200 rounded px-0.5 -mx-0.5",
         "hover:bg-emerald-50 hover:text-emerald-800",
         isHighlightActive && "bg-emerald-100 text-emerald-900",
         isKaraoke && "bg-yellow-200 scale-105"
       )}
+      aria-label={`Click to translate "${token}"`}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          if (mode !== "clean" && isWord(token)) {
+            const rect = tokenRef.current?.getBoundingClientRect();
+            if (rect) {
+              // Calculate position for the inline translation popup
+              const position = {
+                x: rect.left + rect.width / 2,
+                y: rect.top
+              };
+
+              // Call the parent handler which will manage the translation
+              onWordClick(index);
+            }
+          }
+        }
+      }}
     >
       {token}
     </span>

@@ -32,6 +32,7 @@ interface ReaderSettingsState {
   translationProvider: TranslationProvider;
   translationMode: TranslationMode;
   translationGranularity: TranslationGranularity;
+  l2Language: string;
 
   setFontFamily: (font: FontFamily) => void;
   setFontWeight: (weight: string) => void;
@@ -43,6 +44,7 @@ interface ReaderSettingsState {
   setTranslationProvider: (provider: TranslationProvider) => void;
   setTranslationMode: (mode: TranslationMode) => void;
   setTranslationGranularity: (granularity: TranslationGranularity) => void;
+  setL2Language: (language: string) => void;
 }
 
 export const useReaderSettings = create<ReaderSettingsState>()(
@@ -58,6 +60,7 @@ export const useReaderSettings = create<ReaderSettingsState>()(
       translationProvider: "google",
       translationMode: "inline",
       translationGranularity: "chunk",
+      l2Language: "en-GB", // Default to English (GB)
 
       setFontFamily: (font) => set({ fontFamily: font }),
       setFontWeight: (weight) => set({ fontWeight: weight }),
@@ -69,6 +72,7 @@ export const useReaderSettings = create<ReaderSettingsState>()(
       setTranslationProvider: (provider) => set({ translationProvider: provider }),
       setTranslationMode: (mode) => set({ translationMode: mode }),
       setTranslationGranularity: (granularity) => set({ translationGranularity: granularity }),
+      setL2Language: (language) => set({ l2Language: language }),
     }),
     {
       name: "reader-settings",

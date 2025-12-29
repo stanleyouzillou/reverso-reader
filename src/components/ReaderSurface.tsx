@@ -9,12 +9,14 @@ import { useWordSelection } from "../hooks/useWordSelection";
 import { useAudioPlayer } from "../hooks/useAudioPlayer";
 import { useArticleIngestion } from "../hooks/useArticleIngestion";
 import { useVocabulary } from "../hooks/useVocabulary";
+import { useInlineTranslation } from "../hooks/useInlineTranslation";
 
 // Components
 import { ReaderHeader } from "./reader/ReaderHeader";
 import { DualModeView } from "./reader/DualModeView";
 import { SingleModeView } from "./reader/SingleModeView";
 import { Token } from "./reader/Token";
+import { InlineTranslation } from "./translation/InlineTranslation";
 import { cn } from "../lib/utils";
 
 interface ReaderSurfaceProps {
@@ -33,6 +35,18 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({ sidebarCollapsed =
     setCurrentSentenceIdx,
     setKaraokeActive,
   } = useStore();
+
+  // Inline translation functionality
+  const {
+    showTranslation,
+    selectedWord,
+    position,
+    isSaved,
+    openTranslation,
+    closeTranslation,
+    toggleSave,
+    addToHistory: addToHistoryInline
+  } = useInlineTranslation();
   const {
     fontFamily,
     fontWeight,
@@ -280,6 +294,18 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({ sidebarCollapsed =
           />
         )}
       </div>
+
+      {/* Inline Translation Popup */}
+      {showTranslation && selectedWord && position && (
+        <InlineTranslation
+          word={selectedWord}
+          position={position}
+          onClose={closeTranslation}
+          onAddToVocabulary={addToHistory}
+          isSaved={isSaved}
+          onToggleSave={toggleSave}
+        />
+      )}
     </div>
   );
 };

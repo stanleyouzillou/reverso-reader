@@ -2,15 +2,17 @@ import { translationRegistry } from "./translation/TranslationRegistry";
 
 interface TranslationResult {
   text: string;
+  dictionary?: any | null;
 }
 
 interface MultiTranslationResult {
   translations: string[];
+  dictionary?: any | null;
   error?: string;
 }
 
 export class MultiTranslationService {
-  private cache: Record<string, string[]> = {};
+  private cache: Record<string, { translations: string[], dictionary?: any | null }> = {};
 
   async getMultipleTranslations(
     text: string, 
@@ -25,13 +27,17 @@ export class MultiTranslationService {
     const cacheKey = `multi:${text.trim().toLowerCase()}:${to}`;
 
     if (this.cache[cacheKey]) {
-      return { translations: this.cache[cacheKey] };
+      return { 
+        translations: this.cache[cacheKey].translations,
+        dictionary: this.cache[cacheKey].dictionary
+      };
     }
 
     try {
       // Get translations from multiple providers
       const providers = ['google', 'reverso', 'gemini'];
       const results: string[] = [];
+      let dictionaryData: any | null = null;
       
       // Add a slight delay to prevent flickering
       await new Promise((resolve) => setTimeout(resolve, 300));
@@ -46,6 +52,11 @@ export class MultiTranslationService {
           if (result.text && !results.includes(result.text)) {
             results.push(result.text);
           }
+
+          // Store dictionary data if available (e.g. from Google)
+          if (result.dictionary && !dictionaryData) {
+            dictionaryData = result.dictionary;
+          }
         } catch (error) {
           console.error(`Error with ${provider} translation:`, error);
           // Continue with other providers
@@ -53,16 +64,22 @@ export class MultiTranslationService {
       }
 
       // Cache the results
-      this.cache[cacheKey] = results;
+      this.cache[cacheKey] = { 
+        translations: results,
+        dictionary: dictionaryData
+      };
       
-      return { translations: results };
+      return { 
+        translations: results,
+        dictionary: dictionaryData
+      };
     } catch (error: any) {
       console.error('MultiTranslation Service Error:', error);
       return { translations: [], error: error.message || "Unknown translation error" };
     }
   }
 
-  getCachedTranslations(text: string, to: string = "fr"): string[] | null {
+  getCachedTranslations(text: string, to: string = "fr"): { translations: string[], dictionary?: any | null } | null {
     const cacheKey = `multi:${text.trim().toLowerCase()}:${to}`;
     return this.cache[cacheKey] || null;
   }
