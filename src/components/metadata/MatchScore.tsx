@@ -1,23 +1,34 @@
-import React from 'react';
-import { cn } from '../../lib/utils';
+import React from "react";
+import { cn } from "../../lib/utils";
 
 interface MatchScoreProps {
   score: number;
+  size?: number;
+  showText?: boolean;
   className?: string;
 }
 
-export const MatchScore: React.FC<MatchScoreProps> = ({ 
-  score, 
-  className = '' 
+export const MatchScore: React.FC<MatchScoreProps> = ({
+  score,
+  size = 32,
+  showText = true,
+  className = "",
 }) => {
-  const size = 32;
-  const strokeWidth = 3;
+  const strokeWidth = Math.max(2, size / 10);
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (score / 100) * circumference;
 
   return (
-    <div className={cn('relative', className)} role="img" aria-label={`${score}% match`}>
+    <div
+      className={cn(
+        "relative inline-flex items-center justify-center",
+        className
+      )}
+      role="img"
+      aria-label={`${score}% match`}
+      style={{ width: size, height: size }}
+    >
       <svg
         width={size}
         height={size}
@@ -47,12 +58,14 @@ export const MatchScore: React.FC<MatchScoreProps> = ({
           className="text-green-500 transition-all duration-500 ease-in-out"
         />
       </svg>
-      <span
-        className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-700"
-        style={{ fontSize: '8px' }}
-      >
-        {score}%
-      </span>
+      {showText && (
+        <span
+          className="absolute inset-0 flex items-center justify-center font-bold text-slate-700"
+          style={{ fontSize: `${size / 3.5}px` }}
+        >
+          {score}
+        </span>
+      )}
     </div>
   );
 };

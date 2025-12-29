@@ -4,6 +4,7 @@ import { Sidebar } from "./Sidebar";
 import { ControlBar } from "./ControlBar";
 import { ReaderSurface } from "./ReaderSurface";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { FloatingToolbar } from "./FloatingToolbar";
 
 export const Layout: React.FC = () => {
   const [showStickyTitle, setShowStickyTitle] = useState(false);
@@ -32,13 +33,17 @@ export const Layout: React.FC = () => {
           <ControlBar />
         </div>
 
+        <FloatingToolbar sidebarCollapsed={sidebarCollapsed} />
+
         {/* Toggle button and sidebar container */}
         <div className="relative h-full">
           {/* Toggle button positioned relative to the sidebar */}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="absolute -left-8 top-4 z-20 bg-white rounded-l-lg shadow-md p-2 hover:bg-slate-50 border border-slate-200 transition-all duration-200 flex items-center justify-center"
-            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={
+              sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
           >
             {sidebarCollapsed ? (
               <ChevronRight className="h-4 w-4 text-slate-600" />
@@ -48,7 +53,11 @@ export const Layout: React.FC = () => {
           </button>
 
           {/* Sidebar with conditional width - this doesn't affect the main content margins */}
-          <div className={`${sidebarCollapsed ? "w-12" : "w-80"} h-full transition-all duration-300 ease-in-out`}>
+          <div
+            className={`${
+              sidebarCollapsed ? "w-12" : "w-80"
+            } h-full transition-all duration-300 ease-in-out`}
+          >
             <Sidebar collapsed={sidebarCollapsed} />
           </div>
         </div>

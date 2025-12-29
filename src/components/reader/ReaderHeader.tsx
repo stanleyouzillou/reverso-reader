@@ -20,6 +20,7 @@ interface ReaderHeaderProps {
   matchScore: number;
   wordCount: number;
   estimatedMinutes: number;
+  publishDate?: string;
   mode: ReadingMode;
   dualModeOption: "sentences" | "hover" | "interleaved" | "sync";
   setDualModeOption: (
@@ -35,6 +36,7 @@ export const ReaderHeader: React.FC<ReaderHeaderProps> = ({
   matchScore,
   wordCount,
   estimatedMinutes,
+  publishDate,
   mode,
   dualModeOption,
   setDualModeOption,
@@ -48,6 +50,7 @@ export const ReaderHeader: React.FC<ReaderHeaderProps> = ({
         matchScore={matchScore}
         wordCount={wordCount}
         estimatedMinutes={estimatedMinutes}
+        publishDate={publishDate}
       />
 
       {/* Dual Mode Sub-options Controls */}
