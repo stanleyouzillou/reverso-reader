@@ -6,6 +6,7 @@ import { ModeSelector } from "./metadata/ModeSelector";
 import { DictionaryMode } from "./metadata/DictionaryMode";
 import { AIAssistantMode } from "./metadata/AIAssistantMode";
 import { VocabularyMode } from "./metadata/VocabularyMode";
+import { DeckIcon } from "./metadata/DeckIcon";
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -45,11 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
             title="Vocabulary"
             aria-label="Vocabulary"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-              <polyline points="10 17 5 12 10 7"/>
-              <line x1="5" x2="19" y1="12" y2="12"/>
-            </svg>
+            <DeckIcon size={16} className={sidebarMode === "vocabulary" ? "text-blue-600" : "text-slate-400"} />
             {history.length > 0 && (
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-white" />
             )}
