@@ -149,14 +149,19 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({ sidebarCollapsed =
       });
 
       // 5. Add to History
-      addToHistory({
+      const vocabItem = {
         word: newSelection.text,
         translation: result.text,
         level: metadata.level,
         status: WordStatus.Learning,
         context: getContext(newSelection.start, newSelection.end),
         timestamp: Date.now(),
-      });
+      };
+
+      addToHistory(vocabItem);
+
+      // 6. Set as selected dictionary word
+      useStore.getState().setSelectedDictionaryWord(vocabItem);
     } else {
       setSelection((prev) =>
         prev ? { ...prev, loading: false, translation: "Error" } : null
@@ -225,6 +230,10 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({ sidebarCollapsed =
           title={title}
           l1Title={l1_title}
           categories={categories}
+          level={metadata.level}
+          matchScore={78} // This would come from actual data in a real implementation
+          wordCount={metadata.wordCount}
+          estimatedMinutes={metadata.estimatedMinutes}
           mode={mode}
           dualModeOption={dualModeOption}
           setDualModeOption={setDualModeOption}

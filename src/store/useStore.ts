@@ -1,9 +1,10 @@
 import { create } from "zustand";
-import { ReadingMode, VocabItem, WordStatus } from "../types";
+import { ReadingMode, SidebarMode, VocabItem, WordStatus } from "../types";
 import { DEMO_ARTICLE } from "../constants/demoContent";
 
 interface State {
   mode: ReadingMode;
+  sidebarMode: SidebarMode;
   history: VocabItem[];
   saved: VocabItem[];
   toLearn: VocabItem[];
@@ -16,8 +17,12 @@ interface State {
   currentWordIdx: number; // Added: For tracking current spoken word
   selectedVoice: string | null;
 
+  // Dictionary State
+  selectedDictionaryWord: VocabItem | null;
+
   // Actions
   setMode: (mode: ReadingMode) => void;
+  setSidebarMode: (mode: SidebarMode) => void;
   setDualModeOption: (
     option: "sentences" | "hover" | "interleaved" | "sync"
   ) => void;
@@ -28,11 +33,13 @@ interface State {
   setCurrentSentenceIdx: (idx: number) => void;
   setCurrentWordIdx: (idx: number) => void; // Added: Action to set word index
   setSelectedVoice: (voice: string | null) => void;
+  setSelectedDictionaryWord: (word: VocabItem | null) => void;
   clearHistory: () => void;
 }
 
 export const useStore = create<State>((set) => ({
   mode: "learning",
+  sidebarMode: "vocabulary",
   history: [],
   saved: [],
   toLearn: DEMO_ARTICLE.metadata.keyVocab,
@@ -42,9 +49,12 @@ export const useStore = create<State>((set) => ({
   currentSentenceIdx: 0,
   currentWordIdx: -1, // Default: no word highlighted
   selectedVoice: null,
+  selectedDictionaryWord: null,
 
   setMode: (mode) => set({ mode }),
+  setSidebarMode: (mode) => set({ sidebarMode: mode }),
   setDualModeOption: (option) => set({ dualModeOption: option }),
+  setSelectedDictionaryWord: (word) => set({ selectedDictionaryWord: word }),
 
   addToHistory: (item) =>
     set((state) => {

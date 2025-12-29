@@ -33,7 +33,7 @@ export const Layout: React.FC = () => {
         </div>
 
         {/* Toggle button and sidebar container */}
-        <div className="relative">
+        <div className="relative h-full">
           {/* Toggle button positioned relative to the sidebar */}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -48,7 +48,7 @@ export const Layout: React.FC = () => {
           </button>
 
           {/* Sidebar with conditional width - this doesn't affect the main content margins */}
-          <div className={`${sidebarCollapsed ? "w-12" : "w-80"} transition-all duration-300 ease-in-out`}>
+          <div className={`${sidebarCollapsed ? "w-12" : "w-80"} h-full transition-all duration-300 ease-in-out`}>
             <Sidebar collapsed={sidebarCollapsed} />
           </div>
         </div>

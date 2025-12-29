@@ -54,3 +54,5 @@ export interface TranslatedSpan {
   end: number;
   translation: string;
 }
+
+export type SidebarMode = 'dictionary' | 'vocabulary' | 'ai';

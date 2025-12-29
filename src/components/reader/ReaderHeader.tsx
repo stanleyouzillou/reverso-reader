@@ -9,11 +9,17 @@ import {
 import { cn } from "../../lib/utils";
 import { ReadingMode } from "../../types";
 import { SettingsPanel } from "../settings/SettingsPanel";
+import { ArticleHeader } from "../metadata/ArticleHeader";
+import { DEMO_ARTICLE } from "../../constants/demoContent";
 
 interface ReaderHeaderProps {
   title: string;
   l1Title: string;
   categories: string[];
+  level: string;
+  matchScore: number;
+  wordCount: number;
+  estimatedMinutes: number;
   mode: ReadingMode;
   dualModeOption: "sentences" | "hover" | "interleaved" | "sync";
   setDualModeOption: (
@@ -25,33 +31,24 @@ export const ReaderHeader: React.FC<ReaderHeaderProps> = ({
   title,
   l1Title,
   categories,
+  level,
+  matchScore,
+  wordCount,
+  estimatedMinutes,
   mode,
   dualModeOption,
   setDualModeOption,
 }) => {
   return (
     <div className="relative">
-      <div className="flex gap-4 mb-6 justify-center pt-8">
-        {categories.map((c) => (
-          <span
-            key={c}
-            className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded uppercase tracking-wider"
-          >
-            {c}
-          </span>
-        ))}
-      </div>
-
-      <h1
-        className={cn(
-          "text-4xl font-serif font-bold mb-2 text-center leading-tight transition-colors duration-300",
-          // The parent ReaderSurface handles theme text color, so we use inherit or standard classes
-          // But to be safe against overrides:
-          "text-inherit"
-        )}
-      >
-        {title}
-      </h1>
+      <ArticleHeader
+        title={title}
+        tags={categories}
+        level={level}
+        matchScore={matchScore}
+        wordCount={wordCount}
+        estimatedMinutes={estimatedMinutes}
+      />
 
       {/* Dual Mode Sub-options Controls */}
       {mode === "dual" && (

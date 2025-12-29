@@ -1,84 +1,74 @@
-import React, { useState } from "react";
-import { History, Bookmark, Lightbulb, Trash2 } from "lucide-react";
+import React from "react";
 import { useStore } from "../store/useStore";
 import { cn } from "../lib/utils";
 import { DEMO_ARTICLE } from "../constants/demoContent";
-
-type Tab = "history" | "saved" | "learn";
+import { ModeSelector } from "./metadata/ModeSelector";
+import { DictionaryMode } from "./metadata/DictionaryMode";
+import { AIAssistantMode } from "./metadata/AIAssistantMode";
+import { VocabularyMode } from "./metadata/VocabularyMode";
 
 interface SidebarProps {
   collapsed?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
-  const [activeTab, setActiveTab] = useState<Tab>("history");
-  const { history, saved, toLearn, clearHistory, addToHistory, toggleSaved } =
-    useStore();
-
-  // Debugging log to check history updates
-  React.useEffect(() => {
-    console.log("Current History:", history);
-  }, [history]);
-
-  const activeList =
-    activeTab === "history" ? history : activeTab === "saved" ? saved : toLearn;
-
-  // Use a key to force re-render if needed, though React should handle this via the hook
-  const listKey = `${activeTab}-${activeList.length}`;
+  const { sidebarMode, setSidebarMode, history } = useStore();
 
   if (collapsed) {
     return (
       <div className="w-12 bg-white border-l border-slate-100 flex flex-col h-full shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10">
-        {/* Collapsed sidebar with just the tabs */}
+        {/* Collapsed sidebar with just the mode selector */}
         <div className="flex flex-col border-b border-slate-100">
           <button
-            onClick={() => setActiveTab("history")}
+            onClick={() => setSidebarMode("dictionary")}
             className={cn(
               "py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2",
-              activeTab === "history"
+              sidebarMode === "dictionary"
                 ? "text-blue-600 border-blue-600"
                 : "text-slate-400 border-transparent hover:text-slate-600"
             )}
-            title="History"
-            aria-label="History"
+            title="Dictionary"
+            aria-label="Dictionary"
           >
-            <div className="relative">
-              <History size={16} />
-              {history.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-white" />
-              )}
-            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+            </svg>
           </button>
           <button
-            onClick={() => setActiveTab("saved")}
+            onClick={() => setSidebarMode("vocabulary")}
             className={cn(
               "py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2",
-              activeTab === "saved"
+              sidebarMode === "vocabulary"
                 ? "text-blue-600 border-blue-600"
                 : "text-slate-400 border-transparent hover:text-slate-600"
             )}
-            title="Saved"
-            aria-label="Saved"
+            title="Vocabulary"
+            aria-label="Vocabulary"
           >
-            <Bookmark size={16} />
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10 17 5 12 10 7"/>
+              <line x1="5" x2="19" y1="12" y2="12"/>
+            </svg>
+            {history.length > 0 && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-white" />
+            )}
           </button>
           <button
-            onClick={() => setActiveTab("learn")}
+            onClick={() => setSidebarMode("ai")}
             className={cn(
               "py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2",
-              activeTab === "learn"
+              sidebarMode === "ai"
                 ? "text-blue-600 border-blue-600"
                 : "text-slate-400 border-transparent hover:text-slate-600"
             )}
-            title="To Learn"
-            aria-label="To Learn"
+            title="AI Assistant"
+            aria-label="AI Assistant"
           >
-            <div className="relative">
-              <Lightbulb size={16} />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-slate-900 text-white text-[8px] flex items-center justify-center rounded-full border border-white">
-                {toLearn.length}
-              </span>
-            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 4.5v3M20 12h-3M4.5 12v3M15.5 4.5 13.25 7"/>
+              <path d="M16 12c-1.5 0-2.5-.5-3-2.5-.5-2.5.5-5.5 4-6-1.5 2-2 3.5-2 5.5a6.2 6.2 0 0 0 1.5 4.5c-1.5 0-2 1.5-2 3.5a6.2 6.2 0 0 0 1.5 4.5c-1.5 0-2.5-.5-3-2.5-.5-2.5.5-5.5 4-6-1.5 2-2 3.5-2 5.5a6.2 6.2 0 0 0 1.5 4.5"/>
+            </svg>
           </button>
         </div>
 
@@ -99,140 +89,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
 
   return (
     <div className="w-80 bg-white border-l border-slate-100 flex flex-col h-full shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10">
-      {/* Sidebar Header */}
-      <div className="p-4 border-b border-slate-100">
-        <h3 className="font-serif font-bold text-slate-800 text-sm mb-3 line-clamp-1">
-          {DEMO_ARTICLE.title}
-        </h3>
+      {/* Mode Selector */}
+      <ModeSelector
+        activeMode={sidebarMode}
+        onModeChange={setSidebarMode}
+      />
 
-        {/* Progress Bar */}
-        <div className="flex justify-between items-center text-xs mb-1">
-          <span className="font-bold text-green-600">78% Match</span>
-          <span className="text-slate-400">B1 Recommended</span>
-        </div>
-        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full bg-green-500 w-[78%] rounded-full" />
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-slate-100">
-        <button
-          onClick={() => setActiveTab("history")}
-          className={cn(
-            "flex-1 py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2",
-            activeTab === "history"
-              ? "text-blue-600 border-blue-600"
-              : "text-slate-400 border-transparent hover:text-slate-600"
-          )}
-        >
-          <div className="relative">
-            <History size={16} />
-            {history.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-white" />
-            )}
-          </div>
-          HISTORY
-        </button>
-        <button
-          onClick={() => setActiveTab("saved")}
-          className={cn(
-            "flex-1 py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2",
-            activeTab === "saved"
-              ? "text-blue-600 border-blue-600"
-              : "text-slate-400 border-transparent hover:text-slate-600"
-          )}
-        >
-          <Bookmark size={16} />
-          SAVED
-        </button>
-        <button
-          onClick={() => setActiveTab("learn")}
-          className={cn(
-            "flex-1 py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2",
-            activeTab === "learn"
-              ? "text-blue-600 border-blue-600"
-              : "text-slate-400 border-transparent hover:text-slate-600"
-          )}
-        >
-          <div className="relative">
-            <Lightbulb size={16} />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-slate-900 text-white text-[8px] flex items-center justify-center rounded-full border border-white">
-              {toLearn.length}
-            </span>
-          </div>
-          TO LEARN
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
-        <div className="flex justify-between items-center mb-4">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            {activeTab === "history"
-              ? "Recent Lookups"
-              : activeTab === "saved"
-              ? "Saved Vocabulary"
-              : "Recommended"}
-          </h4>
-          {activeTab === "history" && history.length > 0 && (
-            <button
-              onClick={clearHistory}
-              className="text-[10px] text-red-400 hover:text-red-600 flex items-center gap-1"
-            >
-              <Trash2 size={10} /> Clear History
-            </button>
-          )}
-        </div>
-
-        <div className="space-y-3" key={listKey}>
-          {activeList.length === 0 ? (
-            <div className="text-center py-10 text-slate-400 text-sm">
-              No items yet.
-            </div>
-          ) : (
-            activeList.map((item, idx) => (
-              <div
-                key={`${item.word}-${idx}`}
-                className="bg-white p-3 rounded-lg border border-slate-100 shadow-sm hover:shadow-md transition-shadow group"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-serif font-bold text-slate-800 text-base">
-                    {item.word}
-                  </span>
-                  <span className="text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
-                    {item.translation}
-                  </span>
-                </div>
-                {item.context && (
-                  <p className="text-xs text-slate-400 italic leading-relaxed line-clamp-2">
-                    "...{item.context}..."
-                  </p>
-                )}
-                <div className="mt-2 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => toggleSaved(item)}
-                    className={cn(
-                      "p-1 rounded hover:bg-slate-100",
-                      saved.some((s) => s.word === item.word)
-                        ? "text-yellow-500"
-                        : "text-slate-300"
-                    )}
-                  >
-                    <Bookmark
-                      size={14}
-                      fill={
-                        saved.some((s) => s.word === item.word)
-                          ? "currentColor"
-                          : "none"
-                      }
-                    />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+      {/* Content based on active mode */}
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {sidebarMode === 'dictionary' && (
+          <DictionaryMode className="flex-1" />
+        )}
+        {sidebarMode === 'vocabulary' && (
+          <VocabularyMode className="flex-1" />
+        )}
+        {sidebarMode === 'ai' && (
+          <AIAssistantMode className="flex-1" />
+        )}
       </div>
 
       {/* Footer Stats */}
