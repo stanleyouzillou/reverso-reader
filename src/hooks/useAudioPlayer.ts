@@ -82,98 +82,100 @@ export const useAudioPlayer = (
       return;
     }
 
-    // Reset word highlighting when starting a new utterance (e.g. voice change)
-    setCurrentWordIdx(-1);
-
+    // Use the raw text directly from the sentence list
     const text = pairedSentences[currentSentenceIdx]?.l2;
     if (!text) return;
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "en-GB"; // Default to en-GB if no voice is selected
-    utterance.rate = playbackSpeed;
 
+    // Voice selection and properties
     if (selectedVoice) {
       const voice = voices.find((v) => v.voiceURI === selectedVoice);
       if (voice) {
         utterance.voice = voice;
         utterance.lang = voice.lang;
       }
+    } else {
+      utterance.lang = "en-GB";
     }
 
+    utterance.rate = playbackSpeed;
+
     // Word boundary event for karaoke effect
-    utterance.onboundary = (event) => {
-      // Use requestAnimationFrame to ensure store updates don't lag behind speech
-      requestAnimationFrame(() => {
-        if (useStore.getState().karaokeActive) {
-          const evt = event as any;
-          if (typeof evt.charIndex === "number") {
-            // Some voices might report charIndex as 0 for every boundary or skip some.
-            // We only update if it's a valid non-negative index.
-            if (evt.charIndex >= 0) {
-              setCurrentWordIdx(evt.charIndex);
-            }
-          }
-        }
-      });
+    // We use addEventListener as it's often more reliable for boundary events in Chrome
+    const handleBoundary = (event: SpeechSynthesisEvent) => {
+      const state = useStore.getState();
+
+      // Safety check: ensure we are still playing this exact utterance
+      if (!state.karaokeActive || utteranceRef.current !== utterance) return;
+
+      // Some voices fire 'sentence' boundaries at charIndex 0.
+      // We skip these to avoid resetting the highlight if we're already on a word.
+      if (event.name === "sentence") return;
+
+      if (typeof event.charIndex === "number" && event.charIndex >= 0) {
+        // Since we are not trimming the text, the charIndex matches our UI tokens perfectly
+        state.setCurrentWordIdx(event.charIndex);
+      }
+    };
+
+    utterance.addEventListener("boundary", handleBoundary);
+
+    // When the voice actually starts speaking, ensure the first word is highlighted
+    utterance.onstart = () => {
+      const state = useStore.getState();
+      if (state.karaokeActive && utteranceRef.current === utterance) {
+        // Find the first actual word in the text to avoid highlighting leading whitespace/punctuation
+        const firstWordMatch = text.match(/[\p{L}\p{N}]/u);
+        const firstWordIdx = firstWordMatch ? firstWordMatch.index || 0 : 0;
+        state.setCurrentWordIdx(firstWordIdx);
+      }
     };
 
     utterance.onend = () => {
-      if (useStore.getState().karaokeActive) {
-        setCurrentSentenceIdx(useStore.getState().currentSentenceIdx + 1);
+      const state = useStore.getState();
+      if (state.karaokeActive && utteranceRef.current === utterance) {
+        // Small delay to let the user see the last word highlighted before moving to next sentence
+        setTimeout(() => {
+          const latestState = useStore.getState();
+          if (latestState.karaokeActive && utteranceRef.current === utterance) {
+            latestState.setCurrentSentenceIdx(
+              latestState.currentSentenceIdx + 1
+            );
+          }
+        }, 150);
       }
     };
 
     utterance.onerror = (event) => {
-      console.error("TTS Error:", event);
-      if (useStore.getState().karaokeActive) {
-        // Try to recover by moving to next sentence
-        setCurrentSentenceIdx(useStore.getState().currentSentenceIdx + 1);
+      // Don't log 'interrupted' errors as they are normal when skipping/canceling
+      if ((event as any).error !== "interrupted") {
+        console.error("TTS Error:", event);
+      }
+      const state = useStore.getState();
+      if (state.karaokeActive && utteranceRef.current === utterance) {
+        state.setCurrentSentenceIdx(state.currentSentenceIdx + 1);
       }
     };
 
-    // Chrome Fix: Periodic resume to prevent the 15-second "stuck" bug
-    // and ensure events keep firing.
-    const keepAlive = setInterval(() => {
-      if (window.speechSynthesis.speaking) {
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-      }
-    }, 10000);
-
-    const originalOnEnd = utterance.onend;
-    utterance.onend = (e) => {
-      clearInterval(keepAlive);
-      if (originalOnEnd) originalOnEnd.call(utterance, e);
-    };
-
-    const originalOnError = utterance.onerror;
-    utterance.onerror = (e) => {
-      clearInterval(keepAlive);
-      if (originalOnError) originalOnError.call(utterance, e);
-    };
-
-    // Chrome Fix: SpeechSynthesis can sometimes hang or fail to fire events
-    // if the utterance is too long or if there's a queue.
-    // We ensure a clean state.
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
-
+    // Chrome Fix: Ensure a clean state before speaking
+    window.speechSynthesis.cancel();
     utteranceRef.current = utterance;
 
-    // Small delay before speaking to allow listeners to attach properly
-    // and the browser's audio context to stabilize
+    // Small delay helps ensure the voice is ready and events fire correctly
     setTimeout(() => {
-      window.speechSynthesis.speak(utterance);
+      if (
+        useStore.getState().karaokeActive &&
+        utteranceRef.current === utterance
+      ) {
+        window.speechSynthesis.speak(utterance);
+      }
     }, 50);
   }, [
     currentSentenceIdx,
     pairedSentences,
     playbackSpeed,
     selectedVoice,
-    setKaraokeActive,
-    setCurrentSentenceIdx,
-    setCurrentWordIdx,
     voices,
   ]);
 

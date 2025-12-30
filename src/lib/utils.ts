@@ -6,12 +6,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function tokenize(text: string): string[] {
-  // Split text into tokens: words, punctuation, whitespace
-  // Keep everything so we can reconstruct the text perfectly
-  return text.split(/([a-zA-Z0-9'’\u00C0-\u00FF]+)/).filter(Boolean);
+  // Split text into tokens: words (including Unicode letters and numbers), and everything else
+  // Using Unicode property escapes (\p{L} for letters, \p{N} for numbers)
+  // This ensures we catch words in any language and keep punctuation/whitespace separate.
+  return text.split(/([\p{L}\p{N}'’]+)/u).filter(Boolean);
 }
 
-export const isWord = (token: string) => /^[a-zA-Z0-9'’\u00C0-\u00FF]+$/.test(token);
+export const isWord = (token: string) => /^[\p{L}\p{N}'’]+$/u.test(token);
 
 export function splitSentences(text: string): string[] {
   try {
