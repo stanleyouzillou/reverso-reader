@@ -49,22 +49,31 @@ app.use(
 );
 
 /**
+ * Serve frontend build from Express
+ */
+const distPath = path.resolve(__dirname, "../dist");
+app.use(express.static(distPath));
+
+// Ensure SPA fallback (index.html) works for deep links
+app.get("*", (req: Request, res: Response) => {
+  // Only fallback for non-API routes
+  if (!req.path.startsWith("/api/")) {
+    res.sendFile(path.resolve(distPath, "index.html"));
+  } else {
+    res.status(404).json({
+      success: false,
+      error: "API not found",
+    });
+  }
+});
+
+/**
  * error handler middleware
  */
 app.use((error: Error, req: Request, res: Response, next: NextFunction) => {
   res.status(500).json({
     success: false,
     error: "Server internal error",
-  });
-});
-
-/**
- * 404 handler
- */
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    error: "API not found",
   });
 });
 

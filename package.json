@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "client:dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run build:frontend && npm run build:server",
+    "build:frontend": "tsc -b && vite build",
+    "build:server": "tsc -p tsconfig.json --outDir dist-api --skipLibCheck",
     "lint": "eslint .",
     "preview": "vite preview",
     "check": "tsc --noEmit",
     "server:dev": "nodemon",
-    "dev": "concurrently \"npm run client:dev\" \"npm run server:dev\""
+    "dev": "concurrently \"npm run client:dev\" \"npm run server:dev\"",
+    "start": "node dist-api/server.js"
   },
   "dependencies": {
     "@google-cloud/translate": "^9.3.0",

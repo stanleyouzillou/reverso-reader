@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { VocabItem } from '../types';
+import { VocabItem, CEFRLevel, WordStatus } from '../types';
 import { useStore } from '../store/useStore';
 
 interface UseInlineTranslationReturn {
@@ -50,8 +50,8 @@ export const useInlineTranslation = (): UseInlineTranslationReturn => {
       const vocabItem: VocabItem = {
         word: selectedWord,
         translation: '', // This will be filled when translation is available
-        level: 'B1', // This will be updated when translation is available
-        status: 'unknown',
+        level: CEFRLevel.B1, // This will be updated when translation is available
+        status: WordStatus.Unknown,
         context: 'Inline translation',
         timestamp: Date.now(),
       };

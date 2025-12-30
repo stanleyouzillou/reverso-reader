@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Loader2, Heart, HeartOff } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { VocabItem, WordStatus } from '../../types';
+import { VocabItem, WordStatus, CEFRLevel } from '../../types';
 import { useStore } from '../../store/useStore';
 import { useTranslationEngine } from '../../hooks/useTranslationEngine';
+import { DEMO_ARTICLE } from '../../constants/demoContent';
 
 interface InlineTranslationProps {
   word: string;
@@ -25,7 +26,6 @@ export const InlineTranslation: React.FC<InlineTranslationProps> = ({
   onToggleSave
 }) => {
   const { translateText, loading, error } = useTranslationEngine();
-  const { metadata } = useStore.getState();
   const [translation, setTranslation] = useState<string | null>(null);
   const [dictionaryData, setDictionaryData] = useState<any | null>(null);
   const [showFullDefinition, setShowFullDefinition] = useState(false);
@@ -47,7 +47,7 @@ export const InlineTranslation: React.FC<InlineTranslationProps> = ({
           const vocabItem: VocabItem = {
             word,
             translation: result.text,
-            level: metadata?.level || 'B1',
+            level: DEMO_ARTICLE.metadata.level || CEFRLevel.B1,
             status: WordStatus.Unknown,
             context: context || 'Inline translation',
             timestamp: Date.now(),
@@ -60,7 +60,7 @@ export const InlineTranslation: React.FC<InlineTranslationProps> = ({
     };
 
     fetchTranslation();
-  }, [word, context, translateText, onAddToVocabulary, metadata]);
+  }, [word, context, translateText, onAddToVocabulary]);
 
   // Handle clicks outside the popup to close it
   useEffect(() => {
