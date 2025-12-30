@@ -76,22 +76,6 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
     itemsPerPage,
   ]);
 
-  const isTokenHighlighted = (
-    targetWordIdx: number,
-    targetWordCount: number,
-    sourceState: { wordIdx: number; wordCount: number }
-  ) => {
-    // Direct proportional mapping (1-to-1 approximation)
-    const ratio = sourceState.wordIdx / sourceState.wordCount;
-    const targetIdx = Math.floor(ratio * targetWordCount);
-    // Use a very small window (0) to match "word" instead of "chunk"
-    const window = 0;
-
-    return (
-      targetWordIdx >= targetIdx - window && targetWordIdx <= targetIdx + window
-    );
-  };
-
   const renderL1Sentence = (sentence: string, sentenceIdx: number) => {
     const tokens = tokenize(sentence);
     const wordTokens = tokens.filter(isWord);
@@ -111,19 +95,11 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
           if (!isWord(token)) return <span key={idx}>{token}</span>;
           const currentWordIdx = wordCount++;
 
-          const isHighlighted =
-            hoveredWord?.source === "l2" &&
-            hoveredWord.sentenceIdx === sentenceIdx &&
-            isTokenHighlighted(currentWordIdx, wordTokens.length, hoveredWord);
-
           return (
             <span
               key={idx}
               className={cn(
-                "cursor-pointer hover:text-blue-600 hover:font-bold transition-all",
-                isHighlighted
-                  ? "bg-yellow-200 text-slate-900 rounded px-0.5"
-                  : ""
+                "cursor-pointer hover:text-blue-600 hover:font-bold transition-all"
               )}
               onMouseEnter={() => {
                 setHoveredWord({
@@ -187,11 +163,6 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
             );
           const currentWordIdx = wordCount++;
 
-          const isHoverHighlighted =
-            hoveredWord?.source === "l1" &&
-            hoveredWord.sentenceIdx === sentenceIdx &&
-            isTokenHighlighted(currentWordIdx, wordTokens.length, hoveredWord);
-
           const normalizedToken = token.toLowerCase().trim();
           const keyVocab = metadata.keyVocab.find(
             (v) => v.word.toLowerCase() === normalizedToken
@@ -205,9 +176,6 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               key={idx}
               className={cn(
                 "transition-colors duration-200 cursor-pointer hover:text-blue-900 hover:font-bold",
-                isHoverHighlighted
-                  ? "bg-yellow-200 text-slate-900 rounded px-0.5"
-                  : "",
                 isKaraokeWord
                   ? "bg-yellow-400 text-slate-900 rounded px-0.5"
                   : "",
@@ -345,7 +313,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               <div
                 className={cn(
                   "leading-relaxed text-slate-800 dark:text-slate-200 text-justify transition-colors",
-                  hoveredSentenceIndex === actualIdx
+                  hoveredSentenceIndex === actualIdx ||
+                    hoveredSentenceIdx === actualIdx
                     ? "text-blue-900 dark:text-blue-400"
                     : ""
                 )}
@@ -355,7 +324,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               <div
                 className={cn(
                   "leading-relaxed text-slate-500 dark:text-slate-400 text-left transition-colors",
-                  hoveredSentenceIndex === actualIdx
+                  hoveredSentenceIndex === actualIdx ||
+                    hoveredSentenceIdx === actualIdx
                     ? "text-blue-700 dark:text-blue-300"
                     : ""
                 )}
@@ -518,7 +488,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               <div
                 className={cn(
                   "text-xl leading-relaxed text-slate-900 dark:text-white text-justify mb-2 transition-colors",
-                  hoveredSentenceIndex === actualIdx
+                  hoveredSentenceIndex === actualIdx ||
+                    hoveredSentenceIdx === actualIdx
                     ? "text-blue-900 dark:text-blue-400"
                     : ""
                 )}
@@ -528,7 +499,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               <div
                 className={cn(
                   "font-sans text-sm leading-relaxed text-indigo-600 dark:text-indigo-400 pl-4 border-l-2 border-indigo-200 dark:border-indigo-900 italic mb-6 transition-colors",
-                  hoveredSentenceIndex === actualIdx
+                  hoveredSentenceIndex === actualIdx ||
+                    hoveredSentenceIdx === actualIdx
                     ? "text-indigo-800 dark:text-indigo-300 border-indigo-400 dark:border-indigo-700"
                     : ""
                 )}

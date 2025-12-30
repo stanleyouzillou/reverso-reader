@@ -15,7 +15,7 @@ export const ArticleTags: React.FC<ArticleTagsProps> = ({
       {tags.map((tag, index) => (
         <span
           key={index}
-          className="text-[10px] font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded-full uppercase tracking-wider"
+          className="text-[10px] font-bold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white px-3 py-1.5 rounded-full uppercase tracking-widest border border-slate-200 dark:border-white/20 shadow-sm"
         >
           {tag}
         </span>

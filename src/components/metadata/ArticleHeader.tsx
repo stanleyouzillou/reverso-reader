@@ -43,7 +43,9 @@ export const ArticleHeader: React.FC<ArticleHeaderProps> = ({
           title="Match based on your vocabulary"
         >
           <MatchScore score={matchScore} size={18} showText={false} />
-          <span className="font-bold text-slate-700 dark:text-slate-200">{matchScore}% match</span>
+          <span className="font-bold text-slate-700 dark:text-slate-200">
+            {matchScore}% match
+          </span>
         </div>
 
         <span className="text-slate-300 hidden sm:inline">•</span>

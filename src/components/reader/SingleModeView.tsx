@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { cn, isWord } from "../../lib/utils";
 import { ReadingMode } from "../../types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useStore } from "../../store/useStore";
 
 interface SingleModeViewProps {
   mode: ReadingMode;
@@ -12,7 +13,7 @@ interface SingleModeViewProps {
   activeSentenceIdx?: number | null; // This maps to PARAGRAPH index in Single Mode
   currentSentenceIdx?: number; // Actual sentence index (0-N)
   activeWordIdx?: number; // Char index from speech synthesis
-  pairedSentences?: { l2: string }[]; // Needed for word mapping
+  pairedSentences?: { l2: string; l1: string }[]; // Needed for word mapping
   sentenceToParagraphMap?: number[]; // Added for accurate click-to-play mapping
   tokenToSentenceMap?: number[];
   onPlaySentence?: (index: number) => void;
@@ -32,13 +33,9 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
   tokenToSentenceMap,
   onPlaySentence,
 }) => {
+  const { hoveredSentenceIdx, setHoveredSentenceIdx } = useStore();
   const [currentPage, setCurrentPage] = useState(0);
   const paragraphsPerPage = 1;
-
-  // Reset page when mode changes
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [readingMode]);
 
   // 1. Calculate Offsets
   const tokenOffsets = useMemo(() => {
@@ -59,6 +56,25 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
       )
       .filter((idx) => idx !== -1);
   }, [paragraphTokens]);
+
+  // Sync page with active paragraph when it changes (e.g. during playback)
+  useEffect(() => {
+    if (
+      readingMode === "page" &&
+      activeSentenceIdx !== null &&
+      activeSentenceIdx !== undefined
+    ) {
+      const targetPage = contentIndices.indexOf(activeSentenceIdx);
+      if (targetPage !== -1 && targetPage !== currentPage) {
+        setCurrentPage(targetPage);
+      }
+    }
+  }, [activeSentenceIdx, readingMode, contentIndices, currentPage]);
+
+  // Reset page when mode changes
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [readingMode]);
 
   // 3. Determine Visible Paragraphs
   const visibleIndices = useMemo(() => {
@@ -215,8 +231,18 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                           "transition-colors duration-200 rounded px-1",
                           isSentActive
                             ? "bg-slate-200"
+                            : hoveredSentenceIdx === group.sentenceIdx
+                            ? "bg-blue-100/50 dark:bg-blue-900/30"
                             : "hover:bg-slate-100 cursor-pointer"
                         )}
+                        onMouseEnter={() => {
+                          if (group.sentenceIdx !== -1) {
+                            setHoveredSentenceIdx(group.sentenceIdx);
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          setHoveredSentenceIdx(null);
+                        }}
                         onClick={() => {
                           // Only allow click-to-play in Reading (Clean) Mode
                           if (mode === "clean") {
@@ -264,10 +290,39 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                   return <div key={originalIndex} className="h-4" />;
                 }
 
+                // Find sentences that belong to this paragraph
+                const sentencesInPara = pairedSentences
+                  .map((pair, globalIdx) => ({ ...pair, globalIdx }))
+                  .filter((_, globalIdx) =>
+                    sentenceToParagraphMap
+                      ? sentenceToParagraphMap[globalIdx] === originalIndex
+                      : false
+                  );
+
                 return (
-                  <p key={originalIndex} className="mb-6">
-                    {l1Paragraphs[originalIndex]}
-                  </p>
+                  <div key={originalIndex} className="mb-6">
+                    {sentencesInPara.length > 0 ? (
+                      sentencesInPara.map((s) => (
+                        <span
+                          key={s.globalIdx}
+                          className={cn(
+                            "transition-colors duration-200 rounded px-1 -mx-1 block md:inline cursor-pointer",
+                            hoveredSentenceIdx === s.globalIdx &&
+                              "bg-blue-100/50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                          )}
+                          onMouseEnter={() =>
+                            setHoveredSentenceIdx(s.globalIdx)
+                          }
+                          onMouseLeave={() => setHoveredSentenceIdx(null)}
+                        >
+                          {s.l1}
+                          <span className="select-none">&nbsp;</span>
+                        </span>
+                      ))
+                    ) : (
+                      <p>{l1Paragraphs[originalIndex]}</p>
+                    )}
+                  </div>
                 );
               })}
             </div>
