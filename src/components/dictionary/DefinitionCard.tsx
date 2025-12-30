@@ -35,7 +35,9 @@ export function DefinitionCard({
   textPosition,
   onAddToVocabulary,
   onNavigateToSource,
-}: DefinitionCardProps) {
+  isSaved = false, // Added prop to track saved status
+}: DefinitionCardProps & { isSaved?: boolean }) {
+  // Updated interface inline for simplicity
   const [activeTab, setActiveTab] = useState<Tab>("Definition");
   const [definition, setDefinition] = useState<GeminiDefinitionResponse | null>(
     null
@@ -43,7 +45,6 @@ export function DefinitionCard({
   const [loading, setLoading] = useState(true);
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [isSpeaking, setIsSpeaking] = useState<string | null>(null);
-  const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -107,18 +108,14 @@ export function DefinitionCard({
               {definition.word}
             </h2>
             <button
-              onClick={() => setIsBookmarked(!isBookmarked)}
+              onClick={() => onAddToVocabulary(definition.word)}
               className={cn(
                 "transition-colors",
-                isBookmarked
-                  ? "text-blue-600"
-                  : "text-slate-300 hover:text-blue-400"
+                isSaved ? "text-blue-600" : "text-slate-300 hover:text-blue-400"
               )}
+              title={isSaved ? "Remove from vocabulary" : "Add to vocabulary"}
             >
-              <Bookmark
-                size={18}
-                fill={isBookmarked ? "currentColor" : "none"}
-              />
+              <Bookmark size={18} fill={isSaved ? "currentColor" : "none"} />
             </button>
           </div>
           <button

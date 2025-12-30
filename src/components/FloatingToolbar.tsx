@@ -112,8 +112,8 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
               commonButtonClasses,
               showHintsEnabled &&
                 (theme === "dark"
-                  ? "bg-emerald-600 text-white"
-                  : "bg-emerald-600 text-white shadow-lg shadow-emerald-200")
+                  ? "bg-blue-600 text-white"
+                  : "bg-blue-600 text-white shadow-lg shadow-blue-200")
             )}
             title={showHintsEnabled ? "Hide Hints" : "Show Hints"}
             aria-label={showHintsEnabled ? "Hide Hints" : "Show Hints"}

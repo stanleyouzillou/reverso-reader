@@ -319,16 +319,20 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
             >
               <div
                 className={cn(
-                  "leading-relaxed text-slate-800 text-justify transition-colors",
-                  hoveredSentenceIndex === actualIdx ? "text-blue-900" : ""
+                  "leading-relaxed text-slate-800 dark:text-slate-200 text-justify transition-colors",
+                  hoveredSentenceIndex === actualIdx
+                    ? "text-blue-900 dark:text-blue-400"
+                    : ""
                 )}
               >
                 {renderL2Tokens(actualIdx, l2Tokens)}
               </div>
               <div
                 className={cn(
-                  "leading-relaxed text-slate-500 text-left transition-colors",
-                  hoveredSentenceIndex === actualIdx ? "text-blue-700" : ""
+                  "leading-relaxed text-slate-500 dark:text-slate-400 text-left transition-colors",
+                  hoveredSentenceIndex === actualIdx
+                    ? "text-blue-700 dark:text-blue-300"
+                    : ""
                 )}
               >
                 {renderL1Sentence(pair.l1, actualIdx)}
@@ -384,7 +388,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               )}
             >
               {/* L2 Content (Sentences flowing inline) */}
-              <p className="leading-loose text-slate-800 text-justify transition-colors duration-200">
+              <p className="leading-relaxed text-slate-800 dark:text-slate-200 text-justify transition-colors duration-200">
                 {sentencesInPara.length > 0 ? (
                   sentencesInPara.map((s) => {
                     const isSentActive = activeSentenceIdx === s.globalIdx;
@@ -488,17 +492,19 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
             >
               <div
                 className={cn(
-                  "text-xl leading-relaxed text-slate-900 text-justify mb-2 transition-colors",
-                  hoveredSentenceIndex === actualIdx ? "text-blue-900" : ""
+                  "text-xl leading-relaxed text-slate-900 dark:text-white text-justify mb-2 transition-colors",
+                  hoveredSentenceIndex === actualIdx
+                    ? "text-blue-900 dark:text-blue-400"
+                    : ""
                 )}
               >
                 {renderL2Tokens(actualIdx, l2Tokens)}
               </div>
               <div
                 className={cn(
-                  "font-sans text-sm leading-relaxed text-indigo-600 pl-4 border-l-2 border-indigo-200 italic mb-6 transition-colors",
+                  "font-sans text-sm leading-relaxed text-indigo-600 dark:text-indigo-400 pl-4 border-l-2 border-indigo-200 dark:border-indigo-900 italic mb-6 transition-colors",
                   hoveredSentenceIndex === actualIdx
-                    ? "text-indigo-800 border-indigo-400"
+                    ? "text-indigo-800 dark:text-indigo-300 border-indigo-400 dark:border-indigo-700"
                     : ""
                 )}
               >

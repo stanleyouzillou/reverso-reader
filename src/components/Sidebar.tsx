@@ -14,7 +14,14 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
-  const { sidebarMode, setSidebarMode, history } = useStore();
+  const {
+    sidebarMode,
+    setSidebarMode,
+    history,
+    saved,
+    vocabNotificationCount,
+    resetVocabNotification,
+  } = useStore();
 
   const handleCreateExercises = () => {
     // Logic for creating exercises can be added here
@@ -24,38 +31,60 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
 
   if (collapsed) {
     return (
-      <div className="w-12 bg-white border-l border-slate-100 flex flex-col h-full shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10">
+      <div className="w-12 bg-white dark:bg-slate-900 border-l border-slate-100 dark:border-slate-800 flex flex-col h-full shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10 transition-colors">
         {/* Collapsed sidebar with just the mode selector */}
-        <div className="flex flex-col border-b border-slate-100">
+        <div className="flex flex-col border-b border-slate-100 dark:border-slate-800">
           <button
             onClick={() => setSidebarMode("dictionary")}
             className={cn(
               "py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2",
               sidebarMode === "dictionary"
                 ? "text-blue-600 border-blue-600"
-                : "text-slate-400 border-transparent hover:text-slate-600"
+                : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"
             )}
             title="Dictionary"
             aria-label="Dictionary"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
             </svg>
           </button>
           <button
-            onClick={() => setSidebarMode("vocabulary")}
+            onClick={() => {
+              setSidebarMode("vocabulary");
+              resetVocabNotification();
+            }}
             className={cn(
-              "py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2",
+              "py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2 relative",
               sidebarMode === "vocabulary"
                 ? "text-blue-600 border-blue-600"
-                : "text-slate-400 border-transparent hover:text-slate-600"
+                : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"
             )}
             title="Vocabulary"
             aria-label="Vocabulary"
           >
-            <DeckIcon size={16} className={sidebarMode === "vocabulary" ? "text-blue-600" : "text-slate-400"} />
-            {history.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-white" />
+            <DeckIcon
+              size={16}
+              className={
+                sidebarMode === "vocabulary"
+                  ? "text-blue-600"
+                  : "text-slate-400"
+              }
+            />
+            {saved.length > 0 && (
+              <span className="absolute top-2 right-1 min-w-[14px] h-[14px] bg-red-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full border border-white dark:border-slate-900 px-0.5">
+                {saved.length}
+              </span>
             )}
           </button>
           <button
@@ -64,20 +93,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
               "py-3 flex flex-col items-center gap-1 text-[10px] font-medium transition-colors border-b-2",
               sidebarMode === "ai"
                 ? "text-blue-600 border-blue-600"
-                : "text-slate-400 border-transparent hover:text-slate-600"
+                : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"
             )}
             title="AI Assistant"
             aria-label="AI Assistant"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 4.5v3M20 12h-3M4.5 12v3M15.5 4.5 13.25 7"/>
-              <path d="M16 12c-1.5 0-2.5-.5-3-2.5-.5-2.5.5-5.5 4-6-1.5 2-2 3.5-2 5.5a6.2 6.2 0 0 0 1.5 4.5c-1.5 0-2 1.5-2 3.5a6.2 6.2 0 0 0 1.5 4.5c-1.5 0-2.5-.5-3-2.5-.5-2.5.5-5.5 4-6-1.5 2-2 3.5-2 5.5a6.2 6.2 0 0 0 1.5 4.5"/>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M12 4.5v3M20 12h-3M4.5 12v3M15.5 4.5 13.25 7" />
+              <path d="M16 12c-1.5 0-2.5-.5-3-2.5-.5-2.5.5-5.5 4-6-1.5 2-2 3.5-2 5.5a6.2 6.2 0 0 0 1.5 4.5c-1.5 0-2 1.5-2 3.5a6.2 6.2 0 0 0 1.5 4.5c-1.5 0-2.5-.5-3-2.5-.5-2.5.5-5.5 4-6-1.5 2-2 3.5-2 5.5a6.2 6.2 0 0 0 1.5 4.5" />
             </svg>
           </button>
         </div>
 
         {/* Collapsed footer CTA */}
-        <div className="mt-auto p-2 border-t border-slate-100 bg-white">
+        <div className="mt-auto p-2 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors">
           <button
             onClick={handleCreateExercises}
             className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
@@ -91,28 +130,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
   }
 
   return (
-    <div className="w-80 bg-white border-l border-slate-100 flex flex-col h-full shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10">
+    <div className="w-80 bg-white dark:bg-slate-900 border-l border-slate-100 dark:border-slate-800 flex flex-col h-full shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10 transition-colors">
       {/* Mode Selector */}
       <ModeSelector
         activeMode={sidebarMode}
-        onModeChange={setSidebarMode}
+        onModeChange={(mode) => {
+          setSidebarMode(mode);
+          if (mode === "vocabulary") resetVocabNotification();
+        }}
       />
 
       {/* Content based on active mode */}
       <div className="flex-1 overflow-hidden flex flex-col">
-        {sidebarMode === 'dictionary' && (
-          <DictionaryMode className="flex-1" />
-        )}
-        {sidebarMode === 'vocabulary' && (
-          <VocabularyMode className="flex-1" />
-        )}
-        {sidebarMode === 'ai' && (
-          <AIAssistantMode className="flex-1" />
-        )}
+        {sidebarMode === "dictionary" && <DictionaryMode className="flex-1" />}
+        {sidebarMode === "vocabulary" && <VocabularyMode className="flex-1" />}
+        {sidebarMode === "ai" && <AIAssistantMode className="flex-1" />}
       </div>
 
       {/* Footer CTA */}
-      <div className="p-4 border-t border-slate-100 bg-white">
+      <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 transition-colors">
         <button
           onClick={handleCreateExercises}
           className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md hover:shadow-lg active:scale-[0.98] group"

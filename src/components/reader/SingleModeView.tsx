@@ -198,7 +198,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                 <p
                   key={originalIndex}
                   id={`paragraph-${originalIndex}`}
-                  className="mb-6 leading-loose transition-colors p-2 rounded"
+                  className="mb-6 leading-relaxed transition-colors p-2 rounded dark:text-slate-200"
                 >
                   {sentencesInPara.map((group, gIdx) => {
                     const isSentActive =
@@ -254,7 +254,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
 
           {/* L1 Content (Dual Mode - Sync) */}
           {mode === "dual" && (
-            <div className="text-slate-500 leading-loose text-left border-l border-slate-100 pl-8">
+            <div className="text-slate-500 dark:text-slate-400 leading-relaxed text-left border-l border-slate-100 dark:border-slate-800 pl-8">
               {visibleIndices.map((originalIndex) => {
                 if (
                   !paragraphTokens[originalIndex] ||

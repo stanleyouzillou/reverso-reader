@@ -9,6 +9,7 @@ interface State {
   history: VocabItem[];
   saved: VocabItem[];
   toLearn: VocabItem[];
+  vocabNotificationCount: number;
   karaokeActive: boolean;
   playbackSpeed: number;
   dualModeOption: "sentences" | "hover" | "interleaved" | "sync";
@@ -37,6 +38,7 @@ interface State {
   setCurrentWordIdx: (idx: number) => void; // Added: Action to set word index
   setSelectedVoice: (voice: string | null) => void;
   setSelectedDictionaryWord: (word: VocabItem | null) => void;
+  resetVocabNotification: () => void;
   clearHistory: () => void;
 }
 
@@ -48,6 +50,7 @@ export const useStore = create<State>()(
       history: [],
       saved: [],
       toLearn: DEMO_ARTICLE.metadata.keyVocab,
+      vocabNotificationCount: 0,
       karaokeActive: false,
       playbackSpeed: 1,
       dualModeOption: "sentences",
@@ -60,7 +63,8 @@ export const useStore = create<State>()(
       setMode: (mode) => set({ mode }),
       setSidebarMode: (mode) => set({ sidebarMode: mode }),
       setDualModeOption: (option) => set({ dualModeOption: option }),
-      setSelectedDictionaryWord: (word) => set({ selectedDictionaryWord: word }),
+      setSelectedDictionaryWord: (word) =>
+        set({ selectedDictionaryWord: word }),
 
       addToHistory: (item) =>
         set((state) => {
@@ -75,7 +79,10 @@ export const useStore = create<State>()(
           if (isSaved) {
             return { saved: state.saved.filter((i) => i.word !== item.word) };
           }
-          return { saved: [item, ...state.saved] };
+          return {
+            saved: [item, ...state.saved],
+            vocabNotificationCount: state.vocabNotificationCount + 1,
+          };
         }),
 
       toggleHighlightedWord: (word) =>
@@ -89,19 +96,21 @@ export const useStore = create<State>()(
               ),
             };
           }
-          return { highlightedWords: [...state.highlightedWords, normalizedWord] };
+          return {
+            highlightedWords: [...state.highlightedWords, normalizedWord],
+          };
         }),
 
       setKaraokeActive: (active) => set({ karaokeActive: active }),
 
-      setPlaybackSpeed: (speed) => set({ bgColor: speed } as any), // This looks like a bug in existing code, but I'll stick to it for now if I don't want to break things. Wait, it should be set({ playbackSpeed: speed }).
-      // Fixing the playbackSpeed bug while I'm here
-      // setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
+      setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
 
       setCurrentSentenceIdx: (idx) =>
         set({ currentSentenceIdx: idx, currentWordIdx: -1 }), // Reset word index on sentence change
       setCurrentWordIdx: (idx) => set({ currentWordIdx: idx }),
       setSelectedVoice: (voice) => set({ selectedVoice: voice }),
+
+      resetVocabNotification: () => set({ vocabNotificationCount: 0 }),
 
       clearHistory: () => set({ history: [] }),
     }),

@@ -55,7 +55,7 @@ export const MatchScore: React.FC<MatchScoreProps> = ({
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
-          className="text-green-500 transition-all duration-500 ease-in-out"
+          className="text-blue-500 transition-all duration-500 ease-in-out"
         />
       </svg>
       {showText && (

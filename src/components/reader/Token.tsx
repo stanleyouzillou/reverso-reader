@@ -382,27 +382,26 @@ export const Token: React.FC<TokenProps> = ({
         : translatedSpan?.end;
 
       if (index === start) {
-        tokenStyling =
-          "rounded-l px-1.5 mx-0 bg-emerald-500 text-white shadow-sm";
+        tokenStyling = "rounded-l px-1.5 mx-0 bg-blue-600 text-white shadow-sm";
       } else if (index === end) {
-        tokenStyling =
-          "rounded-r px-1.5 mx-0 bg-emerald-500 text-white shadow-sm";
+        tokenStyling = "rounded-r px-1.5 mx-0 bg-blue-600 text-white shadow-sm";
       } else {
-        tokenStyling = "px-0 mx-0 bg-emerald-500 text-white shadow-sm";
+        tokenStyling = "px-0 mx-0 bg-blue-600 text-white shadow-sm";
       }
     } else {
-      tokenStyling =
-        "rounded px-1.5 mx-0.5 bg-emerald-500 text-white shadow-sm";
+      tokenStyling = "rounded px-1.5 mx-0.5 bg-blue-600 text-white shadow-sm";
     }
 
     // Apply distinct visual for just-clicked word (the currently added word to the chunk)
     if (isCurrentlyClicked) {
-      tokenHighlightClass = "ring-2 ring-blue-300"; // Distinct visual for just-clicked word
+      tokenHighlightClass = "ring-2 ring-blue-300 dark:ring-blue-800"; // Distinct visual for just-clicked word
     }
   } else if (isHinted) {
-    tokenStyling = "hint-underline px-1.5 mx-0.5 hover:bg-emerald-50";
+    tokenStyling =
+      "hint-underline px-1.5 mx-0.5 hover:bg-blue-50 dark:hover:bg-blue-900/30";
   } else {
-    tokenStyling = "hover:bg-emerald-50 rounded px-1.5 mx-0.5";
+    tokenStyling =
+      "hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded px-1.5 mx-0.5";
   }
 
   // We need to render the popup if:
@@ -420,7 +419,7 @@ export const Token: React.FC<TokenProps> = ({
           onWordClick(index);
         }}
         className={cn(
-          "inline-flex flex-col-reverse items-center align-middle gap-0.5 cursor-pointer",
+          "inline-flex flex-col-reverse items-center align-middle gap-0.5 cursor-pointer has-popup",
           isMultiToken ? "mx-0" : "mx-0.5",
           isKaraoke && "bg-yellow-200 scale-105 rounded"
         )}
@@ -439,13 +438,13 @@ export const Token: React.FC<TokenProps> = ({
         {/* Floating Popup Container */}
         <span
           className={cn(
-            "text-[0.9rem] leading-none whitespace-nowrap font-handwriting text-emerald-600 select-none flex items-center gap-1"
+            "text-[0.9rem] leading-none whitespace-nowrap font-handwriting text-blue-600 select-none flex items-center gap-1"
           )}
         >
           {selection?.loading && showSelectionTranslation ? (
             <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
-            <span className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded shadow-sm border border-emerald-100 flex items-center gap-1">
+            <span className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded shadow-sm border border-blue-100 flex items-center gap-1">
               {translationText}
               {showSelectionTranslation && (
                 <span
@@ -453,7 +452,7 @@ export const Token: React.FC<TokenProps> = ({
                     e.stopPropagation();
                     onClearSelection();
                   }}
-                  className="text-[10px] text-emerald-400 hover:text-emerald-700 cursor-pointer ml-1 font-sans border-l border-emerald-100 pl-1"
+                  className="text-[10px] text-blue-400 hover:text-blue-700 cursor-pointer ml-1 font-sans border-l border-blue-100 pl-1"
                 >
                   ✕
                 </span>
