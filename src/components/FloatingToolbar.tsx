@@ -1,5 +1,5 @@
 import React from "react";
-import { MousePointerClick, BookOpen, Type } from "lucide-react";
+import { MousePointerClick, BookOpen, Type, Lightbulb } from "lucide-react";
 import { useReaderSettings } from "../hooks/useReaderSettings";
 import { cn } from "../lib/utils";
 
@@ -17,6 +17,8 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
     setTranslationMode,
     readingMode,
     setReadingMode,
+    showHintsEnabled,
+    setShowHintsEnabled,
     theme,
   } = useReaderSettings();
 
@@ -99,9 +101,26 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
           >
             <BookOpen size={20} strokeWidth={2.5} />
             <span className="absolute left-0 -translate-x-full ml-[-8px] px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden md:block">
-              {readingMode === "scrolling"
-                ? "Enable Page Mode"
-                : "Enable Scrolling"}
+              {readingMode === "scrolling" ? "Page Mode" : "Scroll Mode"}
+            </span>
+          </button>
+
+          {/* Show Hints Toggle */}
+          <button
+            onClick={() => setShowHintsEnabled(!showHintsEnabled)}
+            className={cn(
+              commonButtonClasses,
+              showHintsEnabled &&
+                (theme === "dark"
+                  ? "bg-emerald-600 text-white"
+                  : "bg-emerald-600 text-white shadow-lg shadow-emerald-200")
+            )}
+            title={showHintsEnabled ? "Hide Hints" : "Show Hints"}
+            aria-label={showHintsEnabled ? "Hide Hints" : "Show Hints"}
+          >
+            <Lightbulb size={20} strokeWidth={2.5} />
+            <span className="absolute left-0 -translate-x-full ml-[-8px] px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden md:block">
+              {showHintsEnabled ? "Hide Hints" : "Show Hints"}
             </span>
           </button>
         </div>

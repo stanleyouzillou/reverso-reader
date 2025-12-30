@@ -334,6 +334,7 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
             activeWordIdx={karaokeActive ? currentWordIdx : -1}
             onPlaySentence={handlePlaySentence}
             sentenceToParagraphMap={sentenceToParagraphMap} // Pass map for hover mode highlighting
+            metadata={metadata}
           />
         ) : (
           /* Standard / Sync Mode */

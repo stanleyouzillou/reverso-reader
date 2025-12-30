@@ -7,6 +7,7 @@ import { DictionaryMode } from "./metadata/DictionaryMode";
 import { AIAssistantMode } from "./metadata/AIAssistantMode";
 import { VocabularyMode } from "./metadata/VocabularyMode";
 import { DeckIcon } from "./metadata/DeckIcon";
+import { Sparkles } from "lucide-react";
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -14,6 +15,12 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
   const { sidebarMode, setSidebarMode, history } = useStore();
+
+  const handleCreateExercises = () => {
+    // Logic for creating exercises can be added here
+    console.log("Create Exercises clicked");
+    alert("Creating exercises based on your reading progress...");
+  };
 
   if (collapsed) {
     return (
@@ -69,16 +76,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
           </button>
         </div>
 
-        {/* Collapsed footer stats */}
+        {/* Collapsed footer CTA */}
         <div className="mt-auto p-2 border-t border-slate-100 bg-white">
-          <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-center">
-            <div className="text-[8px] text-slate-400 font-bold uppercase">
-              {DEMO_ARTICLE.metadata.wordCount}
-            </div>
-            <div className="text-xs font-bold text-slate-800">
-              W
-            </div>
-          </div>
+          <button
+            onClick={handleCreateExercises}
+            className="w-8 h-8 flex items-center justify-center bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+            title="Create Exercises"
+          >
+            <Sparkles size={16} />
+          </button>
         </div>
       </div>
     );
@@ -105,24 +111,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
         )}
       </div>
 
-      {/* Footer Stats */}
-      <div className="p-4 border-t border-slate-100 bg-white grid grid-cols-2 gap-4">
-        <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-          <div className="text-[10px] text-slate-400 font-bold uppercase">
-            Total Words
-          </div>
-          <div className="text-lg font-bold text-slate-800">
-            {DEMO_ARTICLE.metadata.wordCount}
-          </div>
-        </div>
-        <div className="bg-slate-50 p-2 rounded-lg border border-slate-100">
-          <div className="text-[10px] text-slate-400 font-bold uppercase">
-            Read Time
-          </div>
-          <div className="text-lg font-bold text-slate-800">
-            {DEMO_ARTICLE.metadata.estimatedMinutes} min
-          </div>
-        </div>
+      {/* Footer CTA */}
+      <div className="p-4 border-t border-slate-100 bg-white">
+        <button
+          onClick={handleCreateExercises}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-md hover:shadow-lg active:scale-[0.98] group"
+        >
+          <Sparkles size={18} className="group-hover:animate-pulse" />
+          <span>Create Exercises</span>
+        </button>
       </div>
     </div>
   );

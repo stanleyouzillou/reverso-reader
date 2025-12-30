@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { cn, tokenize, isWord } from "../../lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ArticleMetadata } from "../../types";
+import { useReaderSettings } from "../../hooks/useReaderSettings";
+import { useStore } from "../../store/useStore";
 
 interface DualModeViewProps {
   dualModeOption: "sentences" | "hover" | "interleaved" | "sync";
@@ -16,6 +19,7 @@ interface DualModeViewProps {
   activeWordIdx?: number;
   onPlaySentence?: (index: number) => void;
   sentenceToParagraphMap?: number[];
+  metadata: ArticleMetadata;
 }
 
 export const DualModeView: React.FC<DualModeViewProps> = ({
@@ -32,7 +36,10 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
   activeWordIdx = -1,
   onPlaySentence,
   sentenceToParagraphMap,
+  metadata,
 }) => {
+  const { showHintsEnabled } = useReaderSettings();
+  const { highlightedWords } = useStore();
   const [currentPage, setCurrentPage] = useState(0);
   const [hoveredWord, setHoveredWord] = useState<{
     source: "l1" | "l2";
@@ -137,7 +144,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
         {tokens.map((token, idx) => {
           const tokenLen = token.length;
           const isWordToken = isWord(token);
-          
+
           // Karaoke Highlight
           const isKaraokeWord =
             activeSentenceIdx === sentenceIdx &&
@@ -145,16 +152,32 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
             activeWordIdx !== -1 &&
             activeWordIdx >= charCount &&
             activeWordIdx < charCount + tokenLen;
-          
+
           charCount += tokenLen;
 
-          if (!isWordToken) return <span key={idx} className={cn(isKaraokeWord ? "bg-yellow-400" : "")}>{token}</span>;
+          if (!isWordToken)
+            return (
+              <span
+                key={idx}
+                className={cn(isKaraokeWord ? "bg-yellow-400" : "")}
+              >
+                {token}
+              </span>
+            );
           const currentWordIdx = wordCount++;
 
           const isHoverHighlighted =
             hoveredWord?.source === "l1" &&
             hoveredWord.sentenceIdx === sentenceIdx &&
             isTokenHighlighted(currentWordIdx, wordTokens.length, hoveredWord);
+
+          const normalizedToken = token.toLowerCase().trim();
+          const keyVocab = metadata.keyVocab.find(
+            (v) => v.word.toLowerCase() === normalizedToken
+          );
+          const isHinted =
+            showHintsEnabled &&
+            (highlightedWords.includes(normalizedToken) || !!keyVocab);
 
           return (
             <span
@@ -164,7 +187,10 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                 isHoverHighlighted
                   ? "bg-yellow-200 text-slate-900 rounded px-0.5"
                   : "",
-                isKaraokeWord ? "bg-yellow-400 text-slate-900 rounded px-0.5" : ""
+                isKaraokeWord
+                  ? "bg-yellow-400 text-slate-900 rounded px-0.5"
+                  : "",
+                isHinted && "hint-underline"
               )}
               onMouseEnter={() =>
                 setHoveredWord({
@@ -330,8 +356,12 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
           // We can use sentenceToParagraphMap if available, or just filter pairedSentences (less efficient but safe)
           const sentencesInPara = pairedSentences
             .map((pair, globalIdx) => ({ ...pair, globalIdx }))
-            .filter((_, globalIdx) => sentenceToParagraphMap ? sentenceToParagraphMap[globalIdx] === actualIdx : false);
-            
+            .filter((_, globalIdx) =>
+              sentenceToParagraphMap
+                ? sentenceToParagraphMap[globalIdx] === actualIdx
+                : false
+            );
+
           // If map is missing (edge case), fallback to paragraph rendering (but highlighting won't work well)
           // Actually, we should have the map.
 
@@ -349,7 +379,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               key={actualIdx}
               id={`paragraph-${actualIdx}`}
               className={cn(
-                "relative mb-8 group cursor-pointer p-2 rounded transition-colors",
+                "relative mb-8 group cursor-pointer p-2 rounded transition-colors"
                 // isPlayingParagraph ? "bg-yellow-100" : "" // Removed paragraph highlight in favor of sentence highlight
               )}
             >
@@ -359,40 +389,42 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                   sentencesInPara.map((s) => {
                     const isSentActive = activeSentenceIdx === s.globalIdx;
                     const l2Tokens = tokenize(s.l2);
-                    
+
                     return (
-                      <span 
+                      <span
                         key={s.globalIdx}
                         className={cn(
                           "transition-colors duration-200 rounded px-1",
                           isSentActive ? "bg-slate-200" : "hover:bg-slate-100"
                         )}
                         // onClick={(e) => {
-                        //   e.stopPropagation(); 
+                        //   e.stopPropagation();
                         //   onPlaySentence?.(s.globalIdx);
                         // }} // Disabled: Audio from click only in Reading Mode
                       >
-                         {renderL2Tokens(s.globalIdx, l2Tokens)}
-                         {/* Add space between sentences if needed? tokenize(para) has spaces. 
+                        {renderL2Tokens(s.globalIdx, l2Tokens)}
+                        {/* Add space between sentences if needed? tokenize(para) has spaces. 
                              pairedSentences usually trimmed. 
                              We might lose spaces here. 
                              But rendering separate spans is better for highlighting.
                              We can add a trailing space span.
                          */}
-                         <span className="select-none">&nbsp;</span>
+                        <span className="select-none">&nbsp;</span>
                       </span>
                     );
                   })
                 ) : (
                   // Fallback if no sentences mapped
-                   <span onClick={() => {
+                  <span
+                    onClick={() => {
                       const next = new Set(visibleTranslations);
                       if (next.has(actualIdx)) next.delete(actualIdx);
                       else next.add(actualIdx);
                       setVisibleTranslations(next);
-                   }}>
-                      {renderL2Tokens(actualIdx, tokenize(para))} 
-                   </span>
+                    }}
+                  >
+                    {renderL2Tokens(actualIdx, tokenize(para))}
+                  </span>
                 )}
               </p>
 
@@ -405,23 +437,21 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                     : "max-h-0 opacity-0 p-0 mt-0 group-hover:max-h-[500px] group-hover:opacity-100 group-hover:p-4 group-hover:mt-2"
                 )}
                 onClick={() => {
-                   // Toggle logic repeated
-                    const next = new Set(visibleTranslations);
-                    if (next.has(actualIdx)) next.delete(actualIdx);
-                    else next.add(actualIdx);
-                    setVisibleTranslations(next);
+                  // Toggle logic repeated
+                  const next = new Set(visibleTranslations);
+                  if (next.has(actualIdx)) next.delete(actualIdx);
+                  else next.add(actualIdx);
+                  setVisibleTranslations(next);
                 }}
               >
-                 {sentencesInPara.length > 0 ? (
-                    sentencesInPara.map(s => (
-                       <span key={s.globalIdx}>
-                          {renderL1Sentence(s.l1, s.globalIdx)}
-                          <span className="select-none">&nbsp;</span>
-                       </span>
+                {sentencesInPara.length > 0
+                  ? sentencesInPara.map((s) => (
+                      <span key={s.globalIdx}>
+                        {renderL1Sentence(s.l1, s.globalIdx)}
+                        <span className="select-none">&nbsp;</span>
+                      </span>
                     ))
-                 ) : (
-                    renderL1Sentence(l1Paragraphs[actualIdx] || "", actualIdx)
-                 )}
+                  : renderL1Sentence(l1Paragraphs[actualIdx] || "", actualIdx)}
               </div>
             </div>
           );

@@ -1,8 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Volume2, Languages, ArrowRight, GraduationCap, Loader2 } from 'lucide-react';
-import { fetchDefinition, GeminiDefinitionResponse } from '../../services/gemini';
-import { translateText } from '../../services/translation';
-import { cn } from '../../lib/utils';
+import React, { useState, useEffect } from "react";
+import {
+  Volume2,
+  Languages,
+  ArrowRight,
+  GraduationCap,
+  Loader2,
+  Bookmark,
+  Plus,
+} from "lucide-react";
+import {
+  fetchDefinition,
+  GeminiDefinitionResponse,
+} from "../../services/gemini";
+import { translationService } from "../../services/TranslationService";
+import { cn } from "../../lib/utils";
 
 interface DefinitionCardProps {
   word: string;
@@ -14,6 +25,8 @@ interface DefinitionCardProps {
   onNavigateToSource: (position: number) => void;
 }
 
+type Tab = "Definition" | "Examples" | "Source";
+
 export function DefinitionCard({
   word,
   sourceSentence,
@@ -21,22 +34,20 @@ export function DefinitionCard({
   targetLanguage,
   textPosition,
   onAddToVocabulary,
-  onNavigateToSource
+  onNavigateToSource,
 }: DefinitionCardProps) {
-  const [definition, setDefinition] = useState<GeminiDefinitionResponse | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>("Definition");
+  const [definition, setDefinition] = useState<GeminiDefinitionResponse | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [translations, setTranslations] = useState<Record<string, string>>({});
-  const [hoveredSentence, setHoveredSentence] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState<string | null>(null);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
     setLoading(true);
-    fetchDefinition(
-      word,
-      sourceSentence,
-      sourceLanguage,
-      targetLanguage
-    )
+    fetchDefinition(word, sourceSentence, sourceLanguage, targetLanguage)
       .then(setDefinition)
       .finally(() => setLoading(false));
   }, [word, sourceSentence, sourceLanguage, targetLanguage]);
@@ -44,25 +55,26 @@ export function DefinitionCard({
   const handleTranslateClick = async (text: string, key: string) => {
     if (translations[key]) return; // Already translated
 
-    const translated = await translateText(
-      text,
-      sourceLanguage,
-      targetLanguage
-    );
-    setTranslations(prev => ({ ...prev, [key]: translated }));
+    try {
+      const result = await translationService.translate(
+        text,
+        targetLanguage,
+        sourceSentence // use full context for better translation
+      );
+      setTranslations((prev) => ({ ...prev, [key]: result.text }));
+    } catch (error) {
+      console.error("Translation error in DefinitionCard:", error);
+      setTranslations((prev) => ({ ...prev, [key]: "[Error]" }));
+    }
   };
 
   const handleSpeak = (text: string, key: string) => {
-    // Stop any current speech
     window.speechSynthesis.cancel();
-
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = sourceLanguage;
-    
     utterance.onstart = () => setIsSpeaking(key);
     utterance.onend = () => setIsSpeaking(null);
     utterance.onerror = () => setIsSpeaking(null);
-
     window.speechSynthesis.speak(utterance);
   };
 
@@ -70,7 +82,9 @@ export function DefinitionCard({
     return (
       <div className="flex flex-col items-center justify-center py-12 text-slate-500">
         <Loader2 className="w-8 h-8 animate-spin mb-4 text-blue-500" />
-        <p className="text-sm font-medium">Fetching definition for "{word}"...</p>
+        <p className="text-sm font-medium">
+          Fetching definition for "{word}"...
+        </p>
       </div>
     );
   }
@@ -84,154 +98,206 @@ export function DefinitionCard({
   }
 
   return (
-    <div className="flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* HEADER */}
-      <div className="flex justify-between items-start mb-2">
-        <h2 className="text-3xl font-bold text-slate-800 leading-tight">{definition.word}</h2>
-        <button 
-          onClick={() => handleSpeak(definition.word, 'word')} 
-          className={cn(
-            "p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-400 hover:text-blue-500",
-            isSpeaking === 'word' && "text-blue-500 animate-pulse bg-blue-50"
-          )}
-          title="Speak word"
-        >
-          <Volume2 size={24} />
-        </button>
-      </div>
-
-      <div className="text-slate-500 text-sm mb-4 font-medium uppercase tracking-wider">
-        {definition.pronunciation} <span className="mx-2 text-slate-300">·</span> {definition.partOfSpeech}
-      </div>
-
-      {/* TRANSLATIONS BAR */}
-      <div className="flex flex-wrap gap-2 mb-8 items-center">
-        {definition.definitions[0]?.translations.map((t, i) => (
-          <React.Fragment key={i}>
-            <span className="text-blue-600 font-semibold text-lg">{t}</span>
-            {i < definition.definitions[0].translations.length - 1 && (
-              <span className="text-slate-300 text-lg">·</span>
-            )}
-          </React.Fragment>
-        ))}
-      </div>
-
-      {/* DEFINITIONS */}
-      <div className="space-y-8 mb-10">
-        {definition.definitions.map((def, idx) => (
-          <div key={idx} className="group">
-            <div className="flex items-baseline gap-2 mb-2">
-              <span className="text-slate-400 font-bold text-sm italic">({def.senseLabel})</span>
-              <p className="text-slate-800 text-lg font-bold leading-snug flex-1">
-                {def.meaning}
-              </p>
-              <div className="flex flex-col items-end gap-1 min-w-[80px]">
-                {def.translations.slice(0, 3).map((t, i) => (
-                  <span key={i} className="text-slate-600 text-sm font-medium">{t}</span>
-                ))}
-              </div>
-            </div>
-
-            <div
-              className="relative bg-slate-50/50 p-4 rounded-xl border border-transparent hover:border-slate-100 hover:bg-white hover:shadow-sm transition-all group/example"
-              onMouseEnter={() => setHoveredSentence(`ex-${idx}`)}
-              onMouseLeave={() => setHoveredSentence(null)}
+    <div className="flex flex-col h-full bg-white font-sans overflow-hidden animate-in fade-in duration-500 no-scrollbar">
+      {/* HEADER SECTION */}
+      <div className="px-4 pt-4 pb-1">
+        <div className="flex items-center justify-between mb-0">
+          <div className="flex items-center gap-2">
+            <h2 className="text-[22px] font-bold text-slate-900 tracking-tight leading-tight">
+              {definition.word}
+            </h2>
+            <button
+              onClick={() => setIsBookmarked(!isBookmarked)}
+              className={cn(
+                "transition-colors",
+                isBookmarked
+                  ? "text-blue-600"
+                  : "text-slate-300 hover:text-blue-400"
+              )}
             >
-              <p className="text-slate-600 italic text-[15px] leading-relaxed pr-12">
-                "{def.example}"
+              <Bookmark
+                size={18}
+                fill={isBookmarked ? "currentColor" : "none"}
+              />
+            </button>
+          </div>
+          <button
+            onClick={() => handleSpeak(definition.word, "word")}
+            className={cn(
+              "p-1.5 rounded-full hover:bg-slate-50 text-blue-600 transition-colors",
+              isSpeaking === "word" && "bg-blue-50"
+            )}
+          >
+            <Volume2 size={20} />
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-[12px] text-slate-500 mb-2 font-medium">
+          <span className="uppercase tracking-wider">
+            {definition.pronunciation}
+          </span>
+          <span className="w-1 h-1 bg-slate-300 rounded-full" />
+          <span className="text-blue-600 font-bold uppercase tracking-widest text-[10px]">
+            {definition.partOfSpeech}
+          </span>
+        </div>
+
+        {/* HORIZONTAL NAVIGATION */}
+        <div className="flex border-b border-slate-100 mb-3">
+          {(["Definition", "Examples", "Source"] as Tab[]).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                "px-3 py-2 text-[13px] font-semibold transition-all relative",
+                activeTab === tab
+                  ? "text-blue-600"
+                  : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              {tab}
+              {activeTab === tab && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* CONTENT AREA */}
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-2">
+        {activeTab === "Definition" && (
+          <div className="space-y-[14px]">
+            {definition.definitions.map((def, idx) => (
+              <div key={idx} className="relative group">
+                <div className="flex items-center gap-1.5 m-0">
+                  <span className="text-slate-500 font-semibold text-[12px]">
+                    {idx + 1}.
+                  </span>
+                  <span className="text-slate-400 italic text-[11px]">
+                    {def.senseLabel}
+                  </span>
+                </div>
+
+                <p className="text-gray-900 text-[13px] leading-[1.4] font-semibold mt-[2px] mb-[6px] ml-0 mr-0">
+                  {def.meaning}
+                </p>
+
+                <div className="flex items-start gap-1.5 group/example m-0">
+                  <p className="text-gray-600 text-[12px] leading-[1.5] flex-1 italic m-0">
+                    "{def.example}"
+                  </p>
+                  <button
+                    onClick={() => handleSpeak(def.example, `ex-${idx}`)}
+                    className={cn(
+                      "p-1 rounded-full text-slate-300 hover:text-slate-600 transition-opacity opacity-0 group-hover/example:opacity-100 mt-0.5",
+                      isSpeaking === `ex-${idx}` && "opacity-100 text-blue-500"
+                    )}
+                  >
+                    <Volume2 size={14} />
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-[5px] m-0 p-0">
+                  {def.translations.map((t, i) => (
+                    <span
+                      key={i}
+                      className="bg-blue-50 text-blue-800 text-[11px] px-2 py-0.5 rounded-[10px] font-medium"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === "Examples" && (
+          <div className="space-y-3">
+            {definition.usageExamples.map((ex, idx) => (
+              <div
+                key={idx}
+                className="p-3 rounded-lg bg-slate-50 border border-slate-100 group/usage relative"
+              >
+                <div className="flex items-start gap-1.5 mb-1">
+                  <p className="text-slate-800 text-[12px] leading-relaxed font-semibold flex-1">
+                    {ex.sentence}
+                  </p>
+                  <button
+                    onClick={() => handleSpeak(ex.sentence, `usage-${idx}`)}
+                    className={cn(
+                      "p-1 rounded-full text-slate-300 hover:text-slate-600 transition-opacity opacity-0 group-hover/usage:opacity-100 mt-0.5",
+                      isSpeaking === `usage-${idx}` &&
+                        "opacity-100 text-blue-500"
+                    )}
+                  >
+                    <Volume2 size={14} />
+                  </button>
+                </div>
+                <p className="text-blue-700 text-[11px] font-medium">
+                  {ex.translation}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === "Source" && (
+          <div className="space-y-3">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 group/source relative">
+              <p className="text-slate-800 text-[13px] leading-relaxed mb-3 font-semibold italic">
+                "{sourceSentence}"
               </p>
 
-              <div className={cn(
-                "absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity duration-200",
-                hoveredSentence === `ex-${idx}` ? "opacity-100" : "opacity-0"
-              )}>
+              <div className="flex items-center justify-between pt-3 border-t border-slate-200/50">
                 <button
-                  className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-blue-500 transition-colors"
-                  onClick={() => handleTranslateClick(def.example, `ex-${idx}`)}
-                  title="Translate sentence"
+                  onClick={() => onNavigateToSource(textPosition)}
+                  className="flex items-center gap-1.5 text-blue-600 font-bold text-[12px] hover:gap-2 transition-all"
                 >
-                  <Languages size={18} />
+                  View in text <ArrowRight size={14} />
                 </button>
-                <button 
-                  onClick={() => handleSpeak(def.example, `ex-${idx}`)} 
-                  className={cn(
-                    "p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-blue-500 transition-colors",
-                    isSpeaking === `ex-${idx}` && "text-blue-500 animate-pulse bg-blue-50"
-                  )}
-                  title="Speak sentence"
-                >
-                  <Volume2 size={18} />
-                </button>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleSpeak(sourceSentence, "source")}
+                    className={cn(
+                      "p-1.5 rounded-full hover:bg-white text-slate-400 hover:text-blue-600 transition-colors",
+                      isSpeaking === "source" && "text-blue-600 bg-white"
+                    )}
+                  >
+                    <Volume2 size={16} />
+                  </button>
+                  <button
+                    onClick={() =>
+                      handleTranslateClick(sourceSentence, "source")
+                    }
+                    className="p-1.5 rounded-full hover:bg-white text-slate-400 hover:text-blue-600 transition-colors"
+                  >
+                    <Languages size={16} />
+                  </button>
+                </div>
               </div>
 
-              {translations[`ex-${idx}`] && (
-                <div className="mt-3 pt-3 border-t border-slate-100 text-blue-600 text-[14px] font-medium animate-in slide-in-from-top-1 duration-200">
-                  {translations[`ex-${idx}`]}
+              {translations["source"] && (
+                <div className="mt-3 p-3 bg-white rounded-lg border border-blue-100 text-blue-800 text-[11px] font-medium animate-in slide-in-from-top-2 duration-300">
+                  {translations["source"]}
                 </div>
               )}
             </div>
           </div>
-        ))}
+        )}
       </div>
 
-      {/* SOURCE SECTION */}
-      <div className="bg-slate-50/80 rounded-2xl p-6 mb-8 border border-slate-100">
-        <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Source</h3>
-        <div
-          className="relative group/source mb-4"
-          onMouseEnter={() => setHoveredSentence('source')}
-          onMouseLeave={() => setHoveredSentence(null)}
-        >
-          <p className="text-slate-700 leading-relaxed pr-12">
-            {sourceSentence}
-          </p>
-
-          <div className={cn(
-            "absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1 transition-opacity duration-200",
-            hoveredSentence === 'source' ? "opacity-100" : "opacity-0"
-          )}>
-            <button
-              className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-blue-500 transition-colors"
-              onClick={() => handleTranslateClick(sourceSentence, 'source')}
-              title="Translate source"
-            >
-              <Languages size={18} />
-            </button>
-            <button 
-              onClick={() => handleSpeak(sourceSentence, 'source')} 
-              className={cn(
-                "p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-blue-500 transition-colors",
-                isSpeaking === 'source' && "text-blue-500 animate-pulse bg-blue-50"
-              )}
-              title="Speak source"
-            >
-              <Volume2 size={18} />
-            </button>
-          </div>
-
-          {translations['source'] && (
-            <div className="mt-3 pt-3 border-t border-slate-200/50 text-blue-600 text-[14px] font-medium animate-in slide-in-from-top-1 duration-200">
-              {translations['source']}
-            </div>
-          )}
-        </div>
-
-        <button
-          className="flex items-center text-blue-500 font-bold text-sm hover:translate-x-1 transition-transform"
-          onClick={() => onNavigateToSource(textPosition)}
-        >
-          View in text <ArrowRight size={16} className="ml-1" />
-        </button>
-      </div>
-
-      {/* ADD TO VOCABULARY CTA */}
-      <button
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-200 transition-all active:scale-[0.98] mb-6"
-        onClick={() => onAddToVocabulary(word)}
-      >
-        <GraduationCap size={20} />
-        Add to vocabulary
-      </button>
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }

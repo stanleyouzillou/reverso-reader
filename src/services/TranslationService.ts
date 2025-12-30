@@ -8,6 +8,8 @@ interface TranslationResult {
 
 class TranslationService {
   private cache: Record<string, TranslationResult> = {};
+  private readonly LS_CACHE_PREFIX = "trans_";
+  private readonly CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
   async translate(text: string, to?: string, context?: string): Promise<TranslationResult> {
     if (!text) {
@@ -23,13 +25,31 @@ class TranslationService {
     const selectedWords = text.trim().split(/\s+/);
     const isChunkTranslation = selectedWords.length > 1;
 
-    // Create cache key using the format "word1_word2_word3" as specified in requirements
-    // Replace spaces with underscores to create the key format
-    const cacheKey = `${provider}:${text.trim().toLowerCase().replace(/\s+/g, '_')}:${targetLanguage}`;
+    // Create cache key using the format "word1_word2_word3"
+    const slug = text.trim().toLowerCase().replace(/\s+/g, '_');
+    const cacheKey = `${provider}:${slug}:${targetLanguage}`;
+    const lsCacheKey = `${this.LS_CACHE_PREFIX}${provider}_${slug}_${targetLanguage}`;
 
-    // Skip cache for chunk translations (2+ words)
+    // 1. Check in-memory cache
     if (!isChunkTranslation && this.cache[cacheKey]) {
       return this.cache[cacheKey];
+    }
+
+    // 2. Check LocalStorage cache
+    if (!isChunkTranslation) {
+      try {
+        const cached = localStorage.getItem(lsCacheKey);
+        if (cached) {
+          const { data, timestamp } = JSON.parse(cached);
+          if (Date.now() - timestamp < this.CACHE_TTL) {
+            console.log(`LocalStorage hit for translation: ${text}`);
+            this.cache[cacheKey] = data; // Sync back to memory
+            return data;
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to read from translation LocalStorage:", e);
+      }
     }
 
     // Add a slight delay to prevent flickering
@@ -37,16 +57,29 @@ class TranslationService {
 
     try {
       const service = translationRegistry.getService(provider);
-      // Defaulting 'from' to 'auto' for better language detection
-      // The service will handle 'auto' appropriately
       const result = await service.translate(text, targetLanguage, "auto", context);
+
+      const translationResult = { text: result.text, dictionary: result.dictionary };
 
       // Only cache single-word translations
       if (!isChunkTranslation) {
-        this.cache[cacheKey] = { text: result.text, dictionary: result.dictionary };
+        this.cache[cacheKey] = translationResult;
+        
+        // Save to LocalStorage
+        try {
+          localStorage.setItem(
+            lsCacheKey,
+            JSON.stringify({
+              data: translationResult,
+              timestamp: Date.now(),
+            })
+          );
+        } catch (e) {
+          console.warn("Failed to save translation to LocalStorage:", e);
+        }
       }
 
-      return { text: result.text, dictionary: result.dictionary };
+      return translationResult;
     } catch (error: any) {
       console.error(`Translation Service Error (${provider}):`, error);
       throw new Error(error.message || "Unknown translation error");
@@ -55,10 +88,26 @@ class TranslationService {
 
   getCached(text: string, to: string = "fr"): TranslationResult | null {
     const provider = useReaderSettings.getState().translationProvider;
-    // Create cache key using the format "word1_word2_word3" as specified in requirements
-    // Replace spaces with underscores to create the key format
-    const cacheKey = `${provider}:${text.trim().toLowerCase().replace(/\s+/g, '_')}:${to}`;
-    return this.cache[cacheKey] || null;
+    const slug = text.trim().toLowerCase().replace(/\s+/g, '_');
+    const cacheKey = `${provider}:${slug}:${to}`;
+    const lsCacheKey = `${this.LS_CACHE_PREFIX}${provider}_${slug}_${to}`;
+    
+    // Check memory
+    if (this.cache[cacheKey]) return this.cache[cacheKey];
+    
+    // Check LocalStorage (synchronous check)
+    try {
+      const cached = localStorage.getItem(lsCacheKey);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < this.CACHE_TTL) {
+          this.cache[cacheKey] = data; // Sync to memory
+          return data;
+        }
+      }
+    } catch (e) {}
+
+    return null;
   }
 }
 

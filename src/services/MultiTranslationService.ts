@@ -1,4 +1,7 @@
-import { translationRegistry, type TranslationProvider } from "./translation/TranslationRegistry";
+import {
+  translationRegistry,
+  type TranslationProvider,
+} from "./translation/TranslationRegistry";
 
 interface TranslationResult {
   text: string;
@@ -12,11 +15,14 @@ interface MultiTranslationResult {
 }
 
 export class MultiTranslationService {
-  private cache: Record<string, { translations: string[], dictionary?: any | null }> = {};
+  private cache: Record<
+    string,
+    { translations: string[]; dictionary?: any | null }
+  > = {};
 
   async getMultipleTranslations(
-    text: string, 
-    to: string = "fr", 
+    text: string,
+    to: string = "fr",
     context?: string
   ): Promise<MultiTranslationResult> {
     if (!text) {
@@ -27,23 +33,23 @@ export class MultiTranslationService {
     const cacheKey = `multi:${text.trim().toLowerCase()}:${to}`;
 
     if (this.cache[cacheKey]) {
-      return { 
+      return {
         translations: this.cache[cacheKey].translations,
-        dictionary: this.cache[cacheKey].dictionary
+        dictionary: this.cache[cacheKey].dictionary,
       };
     }
 
     try {
       // Get translations from multiple providers
-      const providers: TranslationProvider[] = ['google', 'reverso', 'gemini'];
+      const providers: TranslationProvider[] = ["google", "reverso", "gemini"];
       const results: string[] = [];
       let dictionaryData: any | null = null;
-      
+
       // Add a slight delay to prevent flickering
       await new Promise((resolve) => setTimeout(resolve, 300));
-      
+
       // Try each provider and collect unique translations
-      for (const provider of providers as const) { // Use 'as const' to ensure type safety
+      for (const provider of providers) {
         try {
           const service = translationRegistry.getService(provider);
           const result = await service.translate(text, to, "en", context);
@@ -64,22 +70,28 @@ export class MultiTranslationService {
       }
 
       // Cache the results
-      this.cache[cacheKey] = { 
+      this.cache[cacheKey] = {
         translations: results,
-        dictionary: dictionaryData
+        dictionary: dictionaryData,
       };
-      
-      return { 
+
+      return {
         translations: results,
-        dictionary: dictionaryData
+        dictionary: dictionaryData,
       };
     } catch (error: any) {
-      console.error('MultiTranslation Service Error:', error);
-      return { translations: [], error: error.message || "Unknown translation error" };
+      console.error("MultiTranslation Service Error:", error);
+      return {
+        translations: [],
+        error: error.message || "Unknown translation error",
+      };
     }
   }
 
-  getCachedTranslations(text: string, to: string = "fr"): { translations: string[], dictionary?: any | null } | null {
+  getCachedTranslations(
+    text: string,
+    to: string = "fr"
+  ): { translations: string[]; dictionary?: any | null } | null {
     const cacheKey = `multi:${text.trim().toLowerCase()}:${to}`;
     return this.cache[cacheKey] || null;
   }

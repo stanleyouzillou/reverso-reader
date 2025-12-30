@@ -40,9 +40,9 @@ export const Token: React.FC<TokenProps> = ({
   onWordClick,
   onClearSelection,
 }) => {
-  const { translationMode } = useReaderSettings();
+  const { translationMode, showHintsEnabled } = useReaderSettings();
   const { translateText, getCachedTranslation } = useTranslationEngine();
-  const { saved, addToHistory, toggleSaved } = useStore();
+  const { saved, addToHistory, toggleSaved, highlightedWords } = useStore();
   const [hoverTranslations, setHoverTranslations] = useState<string[]>([]);
   const [isHoverLoading, setIsHoverLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -146,6 +146,17 @@ export const Token: React.FC<TokenProps> = ({
     };
   }, []);
 
+  const normalizedToken = token.toLowerCase().trim();
+
+  // Find if this word is in metadata keyVocab
+  const keyVocab = metadata.keyVocab.find(
+    (v) => v.word.toLowerCase() === normalizedToken
+  );
+
+  const isHinted =
+    showHintsEnabled &&
+    (highlightedWords.includes(normalizedToken) || !!keyVocab);
+
   if (!isWord(token)) {
     return <span className="whitespace-pre-wrap">{token}</span>;
   }
@@ -161,7 +172,8 @@ export const Token: React.FC<TokenProps> = ({
         className={cn(
           "relative inline-block transition-all duration-200 rounded px-0.5 -mx-0.5",
           "hover:bg-blue-50 hover:text-blue-800 cursor-zoom-in group", // Hover effect + cursor
-          isKaraoke && "bg-yellow-200 scale-105"
+          isKaraoke && "bg-yellow-200 scale-105",
+          isHinted && "hint-underline"
         )}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -282,9 +294,6 @@ export const Token: React.FC<TokenProps> = ({
   const activeSpan = translatedSpans.find(
     (span) => index >= span.start && index <= span.end
   );
-  const keyVocab = metadata.keyVocab.find(
-    (v) => v.word.toLowerCase() === token.toLowerCase()
-  );
 
   if (mode === "clean") {
     return (
@@ -292,7 +301,8 @@ export const Token: React.FC<TokenProps> = ({
         ref={tokenRef}
         className={cn(
           "transition-colors duration-200",
-          isKaraoke && "bg-yellow-200"
+          isKaraoke && "bg-yellow-200",
+          isHinted && "hint-underline"
         )}
       >
         {token}
@@ -307,7 +317,11 @@ export const Token: React.FC<TokenProps> = ({
   const isSelectionStart = isSelected && index === selection?.start;
   const isSelectionEnd = isSelected && index === selection?.end;
   const isKeyVocab =
-    !isSelected && !activeSpan && keyVocab && mode === "learning";
+    !isSelected &&
+    !activeSpan &&
+    keyVocab &&
+    (mode === "learning" || mode === "dual") &&
+    showHintsEnabled;
 
   // Check if this token is part of a translated span (persistent translation)
   const translatedSpan = translatedSpans.find(
@@ -352,7 +366,8 @@ export const Token: React.FC<TokenProps> = ({
     (isTranslatedSpanActive && translatedSpan?.end > translatedSpan?.start);
 
   // Determine if this token is the currently clicked word (the last added to the selection)
-  const isCurrentlyClicked = isCurrentSelectionActive && index === selection?.end;
+  const isCurrentlyClicked =
+    isCurrentSelectionActive && index === selection?.end;
 
   let tokenStyling = "";
   let tokenHighlightClass = "";
@@ -384,9 +399,8 @@ export const Token: React.FC<TokenProps> = ({
     if (isCurrentlyClicked) {
       tokenHighlightClass = "ring-2 ring-blue-300"; // Distinct visual for just-clicked word
     }
-  } else if (keyVocab && mode === "learning") {
-    tokenStyling =
-      "bg-emerald-100 text-emerald-900 border-b-2 border-emerald-200 rounded px-1.5 mx-0.5 hover:bg-emerald-200";
+  } else if (isHinted) {
+    tokenStyling = "hint-underline px-1.5 mx-0.5 hover:bg-emerald-50";
   } else {
     tokenStyling = "hover:bg-emerald-50 rounded px-1.5 mx-0.5";
   }

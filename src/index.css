@@ -22,3 +22,18 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Wavy underline for hints */
+.hint-underline {
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: #10b981; /* emerald-500 */
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1.5px;
+}
+
+/* Dotted underline fallback or alternative */
+.hint-underline-dotted {
+  border-bottom: 2px dotted #10b981;
+  padding-bottom: 1px;
+}

@@ -1,9 +1,29 @@
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "../../lib/utils";
 import { useReaderSettings } from "../../hooks/useReaderSettings";
+import { Trash2 } from "lucide-react";
 
 export const DebugSettings: React.FC = () => {
   const { translationProvider, setTranslationProvider } = useReaderSettings();
+  const [clearing, setClearing] = useState(false);
+
+  const handleClearCache = () => {
+    setClearing(true);
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith("def_") || key.startsWith("trans_"))) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    setTimeout(() => {
+      setClearing(false);
+      alert(`Cleared ${keysToRemove.length} cached items.`);
+    }, 500);
+  };
 
   return (
     <section>
@@ -11,7 +31,7 @@ export const DebugSettings: React.FC = () => {
         Debug & Integrations
       </h3>
       
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-3">
             Translation Service
@@ -39,6 +59,23 @@ export const DebugSettings: React.FC = () => {
           </div>
           <p className="text-xs text-slate-400 mt-2">
             Select the backend provider for translations. "Reverso" provides context-aware results.
+          </p>
+        </div>
+
+        <div className="pt-4 border-t border-slate-100">
+          <label className="block text-sm font-medium text-slate-700 mb-3">
+            Local Cache
+          </label>
+          <button
+            onClick={handleClearCache}
+            disabled={clearing}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
+          >
+            <Trash2 size={16} />
+            {clearing ? "Clearing..." : "Clear Translation Cache"}
+          </button>
+          <p className="text-xs text-slate-400 mt-2">
+            Removes all stored translations and definitions from LocalStorage.
           </p>
         </div>
       </div>
