@@ -137,15 +137,20 @@ export const useAudioPlayer = (
     };
 
     utterance.onerror = (event) => {
+      const error = (event as any).error;
+      // Ignore 'interrupted' errors as they are expected when we cancel previous speech
+      // Ignore 'not-allowed' errors which often happen in production due to autoplay policies
+      // especially when moving between sentences.
+      if (error === "interrupted" || error === "not-allowed") {
+        return;
+      }
       console.error("TTS Error:", event);
       if (useStore.getState().karaokeActive) {
         setCurrentSentenceIdx(useStore.getState().currentSentenceIdx + 1);
       }
     };
 
-    // Chrome Fix: Ensure a clean state before speaking
-    window.speechSynthesis.cancel();
-
+    // Ensure we reference the utterance so it doesn't get garbage collected
     utteranceRef.current = utterance;
 
     // Small delay before speaking helps some browsers/voices initialize correctly
