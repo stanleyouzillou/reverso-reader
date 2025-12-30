@@ -10,6 +10,12 @@
 
 body {
   @apply bg-white text-slate-900;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+body::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

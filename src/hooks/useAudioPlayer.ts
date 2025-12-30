@@ -36,9 +36,20 @@ export const useAudioPlayer = (
   useEffect(() => {
     const loadVoices = () => {
       const available = window.speechSynthesis.getVoices();
+      if (available.length === 0) return;
+
       setVoices(available);
-      // Set default voice if not set
-      if (!selectedVoice && available.length > 0) {
+
+      // Check if current selectedVoice is valid and is an English voice
+      const currentVoice = available.find((v) => v.voiceURI === selectedVoice);
+      const isVoiceValidAndEnglish =
+        currentVoice && currentVoice.lang.startsWith("en");
+
+      // Set default voice if:
+      // 1. No voice is selected
+      // 2. The selected voice is no longer available in the browser
+      // 3. The selected voice is not an English voice (we want English by default for L2)
+      if ((!selectedVoice || !isVoiceValidAndEnglish) && available.length > 0) {
         // Priority:
         // 1. Google UK English Male (exact or partial)
         // 2. Google UK English Female (exact or partial)
@@ -48,20 +59,23 @@ export const useAudioPlayer = (
         const defaultVoice =
           available.find(
             (v) =>
-              v.name.includes("UK") &&
-              v.name.includes("English") &&
-              v.name.includes("Male")
+              v.name.toLowerCase().includes("uk") &&
+              v.name.toLowerCase().includes("english") &&
+              v.name.toLowerCase().includes("male")
           ) ||
           available.find(
             (v) =>
-              v.name.includes("UK") &&
-              v.name.includes("English") &&
-              v.name.includes("Female")
+              v.name.toLowerCase().includes("uk") &&
+              v.name.toLowerCase().includes("english") &&
+              v.name.toLowerCase().includes("female")
           ) ||
-          available.find((v) => v.lang === "en-GB" || v.lang === "en_GB") ||
+          available.find((v) => v.lang.replace("_", "-").startsWith("en-GB")) ||
           available.find((v) => v.lang.startsWith("en")) ||
           available[0];
-        setSelectedVoice(defaultVoice.voiceURI);
+
+        if (defaultVoice) {
+          setSelectedVoice(defaultVoice.voiceURI);
+        }
       }
     };
 
