@@ -3,7 +3,7 @@ import { ITranslationService, TranslationResult } from "./ITranslationService";
 export class GoogleTranslationService implements ITranslationService {
   async translate(
     text: string,
-    to: string = "fr",  // Default to French
+    to: string = "fr", // Default to French
     from: string = "auto",
     context?: string
   ): Promise<TranslationResult> {
@@ -13,7 +13,7 @@ export class GoogleTranslationService implements ITranslationService {
       const normalizedTo = this.normalizeLanguageCode(to);
       const requestBody: { text: string; to: string; from?: string } = {
         text,
-        to: normalizedTo
+        to: normalizedTo,
       };
 
       if (from !== "auto") {
@@ -27,13 +27,22 @@ export class GoogleTranslationService implements ITranslationService {
       });
 
       if (!res.ok) {
-        throw new Error(`Translation failed: ${res.statusText}`);
+        let errorDetails = res.statusText;
+        try {
+          const errorData = await res.json();
+          errorDetails = errorData.details || errorData.error || res.statusText;
+        } catch (e) {
+          // Fallback to statusText if JSON parsing fails
+        }
+        throw new Error(`Translation failed: ${errorDetails}`);
       }
 
       const data = await res.json();
       return {
-        text: data.translation,  // Updated to match new API response
-        dictionary: data.dictionary
+        text: Array.isArray(data.translation)
+          ? data.translation.join(" ")
+          : data.translation || "",
+        dictionary: data.dictionary,
       };
     } catch (error: any) {
       console.error("Google Translation Service Error:", error);

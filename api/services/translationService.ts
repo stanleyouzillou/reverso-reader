@@ -1,6 +1,7 @@
 import { TranslationServiceClient } from "@google-cloud/translate";
 import NodeCache from "node-cache";
 import path from "path";
+import fs from "fs";
 
 // Initialize Google Cloud Translation client
 let projectId = process.env.GOOGLE_PROJECT_ID?.replace(/['"]/g, "");
@@ -11,29 +12,35 @@ const getTranslationClient = () => {
   if (translationClient) return translationClient;
 
   // Refresh projectId in case it wasn't available at module load
-  projectId = projectId || process.env.GOOGLE_PROJECT_ID?.replace(/['"]/g, "");
+  if (!projectId) {
+    projectId = process.env.GOOGLE_PROJECT_ID?.replace(/['"]/g, "");
+  }
 
-  console.log("Initializing Translation Service:", {
-    projectId,
-    hasCredentials: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
-  });
-
-  let credentialsEnv = process.env.GOOGLE_APPLICATION_CREDENTIALS?.replace(
+  const credentialsEnv = process.env.GOOGLE_APPLICATION_CREDENTIALS?.replace(
     /['"]/g,
     ""
   );
+
+  console.log("Initializing Translation Service:", {
+    projectId,
+    hasCredentials: !!credentialsEnv,
+    credentialsType: credentialsEnv?.trim().startsWith("{") ? "JSON" : "path",
+  });
 
   if (credentialsEnv) {
     if (credentialsEnv.trim().startsWith("{")) {
       try {
         const credentials = JSON.parse(credentialsEnv);
-        if (credentials.project_id) {
+        if (credentials.project_id && !projectId) {
           projectId = credentials.project_id;
         }
-        console.log("Using JSON credentials for Google Translate");
+        console.log(
+          "Using JSON credentials for Google Translate. Project ID:",
+          projectId
+        );
         translationClient = new TranslationServiceClient({
           credentials,
-          projectId: projectId,
+          projectId: projectId || undefined,
         });
         return translationClient;
       } catch (e) {
@@ -49,12 +56,19 @@ const getTranslationClient = () => {
           ? credentialsEnv
           : path.resolve(process.cwd(), credentialsEnv);
 
-        console.log(`Using credentials file at: ${absolutePath}`);
-        translationClient = new TranslationServiceClient({
-          keyFilename: absolutePath,
-          projectId: projectId || undefined,
-        });
-        return translationClient;
+        if (!fs.existsSync(absolutePath)) {
+          console.warn(
+            `Credentials file not found at ${absolutePath}. Falling back to ADC.`
+          );
+          // Don't return here, let it fall back to ADC
+        } else {
+          console.log(`Using credentials file at: ${absolutePath}`);
+          translationClient = new TranslationServiceClient({
+            keyFilename: absolutePath,
+            projectId: projectId || undefined,
+          });
+          return translationClient;
+        }
       } catch (e) {
         console.error(
           "Failed to initialize Google Translate with file path:",
@@ -65,7 +79,10 @@ const getTranslationClient = () => {
   }
 
   // Default fallback (uses default ADC)
-  console.log("Using default Application Default Credentials (ADC)");
+  console.log(
+    "Using default Application Default Credentials (ADC). Project ID:",
+    projectId
+  );
   translationClient = new TranslationServiceClient({
     projectId: projectId || undefined,
   });
@@ -121,10 +138,15 @@ export async function translateText(
   try {
     const client = getTranslationClient();
 
-    // Final check for projectId
+    // Final check for projectId - try to get it from the client if it's still missing
+    if (!projectId) {
+      // If we still don't have projectId, try to see if the client has it
+      projectId = (client as any).projectId || (client as any).project_id;
+    }
+
     if (!projectId) {
       throw new Error(
-        "GOOGLE_PROJECT_ID is not set and could not be found in credentials"
+        "GOOGLE_PROJECT_ID is not set. Please ensure GOOGLE_PROJECT_ID or GOOGLE_APPLICATION_CREDENTIALS (with project_id) is configured."
       );
     }
 
