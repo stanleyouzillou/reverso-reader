@@ -24,13 +24,22 @@ const getTranslationClient = () => {
   console.log("Initializing Translation Service:", {
     projectId,
     hasCredentials: !!credentialsEnv,
-    credentialsType: credentialsEnv?.trim().startsWith("{") ? "JSON" : "path",
+    credentialsType: credentialsEnv
+      ? credentialsEnv.trim().startsWith("{") ||
+        credentialsEnv.trim().startsWith("[")
+        ? "JSON"
+        : "path"
+      : "none",
   });
 
   if (credentialsEnv) {
-    if (credentialsEnv.trim().startsWith("{")) {
+    const trimmedCredentials = credentialsEnv.trim();
+    if (
+      trimmedCredentials.startsWith("{") ||
+      trimmedCredentials.startsWith("[")
+    ) {
       try {
-        const credentials = JSON.parse(credentialsEnv);
+        const credentials = JSON.parse(trimmedCredentials);
         if (credentials.project_id && !projectId) {
           projectId = credentials.project_id;
         }
@@ -52,17 +61,15 @@ const getTranslationClient = () => {
     } else {
       // It's a file path
       try {
-        const absolutePath = path.isAbsolute(credentialsEnv)
-          ? credentialsEnv
-          : path.resolve(process.cwd(), credentialsEnv);
+        const absolutePath = path.isAbsolute(trimmedCredentials)
+          ? trimmedCredentials
+          : path.resolve(process.cwd(), trimmedCredentials);
 
         if (!fs.existsSync(absolutePath)) {
-          console.warn(
-            `Credentials file not found at ${absolutePath}. Falling back to ADC.`
-          );
+          console.warn("Credentials file not found. Falling back to ADC.");
           // Don't return here, let it fall back to ADC
         } else {
-          console.log(`Using credentials file at: ${absolutePath}`);
+          console.log("Using credentials file for Google Translate");
           translationClient = new TranslationServiceClient({
             keyFilename: absolutePath,
             projectId: projectId || undefined,
