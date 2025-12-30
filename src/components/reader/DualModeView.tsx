@@ -39,7 +39,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
   metadata,
 }) => {
   const { showHintsEnabled } = useReaderSettings();
-  const { highlightedWords } = useStore();
+  const { highlightedWords, hoveredSentenceIdx, setHoveredSentenceIdx } =
+    useStore();
   const [currentPage, setCurrentPage] = useState(0);
   const [hoveredWord, setHoveredWord] = useState<{
     source: "l1" | "l2";
@@ -96,8 +97,16 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
     const wordTokens = tokens.filter(isWord);
     let wordCount = 0;
 
+    const isSentenceHovered = hoveredSentenceIdx === sentenceIdx;
+
     return (
-      <span>
+      <span
+        className={cn(
+          "transition-colors duration-200",
+          isSentenceHovered &&
+            "bg-blue-100/50 dark:bg-blue-900/30 rounded px-1 -mx-1"
+        )}
+      >
         {tokens.map((token, idx) => {
           if (!isWord(token)) return <span key={idx}>{token}</span>;
           const currentWordIdx = wordCount++;
@@ -116,15 +125,19 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                   ? "bg-yellow-200 text-slate-900 rounded px-0.5"
                   : ""
               )}
-              onMouseEnter={() =>
+              onMouseEnter={() => {
                 setHoveredWord({
                   source: "l1",
                   sentenceIdx,
                   wordIdx: currentWordIdx,
                   wordCount: wordTokens.length,
-                })
-              }
-              onMouseLeave={() => setHoveredWord(null)}
+                });
+                setHoveredSentenceIdx(sentenceIdx);
+              }}
+              onMouseLeave={() => {
+                setHoveredWord(null);
+                setHoveredSentenceIdx(null);
+              }}
             >
               {token}
             </span>
@@ -139,8 +152,16 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
     let wordCount = 0;
     let charCount = 0;
 
+    const isSentenceHovered = hoveredSentenceIdx === sentenceIdx;
+
     return (
-      <>
+      <span
+        className={cn(
+          "transition-colors duration-200",
+          isSentenceHovered &&
+            "bg-blue-100/50 dark:bg-blue-900/30 rounded px-1 -mx-1"
+        )}
+      >
         {tokens.map((token, idx) => {
           const tokenLen = token.length;
           const isWordToken = isWord(token);
@@ -192,21 +213,25 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                   : "",
                 isHinted && "hint-underline"
               )}
-              onMouseEnter={() =>
+              onMouseEnter={() => {
                 setHoveredWord({
                   source: "l2",
                   sentenceIdx,
                   wordIdx: currentWordIdx,
                   wordCount: wordTokens.length,
-                })
-              }
-              onMouseLeave={() => setHoveredWord(null)}
+                });
+                setHoveredSentenceIdx(sentenceIdx);
+              }}
+              onMouseLeave={() => {
+                setHoveredWord(null);
+                setHoveredSentenceIdx(null);
+              }}
             >
               {token}
             </span>
           );
         })}
-      </>
+      </span>
     );
   };
 

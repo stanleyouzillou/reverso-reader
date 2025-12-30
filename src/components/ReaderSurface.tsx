@@ -255,18 +255,10 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
 
   // Render Token Wrapper
   const renderToken = (token: string, index: number) => {
-    // Check if this token should be highlighted for karaoke
-    // We need to approximate which token corresponds to the current character index (currentWordIdx)
-    // This is tricky with pre-tokenized text.
-    // A simpler approach for now:
-    // If the token's start index in the full text roughly matches currentWordIdx?
-    // No, currentWordIdx is relative to the SENTENCE text in the utterance.
-    //
-    // Let's pass the audio state down to the Views, and let them handle highlighting
-    // because they know the sentence structure.
-    //
-    // Actually, Token component is unaware of sentence context.
-    // We should probably highlight at the View level where we map tokens to sentences.
+    // Get the sentence index for this token
+    const sentenceIndex = tokenToSentenceMap
+      ? tokenToSentenceMap[index]
+      : undefined;
 
     return (
       <Token
@@ -280,6 +272,7 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
         mode={mode}
         onWordClick={handleWordClick}
         onClearSelection={clearSelection}
+        sentenceIndex={sentenceIndex}
       />
     );
   };

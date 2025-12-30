@@ -23,6 +23,10 @@ interface State {
   // Dictionary State
   selectedDictionaryWord: VocabItem | null;
 
+  // Hover Lookup State
+  hoveredTokenId: string | null;
+  hoveredSentenceIdx: number | null;
+
   // Actions
   setMode: (mode: ReadingMode) => void;
   setSidebarMode: (mode: SidebarMode) => void;
@@ -38,6 +42,8 @@ interface State {
   setCurrentWordIdx: (idx: number) => void; // Added: Action to set word index
   setSelectedVoice: (voice: string | null) => void;
   setSelectedDictionaryWord: (word: VocabItem | null) => void;
+  setHoveredTokenId: (id: string | null) => void;
+  setHoveredSentenceIdx: (idx: number | null) => void;
   resetVocabNotification: () => void;
   clearHistory: () => void;
 }
@@ -59,12 +65,16 @@ export const useStore = create<State>()(
       currentWordIdx: -1, // Default: no word highlighted
       selectedVoice: null,
       selectedDictionaryWord: null,
+      hoveredTokenId: null,
+      hoveredSentenceIdx: null,
 
       setMode: (mode) => set({ mode }),
       setSidebarMode: (mode) => set({ sidebarMode: mode }),
       setDualModeOption: (option) => set({ dualModeOption: option }),
       setSelectedDictionaryWord: (word) =>
         set({ selectedDictionaryWord: word }),
+      setHoveredTokenId: (id) => set({ hoveredTokenId: id }),
+      setHoveredSentenceIdx: (idx) => set({ hoveredSentenceIdx: idx }),
 
       addToHistory: (item) =>
         set((state) => {

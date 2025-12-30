@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { Loader2, Heart, HeartOff } from "lucide-react";
+import { Loader2, Bookmark } from "lucide-react";
 import { cn, isWord } from "../../lib/utils";
 import {
   Selection,
@@ -27,6 +27,7 @@ interface TokenProps {
   mode: ReadingMode;
   onWordClick: (index: number) => void;
   onClearSelection: () => void;
+  sentenceIndex?: number; // Added: For sentence-level highlighting
 }
 
 export const Token: React.FC<TokenProps> = ({
@@ -39,15 +40,35 @@ export const Token: React.FC<TokenProps> = ({
   mode,
   onWordClick,
   onClearSelection,
+  sentenceIndex,
 }) => {
-  const { translationMode, showHintsEnabled } = useReaderSettings();
+  const { translationMode, showHintsEnabled, l2Language } = useReaderSettings();
+  const dualModeOption = useStore((state) => state.dualModeOption);
   const { translateText, getCachedTranslation } = useTranslationEngine();
-  const { saved, addToHistory, toggleSaved, highlightedWords } = useStore();
+  const hoveredTokenId = useStore((state) => state.hoveredTokenId);
+  const setHoveredTokenId = useStore((state) => state.setHoveredTokenId);
+  const hoveredSentenceIdx = useStore((state) => state.hoveredSentenceIdx);
+  const setHoveredSentenceIdx = useStore(
+    (state) => state.setHoveredSentenceIdx
+  );
+  const saved = useStore((state) => state.saved);
+  const highlightedWords = useStore((state) => state.highlightedWords);
+  const toggleSaved = useStore((state) => state.toggleSaved);
+  const addToHistory = useStore((state) => state.addToHistory);
   const [hoverTranslations, setHoverTranslations] = useState<string[]>([]);
   const [isHoverLoading, setIsHoverLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const tokenRef = useRef<HTMLSpanElement>(null);
+  const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const tokenId = `token-${index}`;
+  const isCurrentlyHovered = hoveredTokenId === tokenId;
+
+  // Determine if this sentence is hovered in dual/sync mode
+  const isSentenceHovered =
+    (mode === "dual" || dualModeOption === "sync") &&
+    sentenceIndex !== undefined &&
+    hoveredSentenceIdx === sentenceIndex;
 
   // Check if the current token is saved
   useEffect(() => {
@@ -57,50 +78,56 @@ export const Token: React.FC<TokenProps> = ({
   }, [saved, token]);
 
   const handleMouseEnter = useCallback(async () => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
+
     if (translationMode === "hover" && mode !== "clean" && isWord(token)) {
-      // Clear any existing timeout
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
+      setHoveredTokenId(tokenId);
+
+      if (sentenceIndex !== undefined) {
+        setHoveredSentenceIdx(sentenceIndex);
       }
 
       // Check for cached multi-translations first
-      const cached = multiTranslationService.getCachedTranslations(token);
+      // Source language is the article language (l2Language in settings)
+      // Target language is hardcoded to French for now as a default
+      const sourceLang = l2Language.split("-")[0] || "en";
+      const targetLang = "fr";
+
+      const cached = multiTranslationService.getCachedTranslations(
+        token,
+        targetLang,
+        sourceLang
+      );
       if (cached && cached.translations.length > 0) {
         setHoverTranslations(cached.translations);
       } else {
         setIsHoverLoading(true);
         // Get multiple translations
         const result = await multiTranslationService.getMultipleTranslations(
-          token
+          token,
+          targetLang,
+          sourceLang
         );
+
+        // If the user has already moved to another token, don't update state
+        if (useStore.getState().hoveredTokenId !== tokenId) return;
+
         if (result && !result.error && result.translations.length > 0) {
           setHoverTranslations(result.translations);
-
-          // Add first translation to history
-          const vocabItem: VocabItem = {
-            word: token,
-            translation: result.translations[0],
-            level: metadata.level,
-            status: WordStatus.Unknown,
-            context: "Hover translation",
-            timestamp: Date.now(),
-          };
-          addToHistory(vocabItem);
-        } else if (!result.error) {
+        } else {
           // Fallback to single translation if multi-translation fails
           const fallbackResult = await translateText(token);
+
+          // If the user has already moved to another token, don't update state
+          if (useStore.getState().hoveredTokenId !== tokenId) return;
+
           if (fallbackResult && !fallbackResult.error) {
             setHoverTranslations([fallbackResult.text]);
-
-            const vocabItem: VocabItem = {
-              word: token,
-              translation: fallbackResult.text,
-              level: metadata.level,
-              status: WordStatus.Unknown,
-              context: "Hover translation",
-              timestamp: Date.now(),
-            };
-            addToHistory(vocabItem);
+          } else {
+            setHoverTranslations(["No translation found"]);
           }
         }
         setIsHoverLoading(false);
@@ -110,41 +137,49 @@ export const Token: React.FC<TokenProps> = ({
     translationMode,
     mode,
     token,
+    tokenId,
+    setHoveredTokenId,
+    l2Language,
     translateText,
-    metadata.level,
-    addToHistory,
   ]);
 
   const handleMouseLeave = useCallback(() => {
     if (translationMode === "hover") {
-      // Add a small delay before hiding to allow for brief mouse exits
-      hoverTimeoutRef.current = setTimeout(() => {
-        setHoverTranslations([]);
-        setIsHoverLoading(false);
-      }, 100);
+      // Add a small delay before hiding the popup to allow the user to move their mouse into the popup
+      leaveTimeoutRef.current = setTimeout(() => {
+        setHoveredTokenId(null);
+        setHoveredSentenceIdx(null);
+      }, 300); // 300ms grace period
     }
-  }, [translationMode]);
+  }, [translationMode, setHoveredTokenId, setHoveredSentenceIdx]);
 
-  // Clear hover state when token changes to prevent stale state
+  const handlePopupMouseEnter = useCallback(() => {
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handlePopupMouseLeave = useCallback(() => {
+    handleMouseLeave();
+  }, [handleMouseLeave]);
+
+  // Clear local translations when this token is no longer hovered
   useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-      // Reset state when component unmounts
+    if (!isCurrentlyHovered) {
       setHoverTranslations([]);
       setIsHoverLoading(false);
-    };
-  }, [token]);
+    }
+  }, [isCurrentlyHovered]);
 
-  // Cleanup timeout on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
+      if (useStore.getState().hoveredTokenId === tokenId) {
+        useStore.getState().setHoveredTokenId(null);
       }
     };
-  }, []);
+  }, [tokenId]);
 
   const normalizedToken = token.toLowerCase().trim();
 
@@ -173,6 +208,7 @@ export const Token: React.FC<TokenProps> = ({
           "relative inline-block transition-all duration-200 rounded px-0.5 -mx-0.5",
           "hover:bg-blue-50 hover:text-blue-800 cursor-zoom-in group", // Hover effect + cursor
           isKaraoke && "bg-yellow-200 scale-105",
+          isSentenceHovered && "bg-blue-100/50 dark:bg-blue-900/30", // Sentence-level highlighting
           isHinted && "hint-underline"
         )}
         onMouseEnter={handleMouseEnter}
@@ -181,7 +217,7 @@ export const Token: React.FC<TokenProps> = ({
         onBlur={handleMouseLeave} // Support keyboard blur
         tabIndex={0} // Make the token focusable
         aria-describedby={
-          hoverTranslations.length > 0 || isHoverLoading
+          isCurrentlyHovered && (hoverTranslations.length > 0 || isHoverLoading)
             ? `popup-${index}`
             : undefined
         }
@@ -189,101 +225,92 @@ export const Token: React.FC<TokenProps> = ({
         {token}
 
         {/* Hover Popup */}
-        {(hoverTranslations.length > 0 || isHoverLoading) && (
-          <div
-            id={`popup-${index}`}
-            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-auto"
-            role="tooltip"
-            aria-live="polite"
-          >
+        {isCurrentlyHovered &&
+          (hoverTranslations.length > 0 || isHoverLoading) && (
             <div
-              className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs p-3 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 min-w-[200px] max-w-[300px]"
-              tabIndex={-1} // Allow focus on the popup container for accessibility
+              id={`popup-${index}`}
+              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-auto"
+              role="tooltip"
+              aria-live="polite"
+              onMouseEnter={handlePopupMouseEnter}
+              onMouseLeave={handlePopupMouseLeave}
             >
               <div
-                className="font-semibold mb-1 text-slate-700 dark:text-slate-300"
-                tabIndex={0}
+                className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs p-3 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 min-w-[200px] max-w-[300px]"
+                tabIndex={-1} // Allow focus on the popup container for accessibility
               >
-                {token}
+                <div
+                  className="font-semibold mb-1 text-slate-700 dark:text-slate-300"
+                  tabIndex={0}
+                >
+                  {token}
+                </div>
+
+                {isHoverLoading ? (
+                  <div className="flex items-center justify-center py-2">
+                    <Loader2
+                      className="h-4 w-4 animate-spin text-slate-500"
+                      aria-label="Loading translations"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div
+                      className="space-y-1"
+                      tabIndex={0}
+                      aria-label="Translations list"
+                    >
+                      {hoverTranslations.slice(0, 3).map((translation, idx) => (
+                        <div
+                          key={idx}
+                          className="py-1 text-slate-800 dark:text-slate-100 font-medium border-b border-slate-50 dark:border-slate-700/50 last:border-0"
+                          tabIndex={0}
+                          aria-label={`Translation ${idx + 1}: ${translation}`}
+                        >
+                          {translation}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700/50 flex justify-end">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const vocabItem: VocabItem = {
+                            word: token,
+                            translation:
+                              hoverTranslations[0] ||
+                              "Translation not available",
+                            level: metadata.level,
+                            status: WordStatus.Unknown,
+                            context: "Hover translation",
+                            timestamp: Date.now(),
+                          };
+                          toggleSaved(vocabItem);
+                        }}
+                        className={cn(
+                          "transition-colors",
+                          isSaved
+                            ? "text-blue-600"
+                            : "text-slate-300 hover:text-blue-400"
+                        )}
+                        aria-label={isSaved ? "Unsave word" : "Save word"}
+                        title={isSaved ? "Unsave word" : "Save word"}
+                      >
+                        <Bookmark
+                          size={18}
+                          fill={isSaved ? "currentColor" : "none"}
+                        />
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
 
-              {isHoverLoading ? (
-                <div className="flex items-center justify-center py-2">
-                  <Loader2
-                    className="h-4 w-4 animate-spin text-slate-500"
-                    aria-label="Loading translations"
-                  />
-                </div>
-              ) : (
-                <>
-                  <div
-                    className="space-y-1 max-h-32 overflow-y-auto"
-                    tabIndex={0}
-                    aria-label="Translations list"
-                  >
-                    {hoverTranslations.slice(0, 3).map((translation, idx) => (
-                      <div
-                        key={idx}
-                        className="py-1 border-b border-slate-100 dark:border-slate-700 last:border-0"
-                        tabIndex={0}
-                        aria-label={`Translation ${idx + 1}: ${translation}`}
-                      >
-                        {idx + 1}. {translation}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const vocabItem: VocabItem = {
-                          word: token,
-                          translation:
-                            hoverTranslations[0] || "Translation not available",
-                          level: metadata.level,
-                          status: WordStatus.Unknown,
-                          context: "Hover translation",
-                          timestamp: Date.now(),
-                        };
-                        toggleSaved(vocabItem);
-                      }}
-                      className={`flex items-center gap-1 text-sm ${
-                        isSaved
-                          ? "text-red-500"
-                          : "text-slate-500 hover:text-red-500"
-                      }`}
-                      aria-label={isSaved ? "Unsave word" : "Save word"}
-                      title={isSaved ? "Unsave word" : "Save word"}
-                    >
-                      {isSaved ? (
-                        <Heart
-                          className="h-4 w-4 fill-current"
-                          aria-label="Saved"
-                        />
-                      ) : (
-                        <Heart className="h-4 w-4" aria-label="Save word" />
-                      )}
-                      <span>{isSaved ? "Saved" : "Save"}</span>
-                    </button>
-
-                    <span
-                      className="text-xs text-slate-500 dark:text-slate-400"
-                      aria-label={`Showing ${hoverTranslations.length} translations`}
-                    >
-                      {hoverTranslations.length > 3
-                        ? `+${hoverTranslations.length - 3} more`
-                        : `${hoverTranslations.length} translations`}
-                    </span>
-                  </div>
-                </>
-              )}
+              {/* Arrow */}
+              <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white dark:border-t-slate-800" />
             </div>
-
-            {/* Arrow */}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white dark:border-t-slate-800" />
-          </div>
-        )}
+          )}
       </span>
     );
   }
