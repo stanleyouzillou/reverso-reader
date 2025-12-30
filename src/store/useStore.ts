@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { ReadingMode, SidebarMode, VocabItem, WordStatus } from "../types";
 import { DEMO_ARTICLE } from "../constants/demoContent";
+import { useReaderSettings } from "../hooks/useReaderSettings";
 
 interface State {
   mode: ReadingMode;
@@ -68,7 +69,13 @@ export const useStore = create<State>()(
       hoveredTokenId: null,
       hoveredSentenceIdx: null,
 
-      setMode: (mode) => set({ mode }),
+      setMode: (mode) => {
+        set({ mode });
+        // Automatically trigger Page mode for Learning and Dual modes
+        if (mode === "learning" || mode === "dual") {
+          useReaderSettings.getState().setReadingMode("page");
+        }
+      },
       setSidebarMode: (mode) => set({ sidebarMode: mode }),
       setDualModeOption: (option) => set({ dualModeOption: option }),
       setSelectedDictionaryWord: (word) =>

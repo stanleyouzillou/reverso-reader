@@ -204,9 +204,9 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
   };
 
   const renderPaginationFrame = (children: React.ReactNode) => {
-    if (readingMode === "scrolling" || !currentItems) {
+    if (readingMode === "scrolling") {
       return (
-        <div className="w-full mx-auto mt-12">
+        <div className="w-full mx-auto mt-12 space-y-4">
           {children}
           {dualModeOption === "hover" && (
             <p className="text-center text-xs text-slate-400 mt-8">
@@ -216,6 +216,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
         </div>
       );
     }
+
+    if (!currentItems) return null;
 
     const { totalPages } = currentItems;
 
@@ -254,29 +256,6 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
             </button>
           </div>
         </div>
-
-        {/* 4. Mobile Navigation (Bottom) */}
-        <div className="md:hidden flex items-center justify-center gap-4 mt-8 py-4 border-t border-slate-100">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-            disabled={currentPage === 0}
-            className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
-          >
-            <ChevronLeft size={24} />
-          </button>
-          <span className="text-sm font-medium text-slate-500">
-            Page {currentPage + 1} of {totalPages}
-          </span>
-          <button
-            onClick={() =>
-              setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
-            }
-            disabled={currentPage >= totalPages - 1}
-            className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
-          >
-            <ChevronRight size={24} />
-          </button>
-        </div>
       </div>
     );
   };
@@ -292,7 +271,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
       readingMode === "page" && currentItems ? currentItems.startIndex : 0;
 
     return renderPaginationFrame(
-      <div className="flex flex-col gap-0 mt-8">
+      <div className="flex flex-col gap-0 mt-4">
         {visibleSentences.map((pair, idx) => {
           const actualIdx = startIndex + idx;
           const l2Tokens = tokenize(pair.l2);
@@ -303,8 +282,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               key={actualIdx}
               id={`sentence-${actualIdx}`}
               className={cn(
-                "grid grid-cols-2 gap-8 py-4 border-b border-slate-50 hover:bg-blue-50/30 transition-colors group cursor-pointer",
-                isPlaying ? "bg-yellow-50/50" : ""
+                "grid grid-cols-2 gap-4 py-2 border-b border-slate-50 dark:border-slate-800/50 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group cursor-pointer",
+                isPlaying ? "bg-yellow-50/50 dark:bg-yellow-900/10" : ""
               )}
               onClick={() => onPlaySentence?.(actualIdx)}
               onMouseEnter={() => setHoveredSentenceIndex(actualIdx)}
@@ -312,7 +291,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
             >
               <div
                 className={cn(
-                  "leading-relaxed text-slate-800 dark:text-slate-200 text-justify transition-colors",
+                  "leading-relaxed text-slate-800 dark:text-slate-200 text-left transition-colors",
                   hoveredSentenceIndex === actualIdx ||
                     hoveredSentenceIdx === actualIdx
                     ? "text-blue-900 dark:text-blue-400"
@@ -339,6 +318,44 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
     );
   }
 
+  if (dualModeOption === "sync") {
+    const visibleSentences =
+      readingMode === "page" && currentItems
+        ? (currentItems.items as typeof pairedSentences)
+        : pairedSentences;
+    const startIndex =
+      readingMode === "page" && currentItems ? currentItems.startIndex : 0;
+
+    return renderPaginationFrame(
+      <div className="flex flex-col gap-4 mt-4">
+        {visibleSentences.map((pair, idx) => {
+          const actualIdx = startIndex + idx;
+          const l2Tokens = tokenize(pair.l2);
+          const isPlaying = activeSentenceIdx === actualIdx;
+
+          return (
+            <div
+              key={actualIdx}
+              id={`sentence-${actualIdx}`}
+              className={cn(
+                "grid grid-cols-2 gap-4 py-4 border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors group cursor-pointer",
+                isPlaying ? "bg-yellow-50/50 dark:bg-yellow-900/10" : ""
+              )}
+              onClick={() => onPlaySentence?.(actualIdx)}
+            >
+              <div className="leading-relaxed text-slate-800 dark:text-slate-200 text-left">
+                {renderL2Tokens(actualIdx, l2Tokens)}
+              </div>
+              <div className="leading-relaxed text-slate-500 dark:text-slate-400 text-left">
+                {renderL1Sentence(pair.l1, actualIdx)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   if (dualModeOption === "hover") {
     const visibleParagraphs =
       readingMode === "page" && currentItems
@@ -348,7 +365,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
       readingMode === "page" && currentItems ? currentItems.startIndex : 0;
 
     return renderPaginationFrame(
-      <>
+      <div className="flex flex-col gap-4">
         {visibleParagraphs.map((para, idx) => {
           const actualIdx = startIndex + idx;
           // Find all sentences belonging to this paragraph
@@ -378,12 +395,14 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               key={actualIdx}
               id={`paragraph-${actualIdx}`}
               className={cn(
-                "relative mb-8 group cursor-pointer p-2 rounded transition-colors"
+                "relative mb-4 group cursor-pointer p-2 rounded transition-colors"
                 // isPlayingParagraph ? "bg-yellow-100" : "" // Removed paragraph highlight in favor of sentence highlight
               )}
+              onMouseEnter={() => setHoveredSentenceIndex(actualIdx)}
+              onMouseLeave={() => setHoveredSentenceIndex(null)}
             >
               {/* L2 Content (Sentences flowing inline) */}
-              <p className="leading-relaxed text-slate-800 dark:text-slate-200 text-justify transition-colors duration-200">
+              <p className="leading-relaxed text-slate-800 dark:text-slate-200 text-left transition-colors duration-200">
                 {sentencesInPara.length > 0 ? (
                   sentencesInPara.map((s) => {
                     const isSentActive = activeSentenceIdx === s.globalIdx;
@@ -455,7 +474,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
             </div>
           );
         })}
-      </>
+      </div>
     );
   }
 
@@ -468,7 +487,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
       readingMode === "page" && currentItems ? currentItems.startIndex : 0;
 
     return renderPaginationFrame(
-      <>
+      <div className="flex flex-col gap-2">
         {visibleSentences.map((pair, idx) => {
           const actualIdx = startIndex + idx;
           const l2Tokens = tokenize(pair.l2);
@@ -479,17 +498,16 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               key={actualIdx}
               id={`sentence-${actualIdx}`}
               className={cn(
-                "mb-6 group p-4 rounded-lg transition-colors",
-                isPlaying ? "bg-yellow-50/50" : ""
+                "mb-1 group p-3 rounded-lg transition-colors",
+                isPlaying ? "bg-yellow-50/50 dark:bg-yellow-900/10" : ""
               )}
               onMouseEnter={() => setHoveredSentenceIndex(actualIdx)}
               onMouseLeave={() => setHoveredSentenceIndex(null)}
             >
               <div
                 className={cn(
-                  "text-xl leading-relaxed text-slate-900 dark:text-white text-justify mb-2 transition-colors",
-                  hoveredSentenceIndex === actualIdx ||
-                    hoveredSentenceIdx === actualIdx
+                  "text-xl leading-relaxed text-slate-900 dark:text-white text-left mb-1 transition-colors",
+                  hoveredSentenceIndex === actualIdx
                     ? "text-blue-900 dark:text-blue-400"
                     : ""
                 )}
@@ -498,9 +516,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               </div>
               <div
                 className={cn(
-                  "font-sans text-sm leading-relaxed text-indigo-600 dark:text-indigo-400 pl-4 border-l-2 border-indigo-200 dark:border-indigo-900 italic mb-6 transition-colors",
-                  hoveredSentenceIndex === actualIdx ||
-                    hoveredSentenceIdx === actualIdx
+                  "font-sans text-sm leading-relaxed text-indigo-600 dark:text-indigo-400 pl-4 border-l-2 border-indigo-200 dark:border-indigo-900 italic mb-2 transition-colors",
+                  hoveredSentenceIndex === actualIdx
                     ? "text-indigo-800 dark:text-indigo-300 border-indigo-400 dark:border-indigo-700"
                     : ""
                 )}
@@ -510,7 +527,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
             </div>
           );
         })}
-      </>
+      </div>
     );
   }
 

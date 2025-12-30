@@ -14,18 +14,6 @@ export const Header: React.FC<HeaderProps> = ({ showStickyTitle = false }) => {
   const { title } = useArticleIngestion();
   const { theme, setTheme } = useReaderSettings();
 
-  // Sync with system theme preference on mount if no preference is saved
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("reader-settings");
-    if (!savedTheme) {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
-      setTheme(systemTheme);
-    }
-  }, [setTheme]);
-
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);

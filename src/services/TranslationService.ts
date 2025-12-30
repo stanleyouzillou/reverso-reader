@@ -18,7 +18,7 @@ class TranslationService {
 
     // Get current provider and L2 language from settings
     const provider = useReaderSettings.getState().translationProvider;
-    const l2Language = useReaderSettings.getState().l2Language || "en-GB";
+    const l2Language = useReaderSettings.getState().l2Language || "fr";
     const targetLanguage = to || l2Language;
 
     // Check if this is a chunk translation (multiple words)

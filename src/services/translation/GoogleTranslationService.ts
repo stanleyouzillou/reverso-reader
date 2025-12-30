@@ -3,7 +3,7 @@ import { ITranslationService, TranslationResult } from "./ITranslationService";
 export class GoogleTranslationService implements ITranslationService {
   async translate(
     text: string,
-    to: string = "en-GB",  // Default to English (GB) as requested
+    to: string = "fr",  // Default to French
     from: string = "auto",
     context?: string
   ): Promise<TranslationResult> {

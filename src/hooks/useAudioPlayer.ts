@@ -89,40 +89,83 @@ export const useAudioPlayer = (
     if (!text) return;
 
     const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-GB"; // Default to en-GB if no voice is selected
     utterance.rate = playbackSpeed;
 
     if (selectedVoice) {
       const voice = voices.find((v) => v.voiceURI === selectedVoice);
-      if (voice) utterance.voice = voice;
+      if (voice) {
+        utterance.voice = voice;
+        utterance.lang = voice.lang;
+      }
     }
 
     // Word boundary event for karaoke effect
     utterance.onboundary = (event) => {
-      // Ensure we are still playing and this event belongs to the active session
-      if (useStore.getState().karaokeActive) {
-        // Always update if charIndex is available, regardless of event name
-        // Some voices might use different names or empty strings
-        // We cast to any to avoid strict type checking issues with some browser implementations
-        const evt = event as any;
-        if (typeof evt.charIndex === "number") {
-          setCurrentWordIdx(evt.charIndex);
+      // Use requestAnimationFrame to ensure store updates don't lag behind speech
+      requestAnimationFrame(() => {
+        if (useStore.getState().karaokeActive) {
+          const evt = event as any;
+          if (typeof evt.charIndex === "number") {
+            // Some voices might report charIndex as 0 for every boundary or skip some.
+            // We only update if it's a valid non-negative index.
+            if (evt.charIndex >= 0) {
+              setCurrentWordIdx(evt.charIndex);
+            }
+          }
         }
-      }
+      });
     };
 
     utterance.onend = () => {
-      // Only advance if we are still playing (wasn't cancelled manually)
-      // We check store/ref state in a functional update or effect,
-      // but here we rely on the fact that if it stops, we cancel.
-      // However, onend might fire after cancel in some browsers.
-      // Ideally, we advance state, and the effect triggers the next play.
       if (useStore.getState().karaokeActive) {
         setCurrentSentenceIdx(useStore.getState().currentSentenceIdx + 1);
       }
     };
 
+    utterance.onerror = (event) => {
+      console.error("TTS Error:", event);
+      if (useStore.getState().karaokeActive) {
+        // Try to recover by moving to next sentence
+        setCurrentSentenceIdx(useStore.getState().currentSentenceIdx + 1);
+      }
+    };
+
+    // Chrome Fix: Periodic resume to prevent the 15-second "stuck" bug
+    // and ensure events keep firing.
+    const keepAlive = setInterval(() => {
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, 10000);
+
+    const originalOnEnd = utterance.onend;
+    utterance.onend = (e) => {
+      clearInterval(keepAlive);
+      if (originalOnEnd) originalOnEnd.call(utterance, e);
+    };
+
+    const originalOnError = utterance.onerror;
+    utterance.onerror = (e) => {
+      clearInterval(keepAlive);
+      if (originalOnError) originalOnError.call(utterance, e);
+    };
+
+    // Chrome Fix: SpeechSynthesis can sometimes hang or fail to fire events
+    // if the utterance is too long or if there's a queue.
+    // We ensure a clean state.
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+
     utteranceRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
+
+    // Small delay before speaking to allow listeners to attach properly
+    // and the browser's audio context to stabilize
+    setTimeout(() => {
+      window.speechSynthesis.speak(utterance);
+    }, 50);
   }, [
     currentSentenceIdx,
     pairedSentences,

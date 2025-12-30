@@ -82,7 +82,7 @@ export const ReaderHeader: React.FC<ReaderHeaderProps> = ({
       )}
 
       {mode === "dual" && dualModeOption === "sync" && (
-        <h2 className="text-xl font-serif text-slate-500 mb-8 text-center italic">
+        <h2 className="text-xl font-serif text-slate-500 dark:text-slate-400 mb-8 text-center italic">
           {l1Title}
         </h2>
       )}

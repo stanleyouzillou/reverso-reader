@@ -52,7 +52,7 @@ interface ReaderSettingsState {
 export const useReaderSettings = create<ReaderSettingsState>()(
   persist(
     (set) => ({
-      fontFamily: "Inter",
+      fontFamily: "Poppins",
       fontWeight: "normal",
       fontSize: 16,
       bgColor: "#ffffff",
@@ -62,7 +62,7 @@ export const useReaderSettings = create<ReaderSettingsState>()(
       translationProvider: "google",
       translationMode: "inline",
       translationGranularity: "chunk",
-      l2Language: "en-GB", // Default to English (GB)
+      l2Language: "fr", // Default to French
       showHintsEnabled: false,
 
       setFontFamily: (font) => set({ fontFamily: font }),

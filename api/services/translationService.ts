@@ -1,8 +1,76 @@
-import { TranslationServiceClient } from '@google-cloud/translate';
-import NodeCache from 'node-cache';
+import { TranslationServiceClient } from "@google-cloud/translate";
+import NodeCache from "node-cache";
+import path from "path";
 
-// Initialize Google Cloud Translation client with Application Default Credentials
-const translationClient = new TranslationServiceClient();
+// Initialize Google Cloud Translation client
+let projectId = process.env.GOOGLE_PROJECT_ID?.replace(/['"]/g, "");
+let translationClient: TranslationServiceClient | null = null;
+
+// Handle GOOGLE_APPLICATION_CREDENTIALS being either a file path or the JSON content itself
+const getTranslationClient = () => {
+  if (translationClient) return translationClient;
+
+  // Refresh projectId in case it wasn't available at module load
+  projectId = projectId || process.env.GOOGLE_PROJECT_ID?.replace(/['"]/g, "");
+
+  console.log("Initializing Translation Service:", {
+    projectId,
+    hasCredentials: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
+  });
+
+  let credentialsEnv = process.env.GOOGLE_APPLICATION_CREDENTIALS?.replace(
+    /['"]/g,
+    ""
+  );
+
+  if (credentialsEnv) {
+    if (credentialsEnv.trim().startsWith("{")) {
+      try {
+        const credentials = JSON.parse(credentialsEnv);
+        if (credentials.project_id) {
+          projectId = credentials.project_id;
+        }
+        console.log("Using JSON credentials for Google Translate");
+        translationClient = new TranslationServiceClient({
+          credentials,
+          projectId: projectId,
+        });
+        return translationClient;
+      } catch (e) {
+        console.error(
+          "Failed to parse GOOGLE_APPLICATION_CREDENTIALS as JSON:",
+          e
+        );
+      }
+    } else {
+      // It's a file path
+      try {
+        const absolutePath = path.isAbsolute(credentialsEnv)
+          ? credentialsEnv
+          : path.resolve(process.cwd(), credentialsEnv);
+
+        console.log(`Using credentials file at: ${absolutePath}`);
+        translationClient = new TranslationServiceClient({
+          keyFilename: absolutePath,
+          projectId: projectId || undefined,
+        });
+        return translationClient;
+      } catch (e) {
+        console.error(
+          "Failed to initialize Google Translate with file path:",
+          e
+        );
+      }
+    }
+  }
+
+  // Default fallback (uses default ADC)
+  console.log("Using default Application Default Credentials (ADC)");
+  translationClient = new TranslationServiceClient({
+    projectId: projectId || undefined,
+  });
+  return translationClient;
+};
 
 // Initialize cache for storing translations (1 hour TTL by default)
 const translationCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
@@ -13,24 +81,24 @@ interface TranslationResult {
 }
 
 /**
- * Translates text using Google Cloud Translation API
- * @param text - Text to translate (single string or array of strings)
- * @param targetLanguage - Target language code (default: 'en')
- * @param sourceLanguage - Source language code (default: 'auto')
- * @returns Promise resolving to TranslationResult
+ * Translates text using Google Cloud Translation API (v3)
  */
 export async function translateText(
   text: string | string[],
-  targetLanguage: string = 'en',
-  sourceLanguage: string = 'auto'
+  targetLanguage: string = "fr",
+  sourceLanguage: string = "auto"
 ): Promise<TranslationResult> {
-  // Determine if input is a single word (for dictionary lookup)
-  const isSingleWord = typeof text === 'string' && !text.includes(' ') && text.trim().split(/\s+/).length === 1;
+  // Normalize language codes (Google v3 prefers BCP-47, e.g., 'en' instead of 'en-GB' for simple cases)
+  const normalizedTarget = targetLanguage.split("-")[0];
+  const normalizedSource =
+    sourceLanguage === "auto" ? "auto" : sourceLanguage.split("-")[0];
 
-  // Create cache key based on input text and target language
-  const cacheKey = Array.isArray(text)
-    ? `${text.join('|')}|${targetLanguage}|${sourceLanguage}`
-    : `${text}|${targetLanguage}|${sourceLanguage}`;
+  const cacheKey = `${
+    Array.isArray(text) ? text.join("|") : text
+  }|${targetLanguage}|${sourceLanguage}`.toLowerCase();
+
+  // Determine if input is a single word (for dictionary lookup)
+  const isSingleWord = typeof text === "string" && !text.includes(" ");
 
   // Check if translation is already in cache
   const cachedResult = translationCache.get<TranslationResult>(cacheKey);
@@ -42,7 +110,7 @@ export async function translateText(
       const cachedDict = translationCache.get<any>(dictCacheKey);
       return {
         translation: cachedResult.translation,
-        dictionary: cachedDict || null
+        dictionary: cachedDict || null,
       };
     }
     return cachedResult;
@@ -51,37 +119,50 @@ export async function translateText(
   console.log(`Cache miss for key: ${cacheKey}, making API call...`);
 
   try {
+    const client = getTranslationClient();
+
+    // Final check for projectId
+    if (!projectId) {
+      throw new Error(
+        "GOOGLE_PROJECT_ID is not set and could not be found in credentials"
+      );
+    }
+
+    const parent = `projects/${projectId}/locations/global`;
+    console.log(`Making Google Translate request to parent: ${parent}`);
+
     // Prepare the request for Google Cloud Translation API
-    // Don't include source language if it's 'auto' to let the API auto-detect
     const request: any = {
-      parent: `projects/${process.env.GOOGLE_PROJECT_ID}/locations/global`,
+      parent,
       contents: Array.isArray(text) ? text : [text],
-      mimeType: 'text/plain', // mime types: text/plain, text/html
-      targetLanguageCode: targetLanguage,
+      mimeType: "text/plain",
+      targetLanguageCode: normalizedTarget,
     };
 
     // Only add source language if it's not 'auto'
-    if (sourceLanguage !== 'auto') {
-      request.sourceLanguageCode = sourceLanguage;
+    if (normalizedSource !== "auto") {
+      request.sourceLanguageCode = normalizedSource;
     }
 
     // Perform the translation
-    const [response] = await translationClient.translateText(request);
+    const [response] = await client.translateText(request);
 
     // Extract translations from response
-    const translations = response.translations?.map(translation => translation.translatedText) || [];
+    const translations =
+      response.translations?.map((translation) => translation.translatedText) ||
+      [];
     const translationText = Array.isArray(text)
-      ? translations  // Return as array if input was array
-      : translations[0] || '';
+      ? translations // Return as array if input was array
+      : translations[0] || "";
 
     // Prepare result object
     let result: TranslationResult = {
       translation: translationText,
-      dictionary: null
+      dictionary: null,
     };
 
     // If input is a single word, fetch dictionary data in parallel
-    if (isSingleWord && typeof text === 'string') {
+    if (isSingleWord && typeof text === "string") {
       try {
         const dictionaryData = await getDictionaryData(text);
         result.dictionary = dictionaryData;
@@ -100,7 +181,7 @@ export async function translateText(
 
     return result;
   } catch (error) {
-    console.error('Translation API error:', error);
+    console.error("Translation API error:", error);
     throw error;
   }
 }
@@ -112,14 +193,20 @@ export async function translateText(
  */
 export async function getDictionaryData(word: string): Promise<any> {
   try {
-    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`);
+    const response = await fetch(
+      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(
+        word
+      )}`
+    );
 
     if (!response.ok) {
       if (response.status === 404) {
         console.log(`Word "${word}" not found in dictionary`);
         return null;
       }
-      throw new Error(`Dictionary API error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Dictionary API error: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
@@ -145,6 +232,6 @@ export function getCacheStats(): { keys: number; hitRate: number } {
   const stats = translationCache.getStats();
   return {
     keys: translationCache.keys().length,
-    hitRate: stats.hits / (stats.hits + stats.misses) || 0
+    hitRate: stats.hits / (stats.hits + stats.misses) || 0,
   };
 }

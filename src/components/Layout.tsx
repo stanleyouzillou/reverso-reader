@@ -1,15 +1,27 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { ControlBar } from "./ControlBar";
 import { ReaderSurface } from "./ReaderSurface";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FloatingToolbar } from "./FloatingToolbar";
+import { useReaderSettings } from "../hooks/useReaderSettings";
+import { cn } from "../lib/utils";
 
 export const Layout: React.FC = () => {
   const [showStickyTitle, setShowStickyTitle] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const mainRef = useRef<HTMLElement>(null);
+  const { theme } = useReaderSettings();
+
+  // Sync dark mode with document root
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
 
   const handleScroll = () => {
     if (mainRef.current) {
@@ -19,14 +31,22 @@ export const Layout: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white overflow-hidden font-sans">
+    <div
+      className={cn(
+        "h-screen flex flex-col overflow-hidden font-sans transition-colors duration-300",
+        theme === "dark" ? "bg-[#1A1A1A]" : "bg-white"
+      )}
+    >
       <Header showStickyTitle={showStickyTitle} />
       <div className="flex flex-1 overflow-hidden">
         <div className="relative flex-1 flex flex-col min-w-0">
           <main
             ref={mainRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto relative bg-white scroll-smooth scrollbar-hide"
+            className={cn(
+              "flex-1 overflow-y-auto relative scroll-smooth scrollbar-hide transition-colors duration-300",
+              theme === "dark" ? "bg-[#1A1A1A]" : "bg-white"
+            )}
           >
             <ReaderSurface sidebarCollapsed={sidebarCollapsed} />
           </main>

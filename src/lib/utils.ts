@@ -19,9 +19,11 @@ export function splitSentences(text: string): string[] {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const segmenter = new (Intl as any).Segmenter('en', { granularity: 'sentence' });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return Array.from(segmenter.segment(text)).map((s: any) => s.segment.trim()).filter(Boolean);
+    // Note: We don't trim here to preserve the exact character offsets for TTS
+    return Array.from(segmenter.segment(text)).map((s: any) => s.segment).filter(Boolean);
   } catch (e) {
     // Fallback for older environments
-    return text.match(/[^.!?]+[.!?]+(\s|$)/g)?.map(s => s.trim()) || [text];
+    // Match sentence and trailing whitespace
+    return text.match(/[^.!?]+[.!?]+(\s*)/g) || [text];
   }
 }

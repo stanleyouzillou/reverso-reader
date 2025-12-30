@@ -204,8 +204,10 @@ export const Token: React.FC<TokenProps> = ({
   if (translationMode === "hover" && mode !== "clean") {
     return (
       <span
+        ref={tokenRef}
+        id={tokenId}
         className={cn(
-          "relative inline-block transition-all duration-200 rounded px-0.5 -mx-0.5",
+          "relative inline transition-all duration-200 rounded px-0.5 -mx-0.5",
           "hover:bg-blue-50 hover:text-blue-800 cursor-zoom-in group", // Hover effect + cursor
           isKaraoke && "bg-yellow-200 scale-105",
           isSentenceHovered && "bg-blue-100/50 dark:bg-blue-900/30", // Sentence-level highlighting

@@ -153,28 +153,23 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
         {/* 3. Content Area */}
         <div
           className={cn(
-            "grid gap-8 w-full transition-colors duration-300 flex-1",
+            "grid gap-2 w-full transition-colors duration-300 flex-1",
             mode === "dual" ? "grid-cols-2" : "grid-cols-1"
           )}
         >
           {/* L2 Content */}
-          <div
-            className={cn(
-              mode === "dual" ? "text-left" : "text-justify",
-              "text-inherit"
-            )}
-          >
+          <div className={cn("text-left", "text-inherit")}>
             {visibleIndices.map((originalIndex) => {
               const tokens = paragraphTokens[originalIndex];
               const startIdx = tokenOffsets[originalIndex];
               const isPlayingParagraph = activeSentenceIdx === originalIndex;
 
-              // Skip rendering empty paragraphs in Page Mode
+              // Skip rendering empty paragraphs
               if (
                 tokens.length === 0 ||
                 (tokens.length === 1 && !tokens[0].trim())
               ) {
-                return <div key={originalIndex} className="h-4" />;
+                return null;
               }
 
               // Group tokens by sentence
@@ -214,7 +209,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                 <p
                   key={originalIndex}
                   id={`paragraph-${originalIndex}`}
-                  className="mb-6 leading-relaxed transition-colors p-2 rounded dark:text-slate-200"
+                  className="mb-3 leading-relaxed transition-colors rounded dark:text-slate-200"
                 >
                   {sentencesInPara.map((group, gIdx) => {
                     const isSentActive =
@@ -228,7 +223,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                       <span
                         key={gIdx}
                         className={cn(
-                          "transition-colors duration-200 rounded px-1",
+                          "transition-colors duration-200 rounded",
                           isSentActive
                             ? "bg-slate-200"
                             : hoveredSentenceIdx === group.sentenceIdx
@@ -287,7 +282,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                   (paragraphTokens[originalIndex].length === 1 &&
                     !paragraphTokens[originalIndex][0].trim())
                 ) {
-                  return <div key={originalIndex} className="h-4" />;
+                  return null;
                 }
 
                 // Find sentences that belong to this paragraph
@@ -300,7 +295,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                   );
 
                 return (
-                  <div key={originalIndex} className="mb-6">
+                  <div key={originalIndex} className="mb-3">
                     {sentencesInPara.length > 0 ? (
                       sentencesInPara.map((s) => (
                         <span
@@ -344,31 +339,6 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
           </div>
         )}
       </div>
-
-      {/* Mobile Pagination Controls (Bottom) */}
-      {readingMode === "page" && (
-        <div className="md:hidden flex items-center justify-center gap-4 mt-8 py-4 border-t border-slate-100">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
-            disabled={currentPage === 0}
-            className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
-          >
-            <ChevronLeft size={24} />
-          </button>
-          <span className="text-sm font-medium text-slate-500">
-            Page {currentPage + 1} of {totalPages}
-          </span>
-          <button
-            onClick={() =>
-              setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
-            }
-            disabled={currentPage >= totalPages - 1}
-            className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
-          >
-            <ChevronRight size={24} />
-          </button>
-        </div>
-      )}
     </div>
   );
 };

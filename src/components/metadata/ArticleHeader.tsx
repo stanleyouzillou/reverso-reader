@@ -36,7 +36,7 @@ export const ArticleHeader: React.FC<ArticleHeaderProps> = ({
       </h1>
 
       {/* 3. Metadata Row */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 pt-5">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500 dark:text-slate-200 border-t border-slate-100 dark:border-slate-800 pt-5">
         {/* Match Score */}
         <div
           className="flex items-center gap-2 group cursor-help"
@@ -52,31 +52,31 @@ export const ArticleHeader: React.FC<ArticleHeaderProps> = ({
 
         {/* Word Count */}
         <div className="flex items-center gap-1.5">
-          <Hash size={14} className="text-slate-400" />
+          <Hash size={14} className="text-slate-400 dark:text-slate-500" />
           <span>{wordCount} words</span>
         </div>
 
-        <span className="text-slate-300 hidden sm:inline">•</span>
+        <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
 
         {/* Read Time */}
         <div className="flex items-center gap-1.5">
-          <Clock size={14} className="text-slate-400" />
+          <Clock size={14} className="text-slate-400 dark:text-slate-500" />
           <span>{estimatedMinutes} min </span>
         </div>
 
-        <span className="text-slate-300 hidden sm:inline">•</span>
+        <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
 
         {/* Level */}
         <div className="flex items-center gap-1.5">
-          <BarChart3 size={14} className="text-slate-400" />
+          <BarChart3 size={14} className="text-slate-400 dark:text-slate-500" />
           <span className="font-medium">{level}</span>
         </div>
 
-        <span className="text-slate-300 hidden sm:inline">•</span>
+        <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
 
         {/* Date */}
         <div className="flex items-center gap-1.5">
-          <Calendar size={14} className="text-slate-400" />
+          <Calendar size={14} className="text-slate-400 dark:text-slate-500" />
           <span>{publishDate}</span>
         </div>
       </div>
