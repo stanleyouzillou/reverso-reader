@@ -43,7 +43,10 @@ export const useAudioPlayer = (
       // Check if current selectedVoice is valid and is an English voice
       const currentVoice = available.find((v) => v.voiceURI === selectedVoice);
       const isVoiceValidAndEnglish =
-        currentVoice && currentVoice.lang.startsWith("en");
+        currentVoice &&
+        (currentVoice.lang.startsWith("en") ||
+          currentVoice.lang.startsWith("en-") ||
+          currentVoice.lang.startsWith("en_"));
 
       // Set default voice if:
       // 1. No voice is selected
@@ -69,11 +72,15 @@ export const useAudioPlayer = (
               v.name.toLowerCase().includes("english") &&
               v.name.toLowerCase().includes("female")
           ) ||
-          available.find((v) => v.lang.replace("_", "-").startsWith("en-GB")) ||
-          available.find((v) => v.lang.startsWith("en")) ||
+          available.find((v) => {
+            const l = v.lang.toLowerCase().replace("_", "-");
+            return l === "en-gb" || l.startsWith("en-gb-");
+          }) ||
+          available.find((v) => v.lang.toLowerCase().startsWith("en")) ||
           available[0];
 
         if (defaultVoice) {
+          console.log("Setting default voice to:", defaultVoice.name, defaultVoice.lang);
           setSelectedVoice(defaultVoice.voiceURI);
         }
       }

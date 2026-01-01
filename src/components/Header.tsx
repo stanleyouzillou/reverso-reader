@@ -1,9 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { Settings, Moon, Sun, ChevronDown } from "lucide-react";
+import React, { useState } from "react";
+import {
+  Settings,
+  Moon,
+  Sun,
+  ChevronDown,
+  BookOpen,
+  Brain,
+  Copy,
+} from "lucide-react";
 import { cn } from "../lib/utils";
 import { SettingsPanel } from "./settings/SettingsPanel";
 import { useArticleIngestion } from "../hooks/useArticleIngestion";
 import { useReaderSettings } from "../hooks/useReaderSettings";
+import { useStore } from "../store/useStore";
+import { ReadingMode } from "../types";
 
 interface HeaderProps {
   showStickyTitle?: boolean;
@@ -13,11 +23,18 @@ export const Header: React.FC<HeaderProps> = ({ showStickyTitle = false }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { title } = useArticleIngestion();
   const { theme, setTheme } = useReaderSettings();
+  const { mode, setMode } = useStore();
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
   };
+
+  const modes: { id: ReadingMode; label: string; icon: React.ReactNode }[] = [
+    { id: "clean", label: "Read", icon: <BookOpen size={18} /> },
+    { id: "learning", label: "Learn", icon: <Brain size={18} /> },
+    { id: "dual", label: "Dual", icon: <Copy size={18} /> },
+  ];
 
   return (
     <div className="flex flex-col w-full relative z-50">
@@ -30,17 +47,18 @@ export const Header: React.FC<HeaderProps> = ({ showStickyTitle = false }) => {
       {/* Main Header */}
       <div
         className={cn(
-          "border-b py-3 px-6 flex justify-between items-center shadow-sm transition-colors duration-300",
+          "border-b py-2 px-4 sm:px-6 flex justify-between items-center shadow-sm transition-colors duration-300",
           theme === "dark"
             ? "bg-[#1A1A1A] border-[#333]"
             : "bg-white border-slate-100"
         )}
       >
-        <div className="flex items-center gap-3">
+        {/* Left Section: Logo */}
+        <div className="flex items-center gap-3 flex-shrink-0">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-serif italic font-bold text-xl shadow-sm">
             R
           </div>
-          <div className="flex flex-col">
+          <div className="hidden sm:flex flex-col">
             <h1
               className={cn(
                 "font-bold text-sm leading-tight transition-colors",
@@ -60,27 +78,68 @@ export const Header: React.FC<HeaderProps> = ({ showStickyTitle = false }) => {
           </div>
         </div>
 
-        {/* Sticky Title (Centered) */}
-        <div
-          className={cn(
-            "absolute left-1/2 -translate-x-1/2 flex items-center gap-2 transition-all duration-300",
-            showStickyTitle
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 -translate-y-2 pointer-events-none"
-          )}
-        >
-          <span
+        {/* Center Section: Mode Switcher & Sticky Title */}
+        <div className="flex-1 flex justify-center items-center relative h-10 px-4 overflow-hidden">
+          {/* Mode Switcher */}
+          <div
             className={cn(
-              "font-bold text-xs truncate max-w-[250px] sm:max-w-[400px]",
-              theme === "dark" ? "text-white" : "text-slate-900"
+              "flex items-center gap-1 bg-slate-100 dark:bg-[#2A2A2A] p-1 rounded-xl transition-all duration-500 ease-in-out shadow-inner",
+              showStickyTitle
+                ? "opacity-0 -translate-y-full pointer-events-none"
+                : "opacity-100 translate-y-0"
             )}
           >
-            {title}
-          </span>
-          <ChevronDown size={12} className="text-slate-400" />
+            {modes.map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setMode(m.id)}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 relative group",
+                  mode === m.id
+                    ? "bg-white dark:bg-[#444] text-blue-600 dark:text-blue-400 shadow-sm scale-105"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                )}
+                aria-label={m.label}
+              >
+                <span
+                  className={cn(
+                    "transition-transform duration-300 group-hover:scale-110",
+                    mode === m.id ? "scale-110" : ""
+                  )}
+                >
+                  {m.icon}
+                </span>
+                <span className="hidden md:inline">{m.label}</span>
+                {mode === m.id && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-blue-600 dark:bg-blue-400 rounded-full" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Sticky Title */}
+          <div
+            className={cn(
+              "absolute inset-0 flex justify-center items-center gap-2 transition-all duration-500 ease-in-out px-4",
+              showStickyTitle
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-full pointer-events-none"
+            )}
+          >
+            <span
+              className={cn(
+                "font-bold text-sm truncate max-w-full text-center",
+                theme === "dark" ? "text-white" : "text-slate-900"
+              )}
+            >
+              {title}
+            </span>
+            <ChevronDown size={14} className="text-slate-400 flex-shrink-0" />
+          </div>
         </div>
 
-        <div className="flex items-center gap-1 sm:gap-2">
+        {/* Right Section: Actions */}
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
