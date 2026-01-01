@@ -27,6 +27,8 @@ export const useAudioPlayer = (
     setCurrentWordIdx,
     selectedVoice,
     setSelectedVoice,
+    isPaused,
+    setIsPaused,
   } = useStore();
 
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -80,7 +82,11 @@ export const useAudioPlayer = (
           available[0];
 
         if (defaultVoice) {
-          console.log("Setting default voice to:", defaultVoice.name, defaultVoice.lang);
+          console.log(
+            "Setting default voice to:",
+            defaultVoice.name,
+            defaultVoice.lang
+          );
           setSelectedVoice(defaultVoice.voiceURI);
         }
       }
@@ -230,7 +236,11 @@ export const useAudioPlayer = (
     }
   }, [currentSentenceIdx, karaokeActive, containerRef]);
 
-  const togglePlay = () => setKaraokeActive(!karaokeActive);
+  const togglePlay = () => {
+    const newActive = !karaokeActive;
+    setKaraokeActive(newActive);
+    setIsPaused(!newActive);
+  };
   const setSpeed = (speed: number) => setPlaybackSpeed(speed);
   const setVoice = (voiceURI: string) => setSelectedVoice(voiceURI);
 

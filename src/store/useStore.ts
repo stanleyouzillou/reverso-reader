@@ -19,6 +19,7 @@ interface State {
   // Audio State
   currentSentenceIdx: number;
   currentWordIdx: number; // Added: For tracking current spoken word
+  isPaused: boolean; // Added: For tracking pause state
   selectedVoice: string | null;
 
   // Dictionary State
@@ -41,6 +42,7 @@ interface State {
   setPlaybackSpeed: (speed: number) => void;
   setCurrentSentenceIdx: (idx: number) => void;
   setCurrentWordIdx: (idx: number) => void; // Added: Action to set word index
+  setIsPaused: (paused: boolean) => void; // Added: Action to set pause state
   setSelectedVoice: (voice: string | null) => void;
   setSelectedDictionaryWord: (word: VocabItem | null) => void;
   setHoveredTokenId: (id: string | null) => void;
@@ -64,6 +66,7 @@ export const useStore = create<State>()(
       highlightedWords: [],
       currentSentenceIdx: 0,
       currentWordIdx: -1, // Default: no word highlighted
+      isPaused: true, // Start paused
       selectedVoice: null,
       selectedDictionaryWord: null,
       hoveredTokenId: null,
@@ -125,6 +128,7 @@ export const useStore = create<State>()(
       setCurrentSentenceIdx: (idx) =>
         set({ currentSentenceIdx: idx, currentWordIdx: -1 }), // Reset word index on sentence change
       setCurrentWordIdx: (idx) => set({ currentWordIdx: idx }),
+      setIsPaused: (paused) => set({ isPaused: paused }),
       setSelectedVoice: (voice) => set({ selectedVoice: voice }),
 
       resetVocabNotification: () => set({ vocabNotificationCount: 0 }),

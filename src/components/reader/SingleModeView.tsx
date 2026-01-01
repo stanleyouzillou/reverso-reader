@@ -21,6 +21,7 @@ interface SingleModeViewProps {
   sentenceToParagraphMap?: number[]; // Added for accurate click-to-play mapping
   tokenToSentenceMap?: number[];
   onPlaySentence?: (index: number) => void;
+  isPaused?: boolean;
 }
 
 export const SingleModeView: React.FC<SingleModeViewProps> = ({
@@ -36,6 +37,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
   sentenceToParagraphMap,
   tokenToSentenceMap,
   onPlaySentence,
+  isPaused = true,
 }) => {
   const { hoveredSentenceIdx, setHoveredSentenceIdx } = useStore();
   const [currentPage, setCurrentPage] = useState(0);
@@ -227,15 +229,12 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                       <span
                         key={gIdx}
                         className={cn(
-                          "transition-colors duration-200 rounded",
-                          isSentActive && mode !== "learning"
-                            ? "bg-slate-200"
-                            : hoveredSentenceIdx === group.sentenceIdx &&
-                              mode !== "learning"
+                          "transition-colors duration-200 rounded cursor-pointer",
+                          isSentActive
+                            ? "bg-slate-200 dark:bg-slate-800"
+                            : hoveredSentenceIdx === group.sentenceIdx
                             ? "bg-blue-100/50 dark:bg-blue-900/30"
-                            : mode !== "learning"
-                            ? "hover:bg-slate-100 cursor-pointer"
-                            : ""
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800/50"
                         )}
                         onMouseEnter={() => {
                           if (group.sentenceIdx !== -1) {
@@ -246,10 +245,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                           setHoveredSentenceIdx(null);
                         }}
                         onClick={() => {
-                          // Only allow click-to-play in Reading (Clean) Mode
-                          if (mode === "clean") {
-                            onPlaySentence?.(group.sentenceIdx);
-                          }
+                          onPlaySentence?.(group.sentenceIdx);
                         }}
                       >
                         {group.tokens.map((t, tIdx) => {
@@ -301,7 +297,6 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                           className={cn(
                             "transition-colors duration-200 rounded px-1 -mx-1 block md:inline cursor-pointer",
                             hoveredSentenceIdx === s.globalIdx &&
-                              mode !== "learning" &&
                               "bg-blue-100/50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
                           )}
                           onMouseEnter={() =>

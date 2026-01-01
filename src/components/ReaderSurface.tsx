@@ -36,6 +36,8 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
     karaokeActive,
     setCurrentSentenceIdx,
     setKaraokeActive,
+    isPaused,
+    setIsPaused,
   } = useStore();
 
   // Inline translation functionality
@@ -333,6 +335,7 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
             sentenceToParagraphMap={sentenceToParagraphMap} // Pass map for hover mode highlighting
             metadata={metadata}
             mode={mode}
+            isPaused={isPaused}
           />
         ) : (
           /* Standard / Sync Mode */
@@ -354,6 +357,7 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
             pairedSentences={pairedSentences}
             onPlaySentence={handlePlaySentence}
             sentenceToParagraphMap={sentenceToParagraphMap}
+            isPaused={isPaused}
           />
         )}
       </div>
