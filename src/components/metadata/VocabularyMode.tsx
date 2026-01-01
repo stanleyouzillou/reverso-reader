@@ -3,6 +3,7 @@ import { History, Bookmark, Lightbulb, Trash2 } from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { cn } from "../../lib/utils";
 import { DEMO_ARTICLE } from "../../constants/demoContent";
+import { VocabContextSentence } from "../vocabulary/VocabContextSentence";
 
 type Tab = "history" | "saved" | "learn";
 
@@ -10,7 +11,9 @@ interface VocabularyModeProps {
   className?: string;
 }
 
-export const VocabularyMode: React.FC<VocabularyModeProps> = ({ className = '' }) => {
+export const VocabularyMode: React.FC<VocabularyModeProps> = ({
+  className = "",
+}) => {
   const [activeTab, setActiveTab] = useState<Tab>("history");
   const { history, saved, toLearn, clearHistory, addToHistory, toggleSaved } =
     useStore();
@@ -27,84 +30,123 @@ export const VocabularyMode: React.FC<VocabularyModeProps> = ({ className = '' }
   const listKey = `${activeTab}-${activeList.length}`;
 
   return (
-    <div className={cn('flex flex-col h-full', className)} style={{ minHeight: 0 }}>
-      {/* Tabs - Mode selectors with larger click targets */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900" role="tablist">
+    <div
+      className={cn("flex flex-col h-full", className)}
+      style={{ minHeight: 0 }}
+    >
+      {/* Tabs - Minimalist redesigned selector */}
+      <div
+        className="flex border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950"
+        role="tablist"
+      >
         <button
           onClick={() => setActiveTab("history")}
           className={cn(
-            "flex-1 py-4 flex flex-col items-center gap-1 text-sm font-medium transition-all border-b-2 relative",
-            "min-h-[60px] flex items-center justify-center", // Larger click target
+            "flex-1 py-3 flex flex-col items-center gap-0.5 transition-all border-b-2 relative",
+            "min-h-[52px] justify-center", // Optimized height to match other modes
             activeTab === "history"
-              ? "text-blue-600 border-blue-600 bg-blue-50 dark:bg-blue-900/20"
-              : "text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              ? "text-slate-900 dark:text-slate-100 border-slate-900 dark:border-slate-100"
+              : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"
           )}
           role="tab"
           aria-selected={activeTab === "history"}
           aria-controls="vocabulary-history-panel"
           id="vocabulary-history-tab"
         >
-          <div className="relative mb-1">
-            <History size={18} className={activeTab === "history" ? "text-blue-600" : "text-slate-500"} aria-hidden="true" />
-            {history.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-white dark:border-slate-900" aria-label="Unread items" />
-            )}
+          <div className="relative">
+            <History
+              size={16}
+              className={
+                activeTab === "history"
+                  ? "text-slate-900 dark:text-slate-100"
+                  : "text-slate-400"
+              }
+              aria-hidden="true"
+            />
           </div>
-          <span className="text-xs">HISTORY</span>
+          <span className="text-[10px] font-semibold tracking-wide">
+            History
+          </span>
+          {history.length > 0 && (
+            <span
+              className="absolute top-2 right-4 w-1.5 h-1.5 bg-slate-400 dark:bg-slate-500 rounded-full"
+              aria-hidden="true"
+            />
+          )}
         </button>
         <button
           onClick={() => setActiveTab("saved")}
           className={cn(
-            "flex-1 py-4 flex flex-col items-center gap-1 text-sm font-medium transition-all border-b-2 relative",
-            "min-h-[60px] flex items-center justify-center", // Larger click target
+            "flex-1 py-3 flex flex-col items-center gap-0.5 transition-all border-b-2 relative",
+            "min-h-[52px] justify-center", // Optimized height to match other modes
             activeTab === "saved"
-              ? "text-blue-600 border-blue-600 bg-blue-50 dark:bg-blue-900/20"
-              : "text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              ? "text-slate-900 dark:text-slate-100 border-slate-900 dark:border-slate-100"
+              : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"
           )}
           role="tab"
           aria-selected={activeTab === "saved"}
           aria-controls="vocabulary-saved-panel"
           id="vocabulary-saved-tab"
         >
-          <div className="relative mb-1">
-            <Bookmark size={18} className={activeTab === "saved" ? "text-blue-600" : "text-slate-500"} aria-hidden="true" />
-            {saved.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 text-white text-[8px] flex items-center justify-center rounded-full border border-white dark:border-slate-800">
-                {saved.length}
-              </span>
-            )}
+          <div className="relative">
+            <Bookmark
+              size={16}
+              className={
+                activeTab === "saved"
+                  ? "text-slate-900 dark:text-slate-100"
+                  : "text-slate-400"
+              }
+              aria-hidden="true"
+            />
           </div>
-          <span className="text-xs">SAVED</span>
+          <span className="text-[10px] font-semibold tracking-wide">Saved</span>
+          {saved.length > 0 && (
+            <span className="absolute top-2 right-3 text-[9px] font-medium text-slate-500 dark:text-slate-400">
+              {saved.length}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setActiveTab("learn")}
           className={cn(
-            "flex-1 py-4 flex flex-col items-center gap-1 text-sm font-medium transition-all border-b-2 relative",
-            "min-h-[60px] flex items-center justify-center", // Larger click target
+            "flex-1 py-3 flex flex-col items-center gap-0.5 transition-all border-b-2 relative",
+            "min-h-[52px] justify-center", // Optimized height to match other modes
             activeTab === "learn"
-              ? "text-blue-600 border-blue-600 bg-blue-50 dark:bg-blue-900/20"
-              : "text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              ? "text-slate-900 dark:text-slate-100 border-slate-900 dark:border-slate-100"
+              : "text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-300"
           )}
           role="tab"
           aria-selected={activeTab === "learn"}
           aria-controls="vocabulary-learn-panel"
           id="vocabulary-learn-tab"
         >
-          <div className="relative mb-1">
-            <Lightbulb size={18} className={activeTab === "learn" ? "text-blue-600" : "text-slate-500"} aria-hidden="true" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-[8px] flex items-center justify-center rounded-full border border-white dark:border-slate-800">
+          <div className="relative">
+            <Lightbulb
+              size={16}
+              className={
+                activeTab === "learn"
+                  ? "text-slate-900 dark:text-slate-100"
+                  : "text-slate-400"
+              }
+              aria-hidden="true"
+            />
+          </div>
+          <span className="text-[10px] font-semibold tracking-wide">
+            To Learn
+          </span>
+          {toLearn.length > 0 && (
+            <span className="absolute top-2 right-2 text-[9px] font-medium text-slate-500 dark:text-slate-400">
               {toLearn.length}
             </span>
-          </div>
-          <span className="text-xs">TO LEARN</span>
+          )}
         </button>
       </div>
 
-      {/* Content - Submode content with improved visual hierarchy */}
-      <div className="flex-1 overflow-y-auto p-4 bg-white dark:bg-slate-900">
-        <div className="flex justify-between items-center mb-6">
+      {/* Content - Submode content with minimalist hierarchy */}
+      <div className="flex-1 overflow-y-auto p-4 bg-white dark:bg-slate-950">
+        <div className="flex justify-between items-center mb-4">
           <h4
-            className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
+            className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]"
             id="vocabulary-section-heading"
           >
             {activeTab === "history"
@@ -116,16 +158,16 @@ export const VocabularyMode: React.FC<VocabularyModeProps> = ({ className = '' }
           {activeTab === "history" && history.length > 0 && (
             <button
               onClick={clearHistory}
-              className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              className="text-[10px] font-semibold text-slate-400 hover:text-red-500 transition-colors uppercase tracking-wider"
               aria-label="Clear history"
             >
-              <Trash2 size={12} aria-hidden="true" /> Clear History
+              Clear
             </button>
           )}
         </div>
 
         <div
-          className="space-y-4"
+          className="space-y-2"
           key={listKey}
           role="tabpanel"
           aria-labelledby={`vocabulary-${activeTab}-tab`}
@@ -134,7 +176,9 @@ export const VocabularyMode: React.FC<VocabularyModeProps> = ({ className = '' }
           {activeList.length === 0 ? (
             <div className="text-center py-12 text-slate-500 dark:text-slate-400 text-sm">
               <p>No items yet.</p>
-              <p className="text-xs mt-2 text-slate-400 dark:text-slate-500">Words you look up will appear here</p>
+              <p className="text-xs mt-2 text-slate-400 dark:text-slate-500">
+                Words you look up will appear here
+              </p>
             </div>
           ) : (
             activeList.map((item, idx) => {
@@ -143,49 +187,51 @@ export const VocabularyMode: React.FC<VocabularyModeProps> = ({ className = '' }
                 <div
                   key={`${item.word}-${idx}`}
                   className={cn(
-                    "p-4 rounded-xl border shadow-sm hover:shadow-md transition-all group",
+                    "p-3 rounded-xl border transition-all group relative",
                     isSaved && activeTab === "history"
-                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                      : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800"
+                      ? "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+                      : "bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-800 shadow-sm"
                   )}
                   role="listitem"
                 >
-                  <div className="flex justify-between items-start mb-3">
-                    <span className="font-serif font-bold text-slate-800 dark:text-slate-200 text-lg">
+                  <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 mb-1.5 pr-8">
+                    <span className="font-serif font-bold text-slate-800 dark:text-slate-200 text-lg leading-tight">
                       {item.word}
                     </span>
-                    <span className={cn(
-                      "text-sm font-medium px-3 py-1 rounded-full border",
-                      isSaved || activeTab === "saved"
-                        ? "text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 border-blue-200 dark:border-blue-800"
-                        : "text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                    )}>
+                    <span
+                      className={cn(
+                        "text-[10px] leading-tight font-medium px-2 py-0.5 rounded-full border max-w-[140px] text-center",
+                        isSaved || activeTab === "saved"
+                          ? "text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700"
+                          : "text-slate-500 dark:text-slate-400 bg-transparent border-slate-200 dark:border-slate-800"
+                      )}
+                    >
                       {item.translation}
                     </span>
                   </div>
-                  {item.context && (
-                    <p className="text-sm text-slate-600 dark:text-slate-400 italic leading-relaxed mb-3">
-                      "...{item.context}..."
-                    </p>
-                  )}
-                  <div className="mt-3 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => toggleSaved(item)}
-                      className={cn(
-                        "p-2 rounded-lg transition-colors",
-                        isSaved
-                          ? "text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/40 hover:bg-blue-200 dark:hover:bg-blue-900/60"
-                          : "text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
-                      )}
-                      aria-label={isSaved ? "Unsave word" : "Save word"}
-                    >
-                      <Bookmark
-                        size={16}
-                        fill={isSaved ? "currentColor" : "none"}
-                        aria-hidden="true"
-                      />
-                    </button>
-                  </div>
+
+                  <VocabContextSentence
+                    sentence={item.context || ""}
+                    word={item.word}
+                  />
+
+                  <button
+                    onClick={() => toggleSaved(item)}
+                    className={cn(
+                      "absolute top-3 right-3 p-1.5 rounded-lg transition-all",
+                      "opacity-0 group-hover:opacity-100",
+                      isSaved
+                        ? "opacity-100 text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800"
+                        : "text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    )}
+                    aria-label={isSaved ? "Unsave word" : "Save word"}
+                  >
+                    <Bookmark
+                      size={14}
+                      fill={isSaved ? "currentColor" : "none"}
+                      aria-hidden="true"
+                    />
+                  </button>
                 </div>
               );
             })

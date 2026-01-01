@@ -3,6 +3,7 @@ import { BookOpen, Search } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useStore } from "../../store/useStore";
 import { DefinitionCard } from "../dictionary/DefinitionCard";
+import { VocabContextSentence } from "../vocabulary/VocabContextSentence";
 
 interface DictionaryModeProps {
   className?: string;
@@ -111,6 +112,11 @@ export const DictionaryMode: React.FC<DictionaryModeProps> = ({
                           {item.translation}
                         </span>
                       </div>
+                      <VocabContextSentence
+                        sentence={item.context || ""}
+                        word={item.word}
+                        className="mt-2 text-[12px]"
+                      />
                     </div>
                   ))}
               </div>
