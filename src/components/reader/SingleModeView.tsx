@@ -9,7 +9,11 @@ interface SingleModeViewProps {
   readingMode: "scrolling" | "page";
   paragraphTokens: string[][];
   l1Paragraphs: string[];
-  renderToken: (token: string, index: number) => React.ReactNode;
+  renderToken: (
+    token: string,
+    index: number,
+    isKaraoke?: boolean
+  ) => React.ReactNode;
   activeSentenceIdx?: number | null; // This maps to PARAGRAPH index in Single Mode
   currentSentenceIdx?: number; // Actual sentence index (0-N)
   activeWordIdx?: number; // Char index from speech synthesis
@@ -224,11 +228,14 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                         key={gIdx}
                         className={cn(
                           "transition-colors duration-200 rounded",
-                          isSentActive
+                          isSentActive && mode !== "learning"
                             ? "bg-slate-200"
-                            : hoveredSentenceIdx === group.sentenceIdx
+                            : hoveredSentenceIdx === group.sentenceIdx &&
+                              mode !== "learning"
                             ? "bg-blue-100/50 dark:bg-blue-900/30"
-                            : "hover:bg-slate-100 cursor-pointer"
+                            : mode !== "learning"
+                            ? "hover:bg-slate-100 cursor-pointer"
+                            : ""
                         )}
                         onMouseEnter={() => {
                           if (group.sentenceIdx !== -1) {
@@ -254,16 +261,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                             activeWordIdx < charCount + tokenLen;
                           charCount += tokenLen;
 
-                          return (
-                            <span
-                              key={t.globalIdx}
-                              className={cn(
-                                isWordActive ? "bg-yellow-400 rounded-sm" : ""
-                              )}
-                            >
-                              {renderToken(t.text, t.globalIdx)}
-                            </span>
-                          );
+                          return renderToken(t.text, t.globalIdx, isWordActive);
                         })}
                       </span>
                     );
@@ -303,6 +301,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                           className={cn(
                             "transition-colors duration-200 rounded px-1 -mx-1 block md:inline cursor-pointer",
                             hoveredSentenceIdx === s.globalIdx &&
+                              mode !== "learning" &&
                               "bg-blue-100/50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
                           )}
                           onMouseEnter={() =>

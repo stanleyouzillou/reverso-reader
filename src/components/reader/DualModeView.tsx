@@ -20,6 +20,7 @@ interface DualModeViewProps {
   onPlaySentence?: (index: number) => void;
   sentenceToParagraphMap?: number[];
   metadata: ArticleMetadata;
+  mode?: "clean" | "learning" | "dual";
 }
 
 export const DualModeView: React.FC<DualModeViewProps> = ({
@@ -37,6 +38,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
   onPlaySentence,
   sentenceToParagraphMap,
   metadata,
+  mode,
 }) => {
   const { showHintsEnabled } = useReaderSettings();
   const { highlightedWords, hoveredSentenceIdx, setHoveredSentenceIdx } =
@@ -88,6 +90,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
         className={cn(
           "transition-colors duration-200",
           isSentenceHovered &&
+            mode !== "learning" &&
             "bg-blue-100/50 dark:bg-blue-900/30 rounded px-1 -mx-1"
         )}
       >
@@ -135,6 +138,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
         className={cn(
           "transition-colors duration-200",
           isSentenceHovered &&
+            mode !== "learning" &&
             "bg-blue-100/50 dark:bg-blue-900/30 rounded px-1 -mx-1"
         )}
       >
@@ -283,7 +287,9 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               id={`sentence-${actualIdx}`}
               className={cn(
                 "grid grid-cols-2 gap-4 py-2 border-b border-slate-50 dark:border-slate-800/50 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group cursor-pointer",
-                isPlaying ? "bg-yellow-50/50 dark:bg-yellow-900/10" : ""
+                isPlaying && mode !== "learning"
+                  ? "bg-yellow-50/50 dark:bg-yellow-900/10"
+                  : ""
               )}
               onClick={() => onPlaySentence?.(actualIdx)}
               onMouseEnter={() => setHoveredSentenceIndex(actualIdx)}

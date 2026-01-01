@@ -254,7 +254,11 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
   };
 
   // Render Token Wrapper
-  const renderToken = (token: string, index: number) => {
+  const renderToken = (
+    token: string,
+    index: number,
+    isKaraoke: boolean = false
+  ) => {
     // Get the sentence index for this token
     const sentenceIndex = tokenToSentenceMap
       ? tokenToSentenceMap[index]
@@ -266,7 +270,7 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
         token={token}
         index={index}
         selection={selection}
-        karaokeIndex={-1} // Disabled old karaoke, handled by parent
+        karaokeIndex={isKaraoke ? index : -1}
         translatedSpans={translatedSpans}
         metadata={metadata}
         mode={mode}
@@ -328,6 +332,7 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
             onPlaySentence={handlePlaySentence}
             sentenceToParagraphMap={sentenceToParagraphMap} // Pass map for hover mode highlighting
             metadata={metadata}
+            mode={mode}
           />
         ) : (
           /* Standard / Sync Mode */
