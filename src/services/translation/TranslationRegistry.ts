@@ -1,9 +1,8 @@
 import { ITranslationService } from "./ITranslationService";
 import { GoogleTranslationService } from "./GoogleTranslationService";
-import { ReversoTranslationService } from "./ReversoTranslationService";
 import { GeminiTranslationService } from "./GeminiTranslationService";
 
-export type TranslationProvider = "google" | "reverso" | "gemini";
+export type TranslationProvider = "google" | "gemini";
 
 export class TranslationRegistry {
   private services: Record<TranslationProvider, ITranslationService>;
@@ -11,7 +10,6 @@ export class TranslationRegistry {
   constructor() {
     this.services = {
       google: new GoogleTranslationService(),
-      reverso: new ReversoTranslationService(),
       gemini: new GeminiTranslationService(),
     };
   }

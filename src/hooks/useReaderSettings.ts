@@ -17,7 +17,7 @@ export type FontFamily =
 export type Theme = "light" | "dark";
 export type ReadingMode = "scrolling" | "page";
 export type ColumnWidth = "centered" | "extended";
-export type TranslationProvider = "google" | "reverso" | "gemini";
+export type TranslationProvider = "google" | "gemini";
 export type TranslationMode = "inline" | "hover";
 export type TranslationGranularity = "word" | "chunk";
 

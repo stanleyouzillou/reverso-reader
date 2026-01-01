@@ -12,10 +12,29 @@ This document outlines the architecture for the translation service that support
 - Handles error cases consistently
 
 ### 2. Concrete Translation Services
-- GoogleTranslationService: Uses Google Cloud Translation API
-- ReversoTranslationService: Uses Reverso API
+- GoogleTranslationService: Uses Google Cloud Translation API (Primary)
 - GeminiTranslationService: Uses Google Gemini API
 - Each service implements the ITranslationService interface
+
+## Adding a New Translation Service
+
+To add a new translation provider to the application, follow these steps:
+
+1. **Create the Service Class**: 
+   - Create a new file in `src/services/translation/` (e.g., `MyNewService.ts`).
+   - Implement the `ITranslationService` interface.
+   - Handle API calls and response mapping within the `translate` method.
+
+2. **Update the Provider Type**:
+   - In `src/hooks/useReaderSettings.ts`, add your new provider name to the `TranslationProvider` type.
+
+3. **Register the Service**:
+   - In `src/services/translation/TranslationRegistry.ts`, import your new service.
+   - Add it to the `services` object in the `TranslationRegistry` constructor.
+   - Update the `TranslationProvider` type in `TranslationRegistry.ts`.
+
+4. **Update the UI**:
+   - In `src/components/settings/DebugSettings.tsx`, add your provider to the list of available services in the UI to allow users to select it.
 
 ### 3. Translation Registry
 - Manages available translation services

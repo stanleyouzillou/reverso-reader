@@ -41,49 +41,21 @@ export class MultiTranslationService {
     }
 
     try {
-      // Get translations from multiple providers
-      const providers: TranslationProvider[] = ["google", "reverso"];
+      // Get translations from Google provider
       const results: string[] = [];
       let dictionaryData: any | null = null;
 
-      // Try each provider and collect unique translations
-      for (const provider of providers) {
-        try {
-          const service = translationRegistry.getService(provider);
-
-          // Special handling for Reverso to get multiple translations if possible
-          if (provider === "reverso") {
-            const res = await fetch("/api/reverso/translation", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                text,
-                from: from === "en" ? "English" : from,
-                to: to === "fr" ? "French" : to,
-              }),
-            });
-            if (res.ok) {
-              const data = await res.json();
-              if (data.translations && Array.isArray(data.translations)) {
-                data.translations.forEach((t: string) => {
-                  if (t && !results.includes(t)) {
-                    results.push(t);
-                  }
-                });
-              }
-            }
-          } else {
-            const result = await service.translate(text, to, from, context);
-            if (result.text && !results.includes(result.text)) {
-              results.push(result.text);
-            }
-            if (result.dictionary && !dictionaryData) {
-              dictionaryData = result.dictionary;
-            }
-          }
-        } catch (error) {
-          console.error(`Error with ${provider} translation:`, error);
+      try {
+        const service = translationRegistry.getService("google");
+        const result = await service.translate(text, to, from, context);
+        if (result.text && !results.includes(result.text)) {
+          results.push(result.text);
         }
+        if (result.dictionary && !dictionaryData) {
+          dictionaryData = result.dictionary;
+        }
+      } catch (error) {
+        console.error(`Error with google translation:`, error);
       }
 
       console.log(`Translations for "${text}":`, results);

@@ -16,7 +16,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import translateRoutes from "./routes/translate.js";
-import reversoRoutes from "./routes/reverso.js";
 
 // for esm mode
 const __filename = fileURLToPath(import.meta.url);
@@ -33,7 +32,6 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
  */
 app.use("/api/auth", authRoutes);
 app.use("/api/translate", translateRoutes);
-app.use("/api/reverso", reversoRoutes);
 
 /**
  * health

@@ -37,7 +37,7 @@ export const DebugSettings: React.FC = () => {
             Translation Service
           </label>
           <div className="flex flex-col gap-2">
-            {(["google", "reverso", "gemini"] as const).map((provider) => (
+            {(["google", "gemini"] as const).map((provider) => (
               <button
                 key={provider}
                 onClick={() => setTranslationProvider(provider)}
@@ -58,7 +58,7 @@ export const DebugSettings: React.FC = () => {
             ))}
           </div>
           <p className="text-xs text-slate-400 mt-2">
-            Select the backend provider for translations. "Reverso" provides context-aware results.
+            Select the backend provider for translations. Google Translate is the primary provider.
           </p>
         </div>
 
