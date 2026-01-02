@@ -82,7 +82,7 @@ export const useReaderSettings = create<ReaderSettingsState>()(
       minimalistSettings: {
         enabled: true,
         popupDelay: 0,
-        highlightColor: "rgba(59, 130, 246, 0.2)", // Subtle blue tint
+        highlightColor: "rgba(59, 130, 246, 0.08)", // Even more subtle blue tint
         position: "above",
       },
       debugSettings: {

@@ -405,7 +405,10 @@ export const Token: React.FC<TokenProps> = memo(
     const minimalistHoverStyle =
       translationMode === "minimalist" && isCurrentlyHovered
         ? {
-            backgroundColor: "var(--minimalist-highlight-color)",
+            backgroundColor:
+              isTranslated || isSaved
+                ? undefined // Let the state classes handle the background
+                : "var(--minimalist-highlight-color)",
           }
         : {};
 
@@ -567,7 +570,10 @@ export const Token: React.FC<TokenProps> = memo(
         className={cn(
           "transition-colors duration-200 cursor-pointer rounded px-0 mx-0",
           tokenStyling,
-          isHinted && "hint-underline"
+          isHinted && "hint-underline",
+          // Word State Styles
+          isSaved && "word-state-saved",
+          isTranslated && !isSaved && "word-state-translated"
         )}
         data-token-index={index}
         data-sentence-id={sentenceIndex}
