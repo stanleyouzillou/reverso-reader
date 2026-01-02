@@ -55,24 +55,8 @@ export const Layout: React.FC = () => {
 
         <FloatingToolbar sidebarCollapsed={sidebarCollapsed} />
 
-        {/* Toggle button and sidebar container */}
+        {/* Sidebar container */}
         <div className="relative h-full">
-          {/* Toggle button positioned relative to the sidebar */}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={cn(
-              "absolute -left-[1.25rem] top-[50%] z-50 flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-full border bg-white shadow-lg transition-transform hover:scale-110 dark:bg-slate-900 dark:border-slate-800",
-              sidebarCollapsed ? "" : "rotate-0"
-            )}
-            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {sidebarCollapsed ? (
-              <ChevronLeft className="h-[1.25rem] w-[1.25rem] text-slate-600" />
-            ) : (
-              <ChevronRight className="h-[1.25rem] w-[1.25rem] text-slate-600" />
-            )}
-          </button>
-
           {/* Sidebar with conditional width */}
           <div
             className={cn(
@@ -83,7 +67,10 @@ export const Layout: React.FC = () => {
                 "max-md:fixed max-md:inset-0 max-md:z-[60] max-md:w-full"
             )}
           >
-            <Sidebar collapsed={sidebarCollapsed} />
+            <Sidebar 
+              collapsed={sidebarCollapsed} 
+              onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+            />
           </div>
 
           {/* Backdrop for mobile/extreme zoom sidebar */}

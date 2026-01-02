@@ -7,13 +7,17 @@ import { DictionaryMode } from "./metadata/DictionaryMode";
 import { AIAssistantMode } from "./metadata/AIAssistantMode";
 import { VocabularyMode } from "./metadata/VocabularyMode";
 import { DeckIcon } from "./metadata/DeckIcon";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface SidebarProps {
   collapsed?: boolean;
+  onToggle?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  collapsed = false,
+  onToggle,
+}) => {
   const {
     sidebarMode,
     setSidebarMode,
@@ -32,6 +36,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
   if (collapsed) {
     return (
       <div className="w-full bg-white dark:bg-slate-900 border-l border-slate-100 dark:border-slate-800 flex flex-col h-full shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10 transition-colors overflow-hidden">
+        {/* Collapse Toggle Button at Top */}
+        <div className="pt-4 pb-2 flex justify-center border-b border-slate-100 dark:border-slate-800">
+          <button
+            onClick={onToggle}
+            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 hover:text-blue-600"
+            title="Expand sidebar"
+            aria-label="Expand sidebar"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        </div>
+
         {/* Collapsed sidebar with just the mode selector */}
         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800">
           <button
@@ -99,7 +115,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
             title="AI Assistant"
             aria-label="AI Assistant"
           >
-            <Sparkles size={"1.25rem" as any} className={sidebarMode === "ai" ? "text-blue-600" : "text-slate-400"} />
+            <Sparkles
+              size={"1.25rem" as any}
+              className={
+                sidebarMode === "ai" ? "text-blue-600" : "text-slate-400"
+              }
+            />
           </button>
         </div>
 
@@ -119,6 +140,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
 
   return (
     <div className="w-full bg-white dark:bg-slate-900 border-l border-slate-100 dark:border-slate-800 flex flex-col h-full shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)] z-10 transition-colors overflow-hidden">
+      {/* Collapse Toggle Button at Top */}
+      <div className="pt-4 pb-2 px-4 flex justify-end border-b border-slate-100 dark:border-slate-800">
+        <button
+          onClick={onToggle}
+          className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 hover:text-blue-600"
+          title="Collapse sidebar"
+          aria-label="Collapse sidebar"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
       {/* Mode Selector */}
       <ModeSelector
         activeMode={sidebarMode}
@@ -141,7 +174,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
           onClick={handleCreateExercises}
           className="w-full flex items-center justify-center gap-[0.5rem] py-[0.75rem] px-[1rem] bg-blue-600 hover:bg-blue-700 text-white rounded-[0.75rem] font-bold transition-all shadow-md hover:shadow-lg active:scale-[0.98] group"
         >
-          <Sparkles size={"1.125rem" as any} className="group-hover:animate-pulse" />
+          <Sparkles
+            size={"1.125rem" as any}
+            className="group-hover:animate-pulse"
+          />
           <span className="text-[0.9rem]">Create Exercises</span>
         </button>
       </div>
