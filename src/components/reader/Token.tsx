@@ -106,6 +106,26 @@ export const Token: React.FC<TokenProps> = memo(
     const isMinimalistActive = minimalistTokenId === tokenId;
     const isKaraoke = index === karaokeIndex;
 
+    // Handle outside clicks to close minimalist popup
+    useEffect(() => {
+      if (!isMinimalistActive) return;
+
+      const handleClickOutside = (event: MouseEvent) => {
+        if (
+          tokenRef.current &&
+          !tokenRef.current.contains(event.target as Node)
+        ) {
+          setMinimalistTokenId(null);
+        }
+      };
+
+      // Use capture phase to ensure we catch the event before it's stopped by other elements
+      document.addEventListener("mousedown", handleClickOutside, true);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside, true);
+      };
+    }, [isMinimalistActive, setMinimalistTokenId]);
+
     // Determine if this sentence is hovered in dual/sync mode
     const isSentenceHovered =
       translationMode !== "minimalist" && // Disable sentence highlight in minimalist mode
@@ -138,10 +158,6 @@ export const Token: React.FC<TokenProps> = memo(
       if (translationMode === "hover" && mode !== "clean" && isWord(token)) {
         setHoveredTokenId(tokenId);
         addTranslatedWord(token);
-
-        if (sentenceIndex !== undefined) {
-          setHoveredSentenceIdx(sentenceIndex);
-        }
 
         const sourceLang = normalizeLanguageCode(sourceLanguage || "en");
         const targetLang = normalizeLanguageCode(l2Language || "fr");
@@ -203,23 +219,11 @@ export const Token: React.FC<TokenProps> = memo(
             if (useStore.getState().hoveredTokenId === tokenId) {
               setHoveredTokenId(null);
             }
-            if (
-              sentenceIndex !== undefined &&
-              useStore.getState().hoveredSentenceIdx === sentenceIndex
-            ) {
-              setHoveredSentenceIdx(null);
-            }
           },
           translationMode === "minimalist" ? 150 : 300 // Increased minimalist delay slightly for stability
         );
       }
-    }, [
-      translationMode,
-      setHoveredTokenId,
-      setHoveredSentenceIdx,
-      tokenId,
-      sentenceIndex,
-    ]);
+    }, [translationMode, tokenId, setHoveredTokenId]);
 
     const handlePopupMouseEnter = useCallback(() => {
       if (leaveTimeoutRef.current) {

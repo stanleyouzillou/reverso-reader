@@ -199,12 +199,14 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
               const sentencesInPara: {
                 sentenceIdx: number;
                 tokens: { text: string; globalIdx: number }[];
+                l1?: string;
               }[] = [];
 
               if (tokenToSentenceMap) {
                 let currentGroup: {
                   sentenceIdx: number;
                   tokens: { text: string; globalIdx: number }[];
+                  l1?: string;
                 } | null = null;
 
                 tokens.forEach((token, tIndex) => {
@@ -212,7 +214,11 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                   const sentIdx = tokenToSentenceMap[globalIdx];
 
                   if (!currentGroup || currentGroup.sentenceIdx !== sentIdx) {
-                    currentGroup = { sentenceIdx: sentIdx, tokens: [] };
+                    currentGroup = {
+                      sentenceIdx: sentIdx,
+                      tokens: [],
+                      l1: pairedSentences[sentIdx]?.l1,
+                    };
                     sentencesInPara.push(currentGroup);
                   }
                   currentGroup.tokens.push({ text: token, globalIdx });
@@ -293,6 +299,10 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                             group.sentenceIdx === currentSentenceIdx &&
                             currentSentenceIdx !== -1;
 
+                          const isHovered =
+                            hoveredSentenceIdx === group.sentenceIdx;
+                          const showMatchingHighlight = isTranslationExpanded;
+
                           // Track char index for word highlighting within this sentence
                           let charCount = 0;
 
@@ -300,14 +310,11 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                             <span
                               key={gIdx}
                               className={cn(
-                                "cursor-pointer",
+                                "cursor-pointer transition-all duration-300 ease-in-out px-0.5",
                                 isSentActive
-                                  ? "bg-slate-200 dark:bg-slate-800 rounded-sm"
-                                  : translationMode !== "minimalist" &&
-                                    hoveredSentenceIdx === group.sentenceIdx
-                                  ? "bg-blue-100/50 dark:bg-blue-900/30 rounded-sm"
-                                  : translationMode !== "minimalist"
-                                  ? "hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-sm"
+                                  ? "bg-amber-100/80 dark:bg-amber-900/40 rounded-sm shadow-[0_0_0_1px_rgba(245,158,11,0.2)]"
+                                  : showMatchingHighlight && isHovered
+                                  ? "bg-blue-100/60 dark:bg-blue-900/40 rounded-sm shadow-[0_0_0_2px_rgba(59,130,246,0.15)]"
                                   : ""
                               )}
                               style={{
@@ -315,15 +322,22 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                                 boxDecorationBreak: "clone",
                               }}
                               onMouseEnter={() => {
-                                if (group.sentenceIdx !== -1) {
+                                if (
+                                  isTranslationExpanded &&
+                                  group.sentenceIdx !== -1
+                                ) {
                                   setHoveredSentenceIdx(group.sentenceIdx);
                                 }
                               }}
                               onMouseLeave={() => {
                                 setHoveredSentenceIdx(null);
                               }}
-                              onClick={() => {
-                                onPlaySentence?.(group.sentenceIdx);
+                              onClick={(e) => {
+                                // In minimalist mode, we want clicks to go to tokens for translation
+                                // Only trigger playback if NOT in minimalist mode
+                                if (translationMode !== "minimalist") {
+                                  onPlaySentence?.(group.sentenceIdx);
+                                }
                               }}
                             >
                               {group.tokens.map((t) => {
@@ -359,9 +373,26 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                         )}
                       >
                         <div className="pl-4 border-l-2 border-blue-100 dark:border-blue-900/50 py-1">
-                          <p className="text-slate-500 dark:text-slate-400 italic text-[0.95em] leading-relaxed">
-                            {l1Paragraphs[originalIndex]}
-                          </p>
+                          <div className="text-slate-500 dark:text-slate-400 italic text-[0.95em] leading-relaxed">
+                            {sentencesInPara.map((pair, pIdx) => (
+                              <span
+                                key={pIdx}
+                                className={cn(
+                                  "transition-all duration-200 ease-in-out rounded-sm px-0.5",
+                                  hoveredSentenceIdx === pair.sentenceIdx
+                                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-[0_0_0_2px_rgba(59,130,246,0.05)]"
+                                    : "hover:bg-slate-50 dark:hover:bg-slate-800/30"
+                                )}
+                                onMouseEnter={() =>
+                                  setHoveredSentenceIdx(pair.sentenceIdx)
+                                }
+                                onMouseLeave={() => setHoveredSentenceIdx(null)}
+                              >
+                                {pair.l1}
+                                {pIdx < sentencesInPara.length - 1 && " "}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
