@@ -1,9 +1,17 @@
 import React, { useState } from "react";
-import { History, Bookmark, Lightbulb, Trash2 } from "lucide-react";
+import {
+  History,
+  Bookmark,
+  Lightbulb,
+  Trash2,
+  Volume2,
+  BookOpen,
+} from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { cn } from "../../lib/utils";
 import { DEMO_ARTICLE } from "../../constants/demoContent";
 import { VocabContextSentence } from "../vocabulary/VocabContextSentence";
+import { VocabItem } from "../../types";
 
 type Tab = "history" | "saved" | "learn";
 
@@ -15,8 +23,19 @@ export const VocabularyMode: React.FC<VocabularyModeProps> = ({
   className = "",
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>("history");
-  const { history, saved, toLearn, clearHistory, addToHistory, toggleSaved } =
-    useStore();
+  const {
+    history,
+    saved,
+    toLearn,
+    clearHistory,
+    addToHistory,
+    toggleSaved,
+    setSidebarMode,
+    setSelectedDictionaryWord,
+    setSidebarCollapsed,
+  } = useStore();
+
+  const [isSpeaking, setIsSpeaking] = useState<string | null>(null);
 
   // Debugging log to check history updates
   React.useEffect(() => {
@@ -28,6 +47,29 @@ export const VocabularyMode: React.FC<VocabularyModeProps> = ({
 
   // Use a key to force re-render if needed, though React should handle this via the hook
   const listKey = `${activeTab}-${activeList.length}`;
+
+  const handleSpeak = (text: string, id: string) => {
+    if ("speechSynthesis" in window) {
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      // Try to find a good voice for L2 (assuming English for demo)
+      utterance.lang = DEMO_ARTICLE.l2_language || "en-US";
+
+      utterance.onstart = () => setIsSpeaking(id);
+      utterance.onend = () => setIsSpeaking(null);
+      utterance.onerror = () => setIsSpeaking(null);
+
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  const handleOpenDictionary = (item: VocabItem) => {
+    setSelectedDictionaryWord(item);
+    setSidebarMode("dictionary");
+    setSidebarCollapsed(false);
+  };
 
   return (
     <div
@@ -197,9 +239,37 @@ export const VocabularyMode: React.FC<VocabularyModeProps> = ({
                   role="listitem"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 mb-1.5 pr-8">
-                    <span className="font-serif font-bold text-slate-800 dark:text-slate-200 text-lg leading-tight">
-                      {item.word}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-serif font-bold text-slate-800 dark:text-slate-200 text-lg leading-tight">
+                        {item.word}
+                      </span>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSpeak(item.word, `${item.word}-${idx}`);
+                          }}
+                          className={cn(
+                            "p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-blue-500 transition-colors",
+                            isSpeaking === `${item.word}-${idx}` &&
+                              "text-blue-500 bg-blue-50 dark:bg-blue-900/30"
+                          )}
+                          title="Listen"
+                        >
+                          <Volume2 size={"0.875rem" as any} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDictionary(item);
+                          }}
+                          className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 hover:text-blue-500 transition-colors"
+                          title="Open Dictionary"
+                        >
+                          <BookOpen size={"0.875rem" as any} />
+                        </button>
+                      </div>
+                    </div>
                     <span
                       className={cn(
                         "text-[0.625rem] leading-tight font-medium px-2 py-0.5 rounded-full border max-w-[8.75rem] text-center",

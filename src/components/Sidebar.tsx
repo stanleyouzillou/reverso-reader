@@ -25,6 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     saved,
     vocabNotificationCount,
     resetVocabNotification,
+    setSidebarCollapsed,
   } = useStore();
 
   const handleCreateExercises = () => {
@@ -51,7 +52,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Collapsed sidebar with just the mode selector */}
         <div className="flex flex-col border-b border-slate-100 dark:border-slate-800">
           <button
-            onClick={() => setSidebarMode("dictionary")}
+            onClick={() => {
+              setSidebarMode("dictionary");
+              setSidebarCollapsed(false);
+            }}
             className={cn(
               "py-[0.75rem] flex flex-col items-center gap-[0.25rem] text-[0.625rem] font-medium transition-colors border-b-2",
               sidebarMode === "dictionary"
@@ -80,6 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => {
               setSidebarMode("vocabulary");
               resetVocabNotification();
+              setSidebarCollapsed(false);
             }}
             className={cn(
               "py-[0.75rem] flex flex-col items-center gap-[0.25rem] text-[0.625rem] font-medium transition-colors border-b-2 relative",
@@ -105,7 +110,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
           </button>
           <button
-            onClick={() => setSidebarMode("ai")}
+            onClick={() => {
+              setSidebarMode("ai");
+              setSidebarCollapsed(false);
+            }}
             className={cn(
               "py-[0.75rem] flex flex-col items-center gap-[0.25rem] text-[0.625rem] font-medium transition-colors border-b-2",
               sidebarMode === "ai"
