@@ -34,6 +34,10 @@ interface State {
   minimalistTranslation: string | null;
   isMinimalistLoading: boolean;
 
+  // Word States (Session-based)
+  translatedWords: Record<string, number>; // word -> timestamp
+  lastActivity: number;
+
   // Actions
   setMode: (mode: ReadingMode) => void;
   setSidebarMode: (mode: SidebarMode) => void;
@@ -42,6 +46,10 @@ interface State {
   ) => void;
   addToHistory: (item: VocabItem) => void;
   toggleSaved: (item: VocabItem) => void;
+  addTranslatedWord: (word: string) => void;
+  clearTranslatedWords: () => void;
+  updateActivity: () => void;
+  checkSessionTimeout: () => void;
   toggleHighlightedWord: (word: string) => void;
   setKaraokeActive: (active: boolean) => void;
   setPlaybackSpeed: (speed: number) => void;
@@ -82,24 +90,55 @@ export const useStore = create<State>()(
       minimalistTokenId: null,
       minimalistTranslation: null,
       isMinimalistLoading: false,
+      translatedWords: {},
+      lastActivity: Date.now(),
 
       setMode: (mode) => {
-        set({ mode });
+        set({ mode, lastActivity: Date.now() });
         // Automatically trigger Page mode for Learning and Dual modes
         if (mode === "learning" || mode === "dual") {
           useReaderSettings.getState().setReadingMode("page");
         }
       },
-      setSidebarMode: (mode) => set({ sidebarMode: mode }),
-      setDualModeOption: (option) => set({ dualModeOption: option }),
+      setSidebarMode: (mode) =>
+        set({ sidebarMode: mode, lastActivity: Date.now() }),
+      setDualModeOption: (option) =>
+        set({ dualModeOption: option, lastActivity: Date.now() }),
       setSelectedDictionaryWord: (word) =>
-        set({ selectedDictionaryWord: word }),
+        set({ selectedDictionaryWord: word, lastActivity: Date.now() }),
       setHoveredTokenId: (id) => set({ hoveredTokenId: id }),
       setHoveredSentenceIdx: (idx) => set({ hoveredSentenceIdx: idx }),
       setMinimalistTokenId: (id) => set({ minimalistTokenId: id }),
       setMinimalistTranslation: (translation) =>
         set({ minimalistTranslation: translation }),
-      setIsMinimalistLoading: (loading) => set({ isMinimalistLoading: loading }),
+      setIsMinimalistLoading: (loading) =>
+        set({ isMinimalistLoading: loading }),
+
+      addTranslatedWord: (word) =>
+        set((state) => {
+          const normalizedWord = word.toLowerCase().trim();
+          return {
+            translatedWords: {
+              ...state.translatedWords,
+              [normalizedWord]: Date.now(),
+            },
+            lastActivity: Date.now(),
+          };
+        }),
+
+      clearTranslatedWords: () => set({ translatedWords: {} }),
+
+      updateActivity: () => set({ lastActivity: Date.now() }),
+
+      checkSessionTimeout: () =>
+        set((state) => {
+          const now = Date.now();
+          const thirtyMinutes = 30 * 60 * 1000;
+          if (now - state.lastActivity > thirtyMinutes) {
+            return { translatedWords: {}, lastActivity: now };
+          }
+          return state;
+        }),
 
       addToHistory: (item) =>
         set((state) => {
@@ -110,13 +149,24 @@ export const useStore = create<State>()(
 
       toggleSaved: (item) =>
         set((state) => {
-          const isSaved = state.saved.some((i) => i.word === item.word);
+          const normalizedWord = item.word.toLowerCase().trim();
+          const isSaved = state.saved.some(
+            (i) => i.word.toLowerCase().trim() === normalizedWord
+          );
+
           if (isSaved) {
-            return { saved: state.saved.filter((i) => i.word !== item.word) };
+            return {
+              saved: state.saved.filter(
+                (i) => i.word.toLowerCase().trim() !== normalizedWord
+              ),
+              lastActivity: Date.now(),
+            };
           }
+
           return {
             saved: [item, ...state.saved],
             vocabNotificationCount: state.vocabNotificationCount + 1,
+            lastActivity: Date.now(),
           };
         }),
 
@@ -152,6 +202,10 @@ export const useStore = create<State>()(
     }),
     {
       name: "reverso-reader-storage",
+      partialize: (state) => {
+        const { translatedWords, lastActivity, ...rest } = state;
+        return rest;
+      },
     }
   )
 );

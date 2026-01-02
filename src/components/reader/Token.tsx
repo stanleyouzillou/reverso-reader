@@ -82,12 +82,21 @@ export const Token: React.FC<TokenProps> = memo(
     const setIsMinimalistLoading = useStore(
       (state) => state.setIsMinimalistLoading
     );
-    const saved = useStore((state) => state.saved);
+    const isSaved = useStore((state) =>
+      state.saved.some(
+        (item) => item.word.toLowerCase() === token.toLowerCase().trim()
+      )
+    );
+    const isTranslated = useStore(
+      (state) => token.toLowerCase().trim() in state.translatedWords
+    );
+    const addTranslatedWord = useStore((state) => state.addTranslatedWord);
+    const addToHistory = useStore((state) => state.addToHistory);
     const highlightedWords = useStore((state) => state.highlightedWords);
     const toggleSaved = useStore((state) => state.toggleSaved);
     const [hoverTranslations, setHoverTranslations] = useState<string[]>([]);
     const [isHoverLoading, setIsHoverLoading] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
+    const [shouldAnimate, setShouldAnimate] = useState(false);
     const tokenRef = useRef<HTMLSpanElement>(null);
     const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -103,12 +112,16 @@ export const Token: React.FC<TokenProps> = memo(
       sentenceIndex !== undefined &&
       hoveredSentenceIdx === sentenceIndex;
 
-    // Check if the current token is saved
+    // Track when a word becomes translated to trigger animation
+    const prevIsTranslatedRef = useRef(isTranslated);
     useEffect(() => {
-      setIsSaved(
-        saved.some((item) => item.word.toLowerCase() === token.toLowerCase())
-      );
-    }, [saved, token]);
+      if (isTranslated && !prevIsTranslatedRef.current) {
+        setShouldAnimate(true);
+        const timer = setTimeout(() => setShouldAnimate(false), 1200);
+        return () => clearTimeout(timer);
+      }
+      prevIsTranslatedRef.current = isTranslated;
+    }, [isTranslated]);
 
     const handleMouseEnter = useCallback(async () => {
       if (leaveTimeoutRef.current) {
@@ -123,6 +136,7 @@ export const Token: React.FC<TokenProps> = memo(
 
       if (translationMode === "hover" && mode !== "clean" && isWord(token)) {
         setHoveredTokenId(tokenId);
+        addTranslatedWord(token);
 
         if (sentenceIndex !== undefined) {
           setHoveredSentenceIdx(sentenceIndex);
@@ -261,6 +275,7 @@ export const Token: React.FC<TokenProps> = memo(
         }
 
         if (translationMode === "minimalist") {
+          addTranslatedWord(token);
           setMinimalistTokenId(tokenId);
           setMinimalistTranslation(null);
           setIsMinimalistLoading(true);
@@ -289,6 +304,16 @@ export const Token: React.FC<TokenProps> = memo(
           if (cached && cached.translations.length > 0) {
             setMinimalistTranslation(cached.translations[0]);
             setIsMinimalistLoading(false);
+
+            // Add to history even if cached
+            addToHistory({
+              word: token,
+              translation: cached.translations[0],
+              level: metadata.level,
+              status: WordStatus.Learning,
+              context: sentenceText,
+              timestamp: Date.now(),
+            });
           } else {
             // Add artificial delay if configured
             if (minimalistSettings.popupDelay > 0) {
@@ -309,6 +334,14 @@ export const Token: React.FC<TokenProps> = memo(
 
             if (result && !result.error && result.translations.length > 0) {
               setMinimalistTranslation(result.translations[0]);
+              addToHistory({
+                word: token,
+                translation: result.translations[0],
+                level: metadata.level,
+                status: WordStatus.Learning,
+                context: sentenceText,
+                timestamp: Date.now(),
+              });
             } else {
               const fallbackResult = await translateText(
                 token,
@@ -319,6 +352,14 @@ export const Token: React.FC<TokenProps> = memo(
               if (useStore.getState().minimalistTokenId !== tokenId) return;
               if (fallbackResult && !fallbackResult.error) {
                 setMinimalistTranslation(fallbackResult.text);
+                addToHistory({
+                  word: token,
+                  translation: fallbackResult.text,
+                  level: metadata.level,
+                  status: WordStatus.Learning,
+                  context: sentenceText,
+                  timestamp: Date.now(),
+                });
               } else {
                 setMinimalistTranslation("No translation found");
               }
@@ -390,12 +431,16 @@ export const Token: React.FC<TokenProps> = memo(
           onPointerEnter={handleMouseEnter}
           onPointerLeave={handleMouseLeave}
           className={cn(
-            "relative cursor-pointer inline transition-all duration-200 ease-out z-10", // Updated duration and added z-10
+            "relative cursor-pointer inline transition-all duration-200 ease-out z-10",
             tokenStyling,
             tokenHighlightClass,
             isKaraoke && "bg-yellow-200 dark:bg-yellow-900/60 rounded",
             isSentenceHovered && "bg-blue-100/50 dark:bg-blue-900/30",
-            isHinted && !isHighlightActive && "hint-underline"
+            isHinted && !isHighlightActive && "hint-underline",
+            // Word State Styles
+            isSaved && "word-state-saved",
+            isTranslated && !isSaved && "word-state-translated",
+            shouldAnimate && "animate-translated-underline"
           )}
           style={{
             WebkitBoxDecorationBreak: "clone",

@@ -170,6 +170,22 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
   const { translateText } = useTranslationEngine();
   const { addToHistory } = useVocabulary();
 
+  // Handle session timeout for translated words
+  useEffect(() => {
+    const store = useStore.getState();
+    store.checkSessionTimeout();
+
+    const interval = setInterval(() => {
+      store.checkSessionTimeout();
+    }, 60000); // Check every minute
+
+    return () => {
+      clearInterval(interval);
+      // Clear translated words on "article close" (unmount)
+      store.clearTranslatedWords();
+    };
+  }, []);
+
   // Local state for persistent visual spans
   const [translatedSpans, setTranslatedSpans] = useState<TranslatedSpan[]>([]);
   const [overlayPositions, setOverlayPositions] = useState<
@@ -289,6 +305,12 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
   // Orchestrator: Handle Word Click
   const handleWordClick = (index: number) => {
     if (mode === "clean") return;
+
+    // Add to translated words (SAVED priority is handled in the store)
+    const clickedWord = allTokens[index];
+    if (isWord(clickedWord)) {
+      useStore.getState().addTranslatedWord(clickedWord);
+    }
 
     // Pause Audio Mode if active
     if (karaokeActive) {
