@@ -24,6 +24,7 @@ interface State {
 
   // Dictionary State
   selectedDictionaryWord: VocabItem | null;
+  sidebarCollapsed: boolean;
 
   // Hover Lookup State
   hoveredTokenId: string | null;
@@ -58,6 +59,7 @@ interface State {
   setIsPaused: (paused: boolean) => void; // Added: Action to set pause state
   setSelectedVoice: (voice: string | null) => void;
   setSelectedDictionaryWord: (word: VocabItem | null) => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
   setHoveredTokenId: (id: string | null) => void;
   setHoveredSentenceIdx: (idx: number | null) => void;
   setMinimalistTokenId: (id: string | null) => void;
@@ -85,6 +87,7 @@ export const useStore = create<State>()(
       isPaused: true, // Start paused
       selectedVoice: null,
       selectedDictionaryWord: null,
+      sidebarCollapsed: false,
       hoveredTokenId: null,
       hoveredSentenceIdx: null,
       minimalistTokenId: null,
@@ -102,6 +105,7 @@ export const useStore = create<State>()(
         set({ dualModeOption: option, lastActivity: Date.now() }),
       setSelectedDictionaryWord: (word) =>
         set({ selectedDictionaryWord: word, lastActivity: Date.now() }),
+      setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
       setHoveredTokenId: (id) => set({ hoveredTokenId: id }),
       setHoveredSentenceIdx: (idx) => set({ hoveredSentenceIdx: idx }),
       setMinimalistTokenId: (id) => set({ minimalistTokenId: id }),

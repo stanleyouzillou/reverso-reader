@@ -6,11 +6,12 @@ import { ReaderSurface } from "./ReaderSurface";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FloatingToolbar } from "./FloatingToolbar";
 import { useReaderSettings } from "../hooks/useReaderSettings";
+import { useStore } from "../store/useStore";
 import { cn } from "../lib/utils";
 
 export const Layout: React.FC = () => {
   const [showStickyTitle, setShowStickyTitle] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { sidebarCollapsed, setSidebarCollapsed } = useStore();
   const mainRef = useRef<HTMLElement>(null);
   const { theme } = useReaderSettings();
 

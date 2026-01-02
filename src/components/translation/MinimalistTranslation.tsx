@@ -1,14 +1,46 @@
 import React from "react";
-import { Bookmark, X, Loader2 } from "lucide-react";
+import { Bookmark, X, Loader2, Book, Volume2 } from "lucide-react";
 import { cn } from "../../lib/utils";
+
+interface ActionButtonProps {
+  action: string;
+  icon: React.ReactNode;
+  label: string;
+  className?: string;
+  activeClassName?: string;
+  isActive?: boolean;
+}
+
+const ActionButton: React.FC<ActionButtonProps> = ({
+  action,
+  icon,
+  label,
+  className,
+  activeClassName,
+  isActive,
+}) => (
+  <button
+    data-action={action}
+    className={cn(
+      "p-1.5 rounded-full transition-colors duration-200 relative",
+      isActive ? activeClassName : className
+    )}
+    aria-label={label}
+  >
+    <span className="pointer-events-none">{icon}</span>
+  </button>
+);
 
 interface MinimalistTranslationProps {
   word: string;
   translation: string | null;
   isLoading: boolean;
   isSaved: boolean;
+  isDictionaryActive: boolean;
   onSave: () => void;
   onClose: () => void;
+  onDictionary: () => void;
+  onPronounce: () => void;
   position: "above" | "below";
 }
 
@@ -17,18 +49,38 @@ export const MinimalistTranslation: React.FC<MinimalistTranslationProps> = ({
   translation,
   isLoading,
   isSaved,
+  isDictionaryActive,
   onSave,
   onClose,
+  onDictionary,
+  onPronounce,
   position,
 }) => {
   const [justSaved, setJustSaved] = React.useState(false);
 
-  const handleSave = (e: React.MouseEvent) => {
+  const handleActionClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onSave();
-    if (!isSaved) {
-      setJustSaved(true);
-      setTimeout(() => setJustSaved(false), 1000);
+    const target = (e.target as HTMLElement).closest("[data-action]");
+    if (!target) return;
+
+    const action = target.getAttribute("data-action");
+    switch (action) {
+      case "pronounce":
+        onPronounce();
+        break;
+      case "dictionary":
+        onDictionary();
+        break;
+      case "save":
+        onSave();
+        if (!isSaved) {
+          setJustSaved(true);
+          setTimeout(() => setJustSaved(false), 1000);
+        }
+        break;
+      case "close":
+        onClose();
+        break;
     }
   };
 
@@ -48,37 +100,51 @@ export const MinimalistTranslation: React.FC<MinimalistTranslationProps> = ({
         </span>
       )}
 
-      <div className="flex items-center gap-1 ml-1 pl-2 border-l border-slate-200 dark:border-slate-800">
-        <button
-          onClick={handleSave}
-          className={cn(
-            "p-1 rounded-full transition-all duration-300",
-            isSaved
-              ? "text-yellow-500"
-              : "text-slate-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20",
-            justSaved && "scale-125 text-yellow-500"
-          )}
-          title={isSaved ? "Saved to vocabulary" : "Save to vocabulary"}
-        >
-          <Bookmark size="0.875rem" fill={isSaved || justSaved ? "currentColor" : "none"} />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-        >
-          <X size="0.875rem" />
-        </button>
+      <div
+        className="flex items-center gap-1 ml-1 pl-2 border-l border-slate-200 dark:border-slate-800"
+        onClick={handleActionClick}
+      >
+        <ActionButton
+          action="pronounce"
+          icon={<Volume2 size="1rem" />}
+          label="Pronounce"
+          className="text-slate-400"
+        />
+        <ActionButton
+          action="dictionary"
+          icon={<Book size="1rem" />}
+          label="Dictionary"
+          isActive={isDictionaryActive}
+          activeClassName="text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20"
+          className="text-slate-400"
+        />
+        <ActionButton
+          action="save"
+          icon={
+            <Bookmark
+              size="1rem"
+              fill={isSaved || justSaved ? "currentColor" : "none"}
+            />
+          }
+          label={isSaved ? "Saved" : "Save"}
+          isActive={isSaved || justSaved}
+          activeClassName="text-yellow-500"
+          className="text-slate-400"
+        />
+        <ActionButton
+          action="close"
+          icon={<X size="1rem" />}
+          label="Close"
+          className="text-slate-400"
+        />
       </div>
 
       {/* Triangle arrow */}
       <div
         className={cn(
           "absolute left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
-          position === "above" 
-            ? "top-full -mt-1 border-r border-b" 
+          position === "above"
+            ? "top-full -mt-1 border-r border-b"
             : "bottom-full -mb-1 border-l border-t"
         )}
       />

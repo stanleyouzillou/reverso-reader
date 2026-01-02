@@ -389,6 +389,91 @@ export const Token: React.FC<TokenProps> = memo(
       ]
     );
 
+    const sidebarCollapsed = useStore((state) => state.sidebarCollapsed);
+    const sidebarMode = useStore((state) => state.sidebarMode);
+    const setSidebarMode = useStore((state) => state.setSidebarMode);
+    const setSidebarCollapsed = useStore((state) => state.setSidebarCollapsed);
+    const setSelectedDictionaryWord = useStore(
+      (state) => state.setSelectedDictionaryWord
+    );
+
+    const handleMinimalistDictionary = useCallback(() => {
+      if (sidebarCollapsed) {
+        // Expand and show dictionary
+        const dictionaryVocabItem: VocabItem = {
+          word: token,
+          translation: minimalistTranslation || "",
+          level: metadata.level,
+          status: WordStatus.Learning,
+          context: sentenceText || "",
+          position: index,
+          timestamp: Date.now(),
+        };
+        setSelectedDictionaryWord(dictionaryVocabItem);
+        setSidebarMode("dictionary");
+        setSidebarCollapsed(false);
+      } else {
+        // Already expanded, check if it's dictionary mode
+        if (sidebarMode === "dictionary") {
+          // Collapse it
+          setSidebarCollapsed(true);
+        } else {
+          // Switch to dictionary mode
+          const dictionaryVocabItem: VocabItem = {
+            word: token,
+            translation: minimalistTranslation || "",
+            level: metadata.level,
+            status: WordStatus.Learning,
+            context: sentenceText || "",
+            position: index,
+            timestamp: Date.now(),
+          };
+          setSelectedDictionaryWord(dictionaryVocabItem);
+          setSidebarMode("dictionary");
+        }
+      }
+    }, [
+      token,
+      minimalistTranslation,
+      metadata.level,
+      sentenceText,
+      index,
+      sidebarCollapsed,
+      sidebarMode,
+      setSelectedDictionaryWord,
+      setSidebarMode,
+      setSidebarCollapsed,
+    ]);
+
+    const isDictionaryActive =
+      !sidebarCollapsed && sidebarMode === "dictionary";
+
+    const handleMinimalistPronounce = useCallback(() => {
+      if (!window.speechSynthesis) return;
+
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(token);
+
+      // Try to find an English voice if available, otherwise use default
+      const voices = window.speechSynthesis.getVoices();
+      const englishVoice =
+        voices.find(
+          (v) =>
+            v.lang.startsWith("en-GB") ||
+            v.lang.startsWith("en-US") ||
+            v.lang.startsWith("en")
+        ) || voices[0];
+
+      if (englishVoice) {
+        utterance.voice = englishVoice;
+      }
+
+      utterance.rate = 0.9; // Slightly slower for clarity
+      window.speechSynthesis.speak(utterance);
+    }, [token]);
+
     const highlightColorClass = isChunkActive
       ? "bg-blue-100/80 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100"
       : "bg-blue-200/90 text-blue-900 dark:bg-blue-800/80 dark:text-blue-50";
@@ -470,6 +555,7 @@ export const Token: React.FC<TokenProps> = memo(
               translation={minimalistTranslation}
               isLoading={isMinimalistLoading}
               isSaved={isSaved}
+              isDictionaryActive={isDictionaryActive}
               onSave={() => {
                 const vocabItem: VocabItem = {
                   word: token,
@@ -482,6 +568,8 @@ export const Token: React.FC<TokenProps> = memo(
                 toggleSaved(vocabItem);
               }}
               onClose={() => setMinimalistTokenId(null)}
+              onDictionary={handleMinimalistDictionary}
+              onPronounce={handleMinimalistPronounce}
               position={minimalistSettings.position}
             />
           )}
