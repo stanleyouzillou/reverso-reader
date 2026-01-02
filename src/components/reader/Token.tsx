@@ -183,13 +183,28 @@ export const Token: React.FC<TokenProps> = memo(
       if (translationMode === "hover" || translationMode === "minimalist") {
         leaveTimeoutRef.current = setTimeout(
           () => {
-            setHoveredTokenId(null);
-            setHoveredSentenceIdx(null);
+            // Only clear if the current hovered token is still this one
+            // This prevents the "fade out" when moving quickly between words
+            if (useStore.getState().hoveredTokenId === tokenId) {
+              setHoveredTokenId(null);
+            }
+            if (
+              sentenceIndex !== undefined &&
+              useStore.getState().hoveredSentenceIdx === sentenceIndex
+            ) {
+              setHoveredSentenceIdx(null);
+            }
           },
-          translationMode === "minimalist" ? 100 : 300
+          translationMode === "minimalist" ? 150 : 300 // Increased minimalist delay slightly for stability
         );
       }
-    }, [translationMode, setHoveredTokenId, setHoveredSentenceIdx]);
+    }, [
+      translationMode,
+      setHoveredTokenId,
+      setHoveredSentenceIdx,
+      tokenId,
+      sentenceIndex,
+    ]);
 
     const handlePopupMouseEnter = useCallback(() => {
       if (leaveTimeoutRef.current) {
@@ -239,6 +254,11 @@ export const Token: React.FC<TokenProps> = memo(
       async (e: React.MouseEvent) => {
         e.stopPropagation();
         if (!isWordToken) return;
+
+        // Ensure hover state is set when clicking
+        if (hoveredTokenId !== tokenId) {
+          setHoveredTokenId(tokenId);
+        }
 
         if (translationMode === "minimalist") {
           setMinimalistTokenId(tokenId);
@@ -335,7 +355,7 @@ export const Token: React.FC<TokenProps> = memo(
     const tokenHighlightClass = isHighlightActive ? highlightColorClass : "";
 
     const tokenStyling = cn(
-      "px-[0.125em] mx-0 rounded-sm transition-colors duration-150", // Using em for padding
+      "mx-0 rounded-sm transition-colors duration-200 ease-out", // Removed horizontal padding to fix alignment
       isWordToken &&
         translationMode !== "minimalist" &&
         "hover:bg-slate-100 dark:hover:bg-slate-800/50"
@@ -349,17 +369,9 @@ export const Token: React.FC<TokenProps> = memo(
         : {};
 
     // Early return for non-word tokens that aren't highlighted
+    // We return them as plain text nodes to prevent wrapping-induced indentation
     if (!isWordToken && !isHighlightActive && !isKaraoke) {
-      return (
-        <span
-          className="inline whitespace-pre"
-          data-token-index={index}
-          data-sentence-id={sentenceIndex}
-          data-is-hard-stop={/[.!?;]/.test(token) ? "true" : undefined}
-        >
-          {token}
-        </span>
-      );
+      return <>{token}</>;
     }
 
     // Render for Highlighted/Selected/Karaoke state
@@ -375,10 +387,10 @@ export const Token: React.FC<TokenProps> = memo(
           ref={tokenRef}
           id={tokenId}
           onClick={handleTokenClick}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
+          onPointerEnter={handleMouseEnter}
+          onPointerLeave={handleMouseLeave}
           className={cn(
-            "relative cursor-pointer inline transition-all duration-150", // 150ms transition
+            "relative cursor-pointer inline transition-all duration-200 ease-out z-10", // Updated duration and added z-10
             tokenStyling,
             tokenHighlightClass,
             isKaraoke && "bg-yellow-200 dark:bg-yellow-900/60 rounded",

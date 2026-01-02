@@ -217,9 +217,8 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                 <p
                   key={originalIndex}
                   id={`paragraph-${originalIndex}`}
-                  className="mb-[2rem] rounded dark:text-slate-200"
-                >
-                  {sentencesInPara.map((group, gIdx) => {
+                  className="mb-[2rem] dark:text-slate-200 text-left leading-relaxed"
+                >{sentencesInPara.map((group, gIdx) => {
                     const isSentActive =
                       group.sentenceIdx === currentSentenceIdx &&
                       currentSentenceIdx !== -1;
@@ -231,16 +230,20 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                       <span
                         key={gIdx}
                         className={cn(
-                          "rounded cursor-pointer transition-colors duration-200",
+                          "cursor-pointer",
                           isSentActive
-                            ? "bg-slate-200 dark:bg-slate-800"
+                            ? "bg-slate-200 dark:bg-slate-800 rounded-sm"
                             : translationMode !== "minimalist" &&
                               hoveredSentenceIdx === group.sentenceIdx
-                            ? "bg-blue-100/50 dark:bg-blue-900/30"
+                            ? "bg-blue-100/50 dark:bg-blue-900/30 rounded-sm"
                             : translationMode !== "minimalist"
-                            ? "hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                            ? "hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-sm"
                             : ""
                         )}
+                        style={{
+                          WebkitBoxDecorationBreak: "clone",
+                          boxDecorationBreak: "clone",
+                        }}
                         onMouseEnter={() => {
                           if (group.sentenceIdx !== -1) {
                             setHoveredSentenceIdx(group.sentenceIdx);
@@ -303,7 +306,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                         <span
                           key={s.globalIdx}
                           className={cn(
-                            "transition-colors duration-200 rounded px-[0.25rem] -mx-[0.25rem] block md:inline cursor-pointer",
+                            "transition-colors duration-200 rounded-sm block md:inline cursor-pointer",
                             translationMode !== "minimalist" &&
                               hoveredSentenceIdx === s.globalIdx &&
                               "bg-blue-100/50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"

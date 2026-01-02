@@ -119,6 +119,10 @@ p,
   word-break: break-word;
   font-kerning: normal;
   font-variant-ligatures: common-ligatures;
+  text-align: left;
+  text-indent: 0;
+  margin-left: 0;
+  padding-left: 0;
 }
 
 /* Fallback for browsers that don't support custom properties well */

@@ -246,12 +246,36 @@ export async function translateText(
 /**
  * Fetches dictionary data for a given word
  * @param word - The word to look up
+ * @param targetLanguageCode - The target language for the dictionary (optional)
  * @returns Promise resolving to dictionary data or null if not found
  */
-export async function getDictionaryData(word: string): Promise<any> {
+export async function getDictionaryData(
+  word: string,
+  targetLanguageCode?: string
+): Promise<any> {
   try {
+    // Dictionary API supported languages
+    const supportedLangs = [
+      "en",
+      "hi",
+      "es",
+      "fr",
+      "ja",
+      "ru",
+      "de",
+      "it",
+      "ko",
+      "pt-BR",
+      "ar",
+      "tr",
+    ];
+    const lang =
+      targetLanguageCode && supportedLangs.includes(targetLanguageCode)
+        ? targetLanguageCode
+        : "en";
+
     const response = await fetch(
-      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(
+      `https://api.dictionaryapi.dev/api/v2/entries/${lang}/${encodeURIComponent(
         word
       )}`
     );

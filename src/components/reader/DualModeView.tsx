@@ -134,10 +134,9 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
       <span
         className={cn(
           "transition-colors duration-200",
-          isSentenceHovered &&
-            "bg-blue-100/50 dark:bg-blue-900/30 rounded px-1 -mx-1",
+          isSentenceHovered && "bg-blue-100/50 dark:bg-blue-900/30 rounded-sm",
           activeSentenceIdx === sentenceIdx &&
-            "bg-slate-200 dark:bg-slate-800 rounded px-1 -mx-1"
+            "bg-slate-200 dark:bg-slate-800 rounded-sm"
         )}
       >
         {tokens.map((token, idx) => {
@@ -183,9 +182,9 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
             "transition-colors duration-200",
             translationMode !== "minimalist" &&
               hoveredSentenceIdx === sentenceIdx &&
-              "bg-blue-100/50 dark:bg-blue-900/30 rounded px-1 -mx-1",
+              "bg-blue-100/50 dark:bg-blue-900/30 rounded-sm",
             activeSentenceIdx === sentenceIdx &&
-              "bg-slate-200 dark:bg-slate-800 rounded px-1 -mx-1"
+              "bg-slate-200 dark:bg-slate-800 rounded-sm"
           )}
         >
           {tokens.map((token, idx) => {
@@ -211,16 +210,16 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
     let wordCount = 0;
     let charCount = 0;
 
-    const isSentenceHovered = translationMode !== "minimalist" && hoveredSentenceIdx === sentenceIdx;
+    const isSentenceHovered =
+      translationMode !== "minimalist" && hoveredSentenceIdx === sentenceIdx;
 
     return (
       <span
         className={cn(
           "transition-colors duration-200",
-          isSentenceHovered &&
-            "bg-blue-100/50 dark:bg-blue-900/30 rounded px-1 -mx-1",
+          isSentenceHovered && "bg-blue-100/50 dark:bg-blue-900/30 rounded-sm",
           activeSentenceIdx === sentenceIdx &&
-            "bg-slate-200 dark:bg-slate-800 rounded px-1 -mx-1"
+            "bg-slate-200 dark:bg-slate-800 rounded-sm"
         )}
       >
         {tokens.map((token, idx) => {
@@ -262,7 +261,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               className={cn(
                 "transition-colors duration-200 cursor-pointer hover:text-blue-900 hover:font-bold",
                 isKaraokeWord
-                  ? "bg-yellow-400 text-slate-900 rounded px-0.5"
+                  ? "bg-yellow-400 text-slate-900 rounded-sm"
                   : "",
                 isHinted && "hint-underline"
               )}
@@ -377,8 +376,9 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               <div
                 className={cn(
                   "text-slate-800 dark:text-slate-200 text-left",
-                  translationMode !== "minimalist" && (hoveredSentenceIndex === actualIdx ||
-                    hoveredSentenceIdx === actualIdx)
+                  translationMode !== "minimalist" &&
+                    (hoveredSentenceIndex === actualIdx ||
+                      hoveredSentenceIdx === actualIdx)
                     ? "text-blue-900 dark:text-blue-400"
                     : ""
                 )}
@@ -388,8 +388,9 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               <div
                 className={cn(
                   "text-slate-500 dark:text-slate-400 text-left",
-                  translationMode !== "minimalist" && (hoveredSentenceIndex === actualIdx ||
-                    hoveredSentenceIdx === actualIdx)
+                  translationMode !== "minimalist" &&
+                    (hoveredSentenceIndex === actualIdx ||
+                      hoveredSentenceIdx === actualIdx)
                     ? "text-blue-700 dark:text-blue-300"
                     : ""
                 )}
@@ -497,7 +498,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                       <span
                         key={s.globalIdx}
                         className={cn(
-                          "transition-colors duration-200 rounded px-1",
+                          "transition-colors duration-200 rounded-sm",
                           isSentActive
                             ? "bg-slate-200 dark:bg-slate-800"
                             : "hover:bg-slate-100 dark:hover:bg-slate-800/50"
