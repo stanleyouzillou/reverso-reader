@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { cn, isWord } from "../../lib/utils";
 import { ReadingMode } from "../../types";
-import { ChevronLeft, ChevronRight, Languages } from "lucide-react";
+import { ChevronLeft, ChevronRight, Languages, Volume2 } from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { useReaderSettings } from "../../hooks/useReaderSettings";
 
@@ -235,32 +235,53 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                 <div key={originalIndex} className="mb-[2.5rem] group">
                   <div className="flex items-start gap-4">
                     {mode === "learning" && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleTranslation(originalIndex);
-                        }}
-                        className={cn(
-                          "mt-1 flex-shrink-0 p-1.5 rounded-md transition-all duration-200",
-                          "text-slate-300 group-hover:text-slate-400 hover:text-blue-500 hover:bg-blue-50",
-                          "dark:text-slate-600 dark:group-hover:text-slate-500 dark:hover:text-blue-400 dark:hover:bg-blue-900/30",
-                          isTranslationExpanded &&
-                            "text-blue-500 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30 opacity-100"
-                        )}
-                        aria-expanded={isTranslationExpanded}
-                        aria-label={
-                          isTranslationExpanded
-                            ? "Hide translation"
-                            : "Show translation"
-                        }
-                        title={
-                          isTranslationExpanded
-                            ? "Hide translation"
-                            : "Show translation"
-                        }
-                      >
-                        <Languages size={18} />
-                      </button>
+                      <div className="flex flex-col gap-1 mt-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleTranslation(originalIndex);
+                          }}
+                          className={cn(
+                            "flex-shrink-0 p-1.5 rounded-md transition-all duration-200",
+                            "text-slate-300 group-hover:text-slate-400 hover:text-blue-500 hover:bg-blue-50",
+                            "dark:text-slate-600 dark:group-hover:text-slate-500 dark:hover:text-blue-400 dark:hover:bg-blue-900/30",
+                            isTranslationExpanded &&
+                              "text-blue-500 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30 opacity-100"
+                          )}
+                          aria-expanded={isTranslationExpanded}
+                          aria-label={
+                            isTranslationExpanded
+                              ? "Hide translation"
+                              : "Show translation"
+                          }
+                          title={
+                            isTranslationExpanded
+                              ? "Hide translation"
+                              : "Show translation"
+                          }
+                        >
+                          <Languages size={18} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const firstSentenceIdx =
+                              sentencesInPara[0]?.sentenceIdx;
+                            if (firstSentenceIdx !== undefined) {
+                              onPlaySentence?.(firstSentenceIdx);
+                            }
+                          }}
+                          className={cn(
+                            "flex-shrink-0 p-1.5 rounded-md transition-all duration-200",
+                            "text-slate-300 group-hover:text-slate-400 hover:text-blue-500 hover:bg-blue-50",
+                            "dark:text-slate-600 dark:group-hover:text-slate-500 dark:hover:text-blue-400 dark:hover:bg-blue-900/30"
+                          )}
+                          aria-label="Listen to paragraph"
+                          title="Listen to paragraph"
+                        >
+                          <Volume2 size={18} />
+                        </button>
+                      </div>
                     )}
                     <div className="flex-1 min-w-0">
                       <p

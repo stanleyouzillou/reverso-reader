@@ -82,45 +82,8 @@ export const Header: React.FC<HeaderProps> = ({ showStickyTitle = false }) => {
           </div>
         </div>
 
-        {/* Center Section: Mode Switcher & Sticky Title */}
+        {/* Center Section: Sticky Title */}
         <div className="flex-1 flex justify-center items-center relative h-[2.5rem] px-[1rem] overflow-hidden">
-          {/* Mode Switcher */}
-          <div
-            className={cn(
-              "flex items-center gap-[0.25rem] bg-slate-100 dark:bg-[#2A2A2A] p-[0.25rem] rounded-[0.75rem] transition-all duration-500 ease-in-out shadow-inner",
-              showStickyTitle
-                ? "opacity-0 -translate-y-full pointer-events-none"
-                : "opacity-100 translate-y-0"
-            )}
-          >
-            {modes.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setMode(m.id)}
-                className={cn(
-                  "flex items-center gap-[0.5rem] px-[0.75rem] py-[0.375rem] rounded-[0.5rem] text-[0.75rem] font-semibold transition-all duration-300 relative group",
-                  mode === m.id
-                    ? "bg-white dark:bg-[#444] text-blue-600 dark:text-blue-400 shadow-sm scale-105"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                )}
-                aria-label={m.label}
-              >
-                <span
-                  className={cn(
-                    "transition-transform duration-300 group-hover:scale-110",
-                    mode === m.id ? "scale-110" : ""
-                  )}
-                >
-                  {m.icon}
-                </span>
-                <span className="hidden md:inline">{m.label}</span>
-                {mode === m.id && (
-                  <span className="absolute -bottom-[0.25rem] left-1/2 -translate-x-1/2 w-[0.25rem] h-[0.25rem] bg-blue-600 dark:bg-blue-400 rounded-full" />
-                )}
-              </button>
-            ))}
-          </div>
-
           {/* Sticky Title */}
           <div
             className={cn(

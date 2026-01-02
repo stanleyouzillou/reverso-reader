@@ -538,6 +538,7 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
   const handlePlaySentence = (index: number) => {
     setCurrentSentenceIdx(index);
     setKaraokeActive(true);
+    setIsPaused(false);
   };
 
   // Render Token Wrapper

@@ -190,7 +190,7 @@ export const VocabularyMode: React.FC<VocabularyModeProps> = ({
                   key={`${item.word}-${idx}`}
                   className={cn(
                     "p-3 rounded-xl border transition-all group relative",
-                    isSaved && activeTab === "history"
+                    activeTab === "saved" || isSaved
                       ? "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800"
                       : "bg-white dark:bg-slate-950 border-slate-100 dark:border-slate-800 shadow-sm"
                   )}
@@ -203,7 +203,7 @@ export const VocabularyMode: React.FC<VocabularyModeProps> = ({
                     <span
                       className={cn(
                         "text-[0.625rem] leading-tight font-medium px-2 py-0.5 rounded-full border max-w-[8.75rem] text-center",
-                        isSaved || activeTab === "saved"
+                        activeTab === "saved" || isSaved
                           ? "text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700"
                           : "text-slate-500 dark:text-slate-400 bg-transparent border-slate-200 dark:border-slate-800"
                       )}

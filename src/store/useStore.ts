@@ -70,7 +70,7 @@ interface State {
 export const useStore = create<State>()(
   persist(
     (set) => ({
-      mode: "learning",
+      mode: "dual",
       sidebarMode: "vocabulary",
       history: [],
       saved: [],
@@ -95,10 +95,6 @@ export const useStore = create<State>()(
 
       setMode: (mode) => {
         set({ mode, lastActivity: Date.now() });
-        // Automatically trigger Page mode for Learning and Dual modes
-        if (mode === "learning" || mode === "dual") {
-          useReaderSettings.getState().setReadingMode("page");
-        }
       },
       setSidebarMode: (mode) =>
         set({ sidebarMode: mode, lastActivity: Date.now() }),
