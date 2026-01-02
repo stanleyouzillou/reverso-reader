@@ -44,12 +44,22 @@ body::-webkit-scrollbar {
   padding-bottom: 1px;
 }
 
-/* Dynamic line height adjustment when hints/popups are present */
-p:has(.has-popup) {
-  line-height: 2.5 !important;
+/* Base line height for readability - dynamically adjusted in ReaderSurface */
+p {
+  line-height: var(--reader-line-height, 2);
 }
 
-/* For DualModeView sentences */
-div:has(.has-popup) {
-  line-height: 2.5 !important;
+/* Chunk selection continuity */
+.chunk-selected {
+  position: relative;
+  z-index: 10;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0.1rem 0;
+  margin: -0.1rem 0;
+}
+
+/* Ensure no gaps in highlight when wrapping */
+.chunk-selected::selection {
+  background: transparent;
 }

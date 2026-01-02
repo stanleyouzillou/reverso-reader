@@ -31,7 +31,13 @@ export class MultiTranslationService {
     }
 
     // Create cache key for multiple translations
-    const cacheKey = `multi:${text.trim().toLowerCase()}:${to}:${from}`;
+    // Include context hash if available for context-aware caching
+    const contextId = context
+      ? `:${context.length}_${context.slice(0, 10)}`
+      : "";
+    const cacheKey = `multi:${text
+      .trim()
+      .toLowerCase()}:${to}:${from}${contextId}`;
 
     if (this.cache[cacheKey]) {
       return {
@@ -80,10 +86,43 @@ export class MultiTranslationService {
   getCachedTranslations(
     text: string,
     to: string = "fr",
-    from: string = "en"
+    from: string = "en",
+    context?: string
   ): { translations: string[]; dictionary?: any | null } | null {
-    const cacheKey = `multi:${text.trim().toLowerCase()}:${to}:${from}`;
+    const contextId = context
+      ? `:${context.length}_${context.slice(0, 10)}`
+      : "";
+    const cacheKey = `multi:${text
+      .trim()
+      .toLowerCase()}:${to}:${from}${contextId}`;
     return this.cache[cacheKey] || null;
+  }
+
+  cacheTranslation(
+    text: string,
+    to: string = "fr",
+    from: string = "en",
+    translation: string,
+    context?: string
+  ): void {
+    const contextId = context
+      ? `:${context.length}_${context.slice(0, 10)}`
+      : "";
+    const cacheKey = `multi:${text
+      .trim()
+      .toLowerCase()}:${to}:${from}${contextId}`;
+
+    // If there's already a cached entry, add the new translation to it
+    if (this.cache[cacheKey]) {
+      if (!this.cache[cacheKey].translations.includes(translation)) {
+        this.cache[cacheKey].translations.push(translation);
+      }
+    } else {
+      // Otherwise create a new cache entry
+      this.cache[cacheKey] = {
+        translations: [translation],
+      };
+    }
   }
 }
 

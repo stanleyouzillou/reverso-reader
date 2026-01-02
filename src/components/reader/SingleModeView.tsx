@@ -215,7 +215,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                 <p
                   key={originalIndex}
                   id={`paragraph-${originalIndex}`}
-                  className="mb-3 leading-relaxed transition-colors rounded dark:text-slate-200"
+                  className="mb-8 rounded dark:text-slate-200"
                 >
                   {sentencesInPara.map((group, gIdx) => {
                     const isSentActive =
@@ -229,7 +229,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                       <span
                         key={gIdx}
                         className={cn(
-                          "transition-colors duration-200 rounded cursor-pointer",
+                          "rounded cursor-pointer",
                           isSentActive
                             ? "bg-slate-200 dark:bg-slate-800"
                             : hoveredSentenceIdx === group.sentenceIdx
@@ -248,13 +248,16 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                           onPlaySentence?.(group.sentenceIdx);
                         }}
                       >
-                        {group.tokens.map((t, tIdx) => {
+                        {group.tokens.map((t) => {
                           const tokenLen = t.text.length;
                           const isWordActive =
                             isSentActive &&
                             activeWordIdx !== -1 &&
                             activeWordIdx >= charCount &&
                             activeWordIdx < charCount + tokenLen;
+
+                          // Correctly increment charCount after check to match TTS boundary reporting
+                          const currentTokenIdx = charCount;
                           charCount += tokenLen;
 
                           return renderToken(t.text, t.globalIdx, isWordActive);
@@ -269,7 +272,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
 
           {/* L1 Content (Dual Mode - Sync) */}
           {mode === "dual" && (
-            <div className="text-slate-500 dark:text-slate-400 leading-relaxed text-left border-l border-slate-100 dark:border-slate-800 pl-8">
+            <div className="text-slate-500 dark:text-slate-400 text-left border-l border-slate-100 dark:border-slate-800 pl-8">
               {visibleIndices.map((originalIndex) => {
                 if (
                   !paragraphTokens[originalIndex] ||

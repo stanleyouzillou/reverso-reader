@@ -1,12 +1,16 @@
-import { useState, useCallback } from 'react';
-import { Selection } from '../types';
-import { isWord } from '../lib/utils';
-import { useReaderSettings } from './useReaderSettings';
+import { useState, useCallback } from "react";
+import { Selection } from "../types";
+import { isWord } from "../lib/utils";
+import { useReaderSettings } from "./useReaderSettings";
 
 interface UseWordSelectionReturn {
   selection: Selection | null;
   setSelection: React.Dispatch<React.SetStateAction<Selection | null>>;
-  handleWordSelection: (index: number, allTokens: string[]) => { start: number; end: number; text: string } | null;
+  handleWordSelection: (
+    index: number,
+    allTokens: string[],
+    tokenToSentenceMap: number[]
+  ) => Selection | null;
   clearSelection: () => void;
 }
 
@@ -17,86 +21,126 @@ export const useWordSelection = (): UseWordSelectionReturn => {
     setSelection(null);
   }, []);
 
-  const handleWordSelection = useCallback((index: number, allTokens: string[]) => {
-    const token = allTokens[index];
-    if (!isWord(token)) return null;
+  const handleWordSelection = useCallback(
+    (index: number, allTokens: string[], tokenToSentenceMap: number[]) => {
+      const token = allTokens[index];
+      if (!isWord(token)) return null;
 
-    const granularity = useReaderSettings.getState().translationGranularity;
+      const granularity = useReaderSettings.getState().translationGranularity;
+      const sentenceId = tokenToSentenceMap[index];
 
-    let newStart = index;
-    let newEnd = index;
+      let newStart = index;
+      let newEnd = index;
 
-    // Check adjacency if selection exists AND we are in chunk mode
-    if (selection && granularity === 'chunk') {
-      if (index >= selection.start && index <= selection.end) {
-        // If clicking within the current selection, deselect it
-        setSelection(null);
-        return null;
+      // For initial selection, also include trailing punctuation
+      const HARD_STOPS = [".", "!", "?", ";"];
+      while (
+        newEnd < allTokens.length - 1 &&
+        !isWord(allTokens[newEnd + 1]) &&
+        !HARD_STOPS.includes(allTokens[newEnd + 1].trim())
+      ) {
+        newEnd++;
       }
 
-      // Check if the new word is adjacent to the current selection
-      let isAdjacent = (index === selection.start - 1) || (index === selection.end + 1);
+      let isChunkActive = false;
+      let newVersion = (selection?.version || 0) + 1;
 
-      // Check if the new word is in the same sentence as the current selection
-      let inSameSentence = true;
+      // Interaction rules for chunk mode
+      if (granularity === "chunk" && selection) {
+        const inSameSentence = selection.sentenceId === sentenceId;
 
-      // Determine the range to check for sentence boundaries
-      let checkStart, checkEnd;
-      if (index === selection.start - 1) { // New word is before the selection
-        checkStart = index + 1;
-        checkEnd = selection.start - 1;
-      } else if (index === selection.end + 1) { // New word is after the selection
-        checkStart = selection.end + 1;
-        checkEnd = index - 1;
-      } else {
-        // Not adjacent, so definitely not in the same sentence
-        isAdjacent = false;
-        inSameSentence = false;
-      }
+        if (inSameSentence) {
+          // Check for adjacency (no other words between selection and clicked index)
+          // and no hard stops crossed.
+          let isAdjacent = false;
+          let hardStopCrossed = false;
 
-      // Check for sentence boundaries in the range
-      if (isAdjacent && checkStart !== undefined && checkEnd !== undefined) {
-        for (let i = checkStart; i <= checkEnd; i++) {
-          if (i >= 0 && i < allTokens.length && /[.!?;]/.test(allTokens[i])) {
-            inSameSentence = false;
-            break;
+          if (index > selection.end) {
+            // Checking forward
+            isAdjacent = true;
+            for (let i = selection.end + 1; i < index; i++) {
+              if (isWord(allTokens[i])) {
+                isAdjacent = false;
+                break;
+              }
+              if (HARD_STOPS.includes(allTokens[i].trim())) {
+                hardStopCrossed = true;
+                break;
+              }
+            }
+            if (isAdjacent && !hardStopCrossed) {
+              newStart = selection.start;
+              newEnd = index;
+
+              // Automatically expand end to include trailing punctuation (but not hard stops or words)
+              while (
+                newEnd < allTokens.length - 1 &&
+                !isWord(allTokens[newEnd + 1]) &&
+                !HARD_STOPS.includes(allTokens[newEnd + 1].trim())
+              ) {
+                newEnd++;
+              }
+
+              isChunkActive = true;
+            }
+          } else if (index < selection.start) {
+            // Checking backward
+            isAdjacent = true;
+            for (let i = index + 1; i < selection.start; i++) {
+              if (isWord(allTokens[i])) {
+                isAdjacent = false;
+                break;
+              }
+              if (HARD_STOPS.includes(allTokens[i].trim())) {
+                hardStopCrossed = true;
+                break;
+              }
+            }
+            if (isAdjacent && !hardStopCrossed) {
+              newStart = index;
+              newEnd = selection.end;
+
+              // Automatically expand end to include trailing punctuation if the click was at the start
+              // (though usually we expand forward, let's be robust)
+              while (
+                newEnd < allTokens.length - 1 &&
+                !isWord(allTokens[newEnd + 1]) &&
+                !HARD_STOPS.includes(allTokens[newEnd + 1].trim())
+              ) {
+                newEnd++;
+              }
+
+              isChunkActive = true;
+            }
+          } else {
+            // Clicked inside existing selection - reset to this word
+            newStart = index;
+            newEnd = index;
+            isChunkActive = false;
           }
         }
       }
 
-      // If both conditions are met (adjacent and in same sentence), extend the selection
-      if (isAdjacent && inSameSentence) {
-        if (index < selection.start) {
-          // New word is before the selection
-          newStart = index;
-          newEnd = selection.end;
-        } else {
-          // New word is after the selection
-          newStart = selection.start;
-          newEnd = index;
-        }
-      } else {
-        // Reset selection and start new single-word chunk
-        newStart = index;
-        newEnd = index;
-      }
-    }
+      const selectedTokens = allTokens.slice(newStart, newEnd + 1);
+      const textToTranslate = selectedTokens.join(""); // Use join("") because allTokens already contains spaces
 
-    const selectedTokens = allTokens.slice(newStart, newEnd + 1);
-    // Join tokens with space to form the phrase to translate
-    const textToTranslate = selectedTokens.join(" ");
+      const newSelection: Selection = {
+        start: newStart,
+        end: newEnd,
+        clickedIndex: index, // Preserve the specific word clicked
+        text: allTokens.slice(newStart, newEnd + 1).join(""),
+        translation: null,
+        loading: true,
+        isChunkActive,
+        sentenceId,
+        version: newVersion,
+      };
 
-    const newSelection = {
-      start: newStart,
-      end: newEnd,
-      text: textToTranslate,
-      translation: null,
-      loading: true,
-    };
-
-    setSelection(newSelection);
-    return newSelection;
-  }, [selection]);
+      setSelection(newSelection);
+      return newSelection;
+    },
+    [selection]
+  );
 
   return {
     selection,

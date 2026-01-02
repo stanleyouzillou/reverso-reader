@@ -22,6 +22,13 @@ interface DualModeViewProps {
   metadata: ArticleMetadata;
   mode?: "clean" | "learning" | "dual";
   isPaused?: boolean;
+  renderToken?: (
+    token: string,
+    index: number,
+    isKaraoke?: boolean
+  ) => React.ReactNode;
+  tokenToSentenceMap?: number[];
+  allTokens?: string[];
 }
 
 export const DualModeView: React.FC<DualModeViewProps> = ({
@@ -41,6 +48,9 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
   metadata,
   mode,
   isPaused = true,
+  renderToken,
+  tokenToSentenceMap,
+  allTokens,
 }) => {
   const { showHintsEnabled } = useReaderSettings();
   const { highlightedWords, hoveredSentenceIdx, setHoveredSentenceIdx } =
@@ -52,6 +62,20 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
     wordIdx: number;
     wordCount: number;
   } | null>(null);
+
+  // Calculate starting token index for each sentence
+  const sentenceTokenOffsets = useMemo(() => {
+    if (!tokenToSentenceMap) return [];
+    const offsets: number[] = [];
+    let currentSentence = -1;
+    for (let i = 0; i < tokenToSentenceMap.length; i++) {
+      if (tokenToSentenceMap[i] !== currentSentence) {
+        currentSentence = tokenToSentenceMap[i];
+        offsets[currentSentence] = i;
+      }
+    }
+    return offsets;
+  }, [tokenToSentenceMap]);
 
   // Reset page when mode changes
   useEffect(() => {
@@ -79,6 +103,23 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
     pairedSentences,
     itemsPerPage,
   ]);
+
+  const getL2Tokens = (sentenceIdx: number, fallbackText: string): string[] => {
+    if (allTokens && tokenToSentenceMap) {
+      const sentenceStartIdx = sentenceTokenOffsets[sentenceIdx];
+      if (sentenceStartIdx !== undefined) {
+        let sentenceEndIdx = sentenceStartIdx;
+        while (
+          sentenceEndIdx < tokenToSentenceMap.length &&
+          tokenToSentenceMap[sentenceEndIdx] === sentenceIdx
+        ) {
+          sentenceEndIdx++;
+        }
+        return allTokens.slice(sentenceStartIdx, sentenceEndIdx);
+      }
+    }
+    return tokenize(fallbackText);
+  };
 
   const renderL1Sentence = (sentence: string, sentenceIdx: number) => {
     const tokens = tokenize(sentence);
@@ -130,6 +171,39 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
   };
 
   const renderL2Tokens = (sentenceIdx: number, tokens: string[]) => {
+    if (renderToken) {
+      const startOffset = sentenceTokenOffsets[sentenceIdx] || 0;
+      let currentCharCount = 0;
+
+      return (
+        <span
+          className={cn(
+            "transition-colors duration-200",
+            hoveredSentenceIdx === sentenceIdx &&
+              "bg-blue-100/50 dark:bg-blue-900/30 rounded px-1 -mx-1",
+            activeSentenceIdx === sentenceIdx &&
+              "bg-slate-200 dark:bg-slate-800 rounded px-1 -mx-1"
+          )}
+        >
+          {tokens.map((token, idx) => {
+            const globalIdx = startOffset + idx;
+            const tokenLen = token.length;
+
+            const isKaraoke =
+              activeSentenceIdx === sentenceIdx &&
+              activeWordIdx !== undefined &&
+              activeWordIdx !== -1 &&
+              activeWordIdx >= currentCharCount &&
+              activeWordIdx < currentCharCount + tokenLen;
+
+            currentCharCount += tokenLen;
+
+            return renderToken(token, globalIdx, isKaraoke);
+          })}
+        </span>
+      );
+    }
+
     const wordTokens = tokens.filter(isWord);
     let wordCount = 0;
     let charCount = 0;
@@ -282,7 +356,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
       <div className="flex flex-col gap-0 mt-4">
         {visibleSentences.map((pair, idx) => {
           const actualIdx = startIndex + idx;
-          const l2Tokens = tokenize(pair.l2);
+          const l2Tokens = getL2Tokens(actualIdx, pair.l2);
           const isPlaying = activeSentenceIdx === actualIdx;
 
           return (
@@ -290,7 +364,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               key={actualIdx}
               id={`sentence-${actualIdx}`}
               className={cn(
-                "grid grid-cols-2 gap-4 py-2 border-b border-slate-50 dark:border-slate-800/50 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group cursor-pointer",
+                "grid grid-cols-2 gap-4 py-2 border-b border-slate-50 dark:border-slate-800/50 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 group cursor-pointer",
                 isPlaying ? "bg-slate-200/50 dark:bg-slate-800/50" : ""
               )}
               onClick={() => onPlaySentence?.(actualIdx)}
@@ -299,7 +373,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
             >
               <div
                 className={cn(
-                  "leading-relaxed text-slate-800 dark:text-slate-200 text-left transition-colors",
+                  "text-slate-800 dark:text-slate-200 text-left",
                   hoveredSentenceIndex === actualIdx ||
                     hoveredSentenceIdx === actualIdx
                     ? "text-blue-900 dark:text-blue-400"
@@ -310,7 +384,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               </div>
               <div
                 className={cn(
-                  "leading-relaxed text-slate-500 dark:text-slate-400 text-left transition-colors",
+                  "text-slate-500 dark:text-slate-400 text-left",
                   hoveredSentenceIndex === actualIdx ||
                     hoveredSentenceIdx === actualIdx
                     ? "text-blue-700 dark:text-blue-300"
@@ -338,7 +412,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
       <div className="flex flex-col gap-4 mt-4">
         {visibleSentences.map((pair, idx) => {
           const actualIdx = startIndex + idx;
-          const l2Tokens = tokenize(pair.l2);
+          const l2Tokens = getL2Tokens(actualIdx, pair.l2);
           const isPlaying = activeSentenceIdx === actualIdx;
 
           return (
@@ -347,14 +421,14 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               id={`sentence-${actualIdx}`}
               className={cn(
                 "grid grid-cols-2 gap-4 py-4 border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-900/10 transition-colors group cursor-pointer",
-                isPlaying ? "bg-yellow-50/50 dark:bg-yellow-900/10" : ""
+                isPlaying ? "bg-slate-200/50 dark:bg-slate-800/50" : ""
               )}
               onClick={() => onPlaySentence?.(actualIdx)}
             >
-              <div className="leading-relaxed text-slate-800 dark:text-slate-200 text-left">
+              <div className="text-slate-800 dark:text-slate-200 text-left">
                 {renderL2Tokens(actualIdx, l2Tokens)}
               </div>
-              <div className="leading-relaxed text-slate-500 dark:text-slate-400 text-left">
+              <div className="text-slate-500 dark:text-slate-400 text-left">
                 {renderL1Sentence(pair.l1, actualIdx)}
               </div>
             </div>
@@ -410,32 +484,23 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               onMouseLeave={() => setHoveredSentenceIndex(null)}
             >
               {/* L2 Content (Sentences flowing inline) */}
-              <p className="leading-relaxed text-slate-800 dark:text-slate-200 text-left transition-colors duration-200">
+              <p className="text-slate-800 dark:text-slate-200 text-left transition-colors duration-200">
                 {sentencesInPara.length > 0 ? (
                   sentencesInPara.map((s) => {
                     const isSentActive = activeSentenceIdx === s.globalIdx;
-                    const l2Tokens = tokenize(s.l2);
+                    const l2Tokens = getL2Tokens(s.globalIdx, s.l2);
 
                     return (
                       <span
                         key={s.globalIdx}
                         className={cn(
                           "transition-colors duration-200 rounded px-1",
-                          isSentActive ? "bg-slate-200" : "hover:bg-slate-100"
+                          isSentActive
+                            ? "bg-slate-200 dark:bg-slate-800"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800/50"
                         )}
-                        // onClick={(e) => {
-                        //   e.stopPropagation();
-                        //   onPlaySentence?.(s.globalIdx);
-                        // }} // Disabled: Audio from click only in Reading Mode
                       >
                         {renderL2Tokens(s.globalIdx, l2Tokens)}
-                        {/* Add space between sentences if needed? tokenize(para) has spaces. 
-                             pairedSentences usually trimmed. 
-                             We might lose spaces here. 
-                             But rendering separate spans is better for highlighting.
-                             We can add a trailing space span.
-                         */}
-                        <span className="select-none">&nbsp;</span>
                       </span>
                     );
                   })
@@ -449,7 +514,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                       setVisibleTranslations(next);
                     }}
                   >
-                    {renderL2Tokens(actualIdx, tokenize(para))}
+                    {para}
                   </span>
                 )}
               </p>
@@ -498,7 +563,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
       <div className="flex flex-col gap-2">
         {visibleSentences.map((pair, idx) => {
           const actualIdx = startIndex + idx;
-          const l2Tokens = tokenize(pair.l2);
+          const l2Tokens = getL2Tokens(actualIdx, pair.l2);
           const isPlaying = activeSentenceIdx === actualIdx;
 
           return (
@@ -514,7 +579,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
             >
               <div
                 className={cn(
-                  "text-xl leading-relaxed text-slate-900 dark:text-white text-left mb-1 transition-colors",
+                  "text-xl text-slate-900 dark:text-white text-left mb-1 transition-colors",
                   hoveredSentenceIndex === actualIdx
                     ? "text-blue-900 dark:text-blue-400"
                     : ""
@@ -524,7 +589,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               </div>
               <div
                 className={cn(
-                  "font-sans text-sm leading-relaxed text-indigo-600 dark:text-indigo-400 pl-4 border-l-2 border-indigo-200 dark:border-indigo-900 italic mb-2 transition-colors",
+                  "font-sans text-sm text-indigo-600 dark:text-indigo-400 pl-4 border-l-2 border-indigo-200 dark:border-indigo-900 italic mb-2 transition-colors",
                   hoveredSentenceIndex === actualIdx
                     ? "text-indigo-800 dark:text-indigo-300 border-indigo-400 dark:border-indigo-700"
                     : ""

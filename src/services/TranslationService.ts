@@ -26,30 +26,30 @@ class TranslationService {
     const isChunkTranslation = selectedWords.length > 1;
 
     // Create cache key using the format "word1_word2_word3"
-    const slug = text.trim().toLowerCase().replace(/\s+/g, '_');
-    const cacheKey = `${provider}:${slug}:${targetLanguage}`;
-    const lsCacheKey = `${this.LS_CACHE_PREFIX}${provider}_${slug}_${targetLanguage}`;
+    const slug = text.trim().toLowerCase().replace(/\s+/g, "_");
+    // If there is context, include a hash or identifier of the context in the cache key
+    const contextId = context ? `:${context.length}_${context.slice(0, 10)}` : "";
+    const cacheKey = `${provider}:${slug}:${targetLanguage}${contextId}`;
+    const lsCacheKey = `${this.LS_CACHE_PREFIX}${provider}_${slug}_${targetLanguage}${contextId ? "_" + context.length : ""}`;
 
     // 1. Check in-memory cache
-    if (!isChunkTranslation && this.cache[cacheKey]) {
+    if (this.cache[cacheKey]) {
       return this.cache[cacheKey];
     }
 
     // 2. Check LocalStorage cache
-    if (!isChunkTranslation) {
-      try {
-        const cached = localStorage.getItem(lsCacheKey);
-        if (cached) {
-          const { data, timestamp } = JSON.parse(cached);
-          if (Date.now() - timestamp < this.CACHE_TTL) {
-            console.log(`LocalStorage hit for translation: ${text}`);
-            this.cache[cacheKey] = data; // Sync back to memory
-            return data;
-          }
+    try {
+      const cached = localStorage.getItem(lsCacheKey);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < this.CACHE_TTL) {
+          console.log(`LocalStorage hit for translation: ${text}`);
+          this.cache[cacheKey] = data; // Sync back to memory
+          return data;
         }
-      } catch (e) {
-        console.warn("Failed to read from translation LocalStorage:", e);
       }
+    } catch (e) {
+      console.warn("Failed to read from translation LocalStorage:", e);
     }
 
     // Add a slight delay to prevent flickering
@@ -57,26 +57,32 @@ class TranslationService {
 
     try {
       const service = translationRegistry.getService(provider);
-      const result = await service.translate(text, targetLanguage, "auto", context);
+      const result = await service.translate(
+        text,
+        targetLanguage,
+        "auto",
+        context
+      );
 
-      const translationResult = { text: result.text, dictionary: result.dictionary };
+      const translationResult = {
+        text: result.text,
+        dictionary: result.dictionary,
+      };
 
-      // Only cache single-word translations
-      if (!isChunkTranslation) {
-        this.cache[cacheKey] = translationResult;
-        
-        // Save to LocalStorage
-        try {
-          localStorage.setItem(
-            lsCacheKey,
-            JSON.stringify({
-              data: translationResult,
-              timestamp: Date.now(),
-            })
-          );
-        } catch (e) {
-          console.warn("Failed to save translation to LocalStorage:", e);
-        }
+      // Cache the result (including chunks)
+      this.cache[cacheKey] = translationResult;
+
+      // Save to LocalStorage
+      try {
+        localStorage.setItem(
+          lsCacheKey,
+          JSON.stringify({
+            data: translationResult,
+            timestamp: Date.now(),
+          })
+        );
+      } catch (e) {
+        console.warn("Failed to save translation to LocalStorage:", e);
       }
 
       return translationResult;
