@@ -82,6 +82,7 @@ export const Token: React.FC<TokenProps> = memo(
     const setIsMinimalistLoading = useStore(
       (state) => state.setIsMinimalistLoading
     );
+    const highlightMode = useStore((state) => state.highlightMode);
     const isSaved = useStore((state) =>
       state.saved.some(
         (item) => item.word.toLowerCase() === token.toLowerCase().trim()
@@ -251,6 +252,7 @@ export const Token: React.FC<TokenProps> = memo(
       (v) => v.word.toLowerCase() === normalizedToken
     );
     const isHinted =
+      highlightMode !== "off" &&
       showHintsEnabled &&
       (highlightedWords.includes(normalizedToken) || !!keyVocab);
 
@@ -526,8 +528,13 @@ export const Token: React.FC<TokenProps> = memo(
             isSentenceHovered && "bg-blue-100/50 dark:bg-blue-900/30",
             isHinted && !isHighlightActive && "hint-underline",
             // Word State Styles
-            isSaved && "word-state-saved",
-            isTranslated && !isSaved && "word-state-translated",
+            (highlightMode === "all" || highlightMode === "saved") &&
+              isSaved &&
+              "word-state-saved",
+            highlightMode === "all" &&
+              isTranslated &&
+              !isSaved &&
+              "word-state-translated",
             shouldAnimate && "animate-translated-underline"
           )}
           style={{
@@ -660,8 +667,13 @@ export const Token: React.FC<TokenProps> = memo(
           tokenStyling,
           isHinted && "hint-underline",
           // Word State Styles
-          isSaved && "word-state-saved",
-          isTranslated && !isSaved && "word-state-translated"
+          (highlightMode === "all" || highlightMode === "saved") &&
+            isSaved &&
+            "word-state-saved",
+          highlightMode === "all" &&
+            isTranslated &&
+            !isSaved &&
+            "word-state-translated"
         )}
         data-token-index={index}
         data-sentence-id={sentenceIndex}

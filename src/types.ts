@@ -64,3 +64,5 @@ export interface TranslatedSpan {
 }
 
 export type SidebarMode = "dictionary" | "vocabulary" | "ai";
+
+export type HighlightMode = "off" | "saved" | "all";

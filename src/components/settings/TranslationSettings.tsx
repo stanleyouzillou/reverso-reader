@@ -9,7 +9,12 @@ import {
   Globe,
   Lightbulb,
   Zap,
+  Eye,
+  EyeOff,
+  Sparkles,
 } from "lucide-react";
+import { useStore } from "../../store/useStore";
+import { HighlightMode } from "../../types";
 
 export const TranslationSettings: React.FC = () => {
   const {
@@ -24,6 +29,8 @@ export const TranslationSettings: React.FC = () => {
     minimalistSettings,
     updateMinimalistSettings,
   } = useReaderSettings();
+
+  const { highlightMode, setHighlightMode } = useStore();
 
   // List of supported languages for translation
   const supportedLanguages = [
@@ -219,6 +226,63 @@ export const TranslationSettings: React.FC = () => {
               ? "Hover over words to see a temporary translation popup."
               : "A minimalist click-to-translate experience with focus on speed."}
           </p>
+        </div>
+
+        {/* Highlight Mode Selection */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-3">
+            Highlight Level
+          </label>
+          <div className="flex flex-col gap-2">
+            {[
+              {
+                mode: "off",
+                label: "Off",
+                desc: "Clean interface, no highlights visible",
+                icon: <EyeOff size="1rem" />,
+              },
+              {
+                mode: "saved",
+                label: "Saved only (Default)",
+                desc: "Only highlight words you have saved",
+                icon: <Highlighter size="1rem" />,
+              },
+              {
+                mode: "all",
+                label: "Translated + Saved",
+                desc: "Highlight everything you've interacted with",
+                icon: <Sparkles size="1rem" />,
+              },
+            ].map((item) => (
+              <button
+                key={item.mode}
+                onClick={() => setHighlightMode(item.mode as HighlightMode)}
+                className={cn(
+                  "flex items-center gap-3 p-3 rounded-lg text-left transition-all border",
+                  highlightMode === item.mode
+                    ? "bg-blue-50 border-blue-200 text-blue-700 shadow-sm"
+                    : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-md flex items-center justify-center shrink-0",
+                    highlightMode === item.mode
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-100 text-slate-500"
+                  )}
+                >
+                  {item.icon}
+                </div>
+                <div>
+                  <div className="text-sm font-semibold">{item.label}</div>
+                  <div className="text-[0.7rem] opacity-70 leading-tight">
+                    {item.desc}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Minimalist Mode Settings */}

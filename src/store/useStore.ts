@@ -1,12 +1,19 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { ReadingMode, SidebarMode, VocabItem, WordStatus } from "../types";
+import {
+  HighlightMode,
+  ReadingMode,
+  SidebarMode,
+  VocabItem,
+  WordStatus,
+} from "../types";
 import { DEMO_ARTICLE } from "../constants/demoContent";
 import { useReaderSettings } from "../hooks/useReaderSettings";
 
 interface State {
   mode: ReadingMode;
   sidebarMode: SidebarMode;
+  highlightMode: HighlightMode;
   history: VocabItem[];
   saved: VocabItem[];
   toLearn: VocabItem[];
@@ -42,6 +49,7 @@ interface State {
   // Actions
   setMode: (mode: ReadingMode) => void;
   setSidebarMode: (mode: SidebarMode) => void;
+  setHighlightMode: (mode: HighlightMode) => void;
   setDualModeOption: (
     option: "sentences" | "hover" | "interleaved" | "sync"
   ) => void;
@@ -74,6 +82,7 @@ export const useStore = create<State>()(
     (set) => ({
       mode: "dual",
       sidebarMode: "vocabulary",
+      highlightMode: "saved",
       history: [],
       saved: [],
       toLearn: DEMO_ARTICLE.metadata.keyVocab,
@@ -101,6 +110,8 @@ export const useStore = create<State>()(
       },
       setSidebarMode: (mode) =>
         set({ sidebarMode: mode, lastActivity: Date.now() }),
+      setHighlightMode: (mode) =>
+        set({ highlightMode: mode, lastActivity: Date.now() }),
       setDualModeOption: (option) =>
         set({ dualModeOption: option, lastActivity: Date.now() }),
       setSelectedDictionaryWord: (word) =>
