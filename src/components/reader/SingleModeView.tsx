@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { cn, isWord } from "../../lib/utils";
 import { ReadingMode } from "../../types";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Languages } from "lucide-react";
 import { useStore } from "../../store/useStore";
 import { useReaderSettings } from "../../hooks/useReaderSettings";
 
@@ -43,7 +43,22 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
   const { translationMode } = useReaderSettings();
   const { hoveredSentenceIdx, setHoveredSentenceIdx } = useStore();
   const [currentPage, setCurrentPage] = useState(0);
+  const [expandedTranslations, setExpandedTranslations] = useState<Set<number>>(
+    new Set()
+  );
   const paragraphsPerPage = 1;
+
+  const toggleTranslation = (idx: number) => {
+    setExpandedTranslations((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) {
+        next.delete(idx);
+      } else {
+        next.add(idx);
+      }
+      return next;
+    });
+  };
 
   // 1. Calculate Offsets
   const tokenOffsets = useMemo(() => {
@@ -213,67 +228,124 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                 });
               }
 
+              const isTranslationExpanded =
+                expandedTranslations.has(originalIndex);
+
               return (
-                <p
-                  key={originalIndex}
-                  id={`paragraph-${originalIndex}`}
-                  className="mb-[2rem] dark:text-slate-200 text-left leading-relaxed"
-                >{sentencesInPara.map((group, gIdx) => {
-                    const isSentActive =
-                      group.sentenceIdx === currentSentenceIdx &&
-                      currentSentenceIdx !== -1;
-
-                    // Track char index for word highlighting within this sentence
-                    let charCount = 0;
-
-                    return (
-                      <span
-                        key={gIdx}
+                <div key={originalIndex} className="mb-[2.5rem] group">
+                  <div className="flex items-start gap-4">
+                    {mode === "learning" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleTranslation(originalIndex);
+                        }}
                         className={cn(
-                          "cursor-pointer",
-                          isSentActive
-                            ? "bg-slate-200 dark:bg-slate-800 rounded-sm"
-                            : translationMode !== "minimalist" &&
-                              hoveredSentenceIdx === group.sentenceIdx
-                            ? "bg-blue-100/50 dark:bg-blue-900/30 rounded-sm"
-                            : translationMode !== "minimalist"
-                            ? "hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-sm"
-                            : ""
+                          "mt-1 flex-shrink-0 p-1.5 rounded-md transition-all duration-200",
+                          "text-slate-300 group-hover:text-slate-400 hover:text-blue-500 hover:bg-blue-50",
+                          "dark:text-slate-600 dark:group-hover:text-slate-500 dark:hover:text-blue-400 dark:hover:bg-blue-900/30",
+                          isTranslationExpanded &&
+                            "text-blue-500 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30 opacity-100"
                         )}
-                        style={{
-                          WebkitBoxDecorationBreak: "clone",
-                          boxDecorationBreak: "clone",
-                        }}
-                        onMouseEnter={() => {
-                          if (group.sentenceIdx !== -1) {
-                            setHoveredSentenceIdx(group.sentenceIdx);
-                          }
-                        }}
-                        onMouseLeave={() => {
-                          setHoveredSentenceIdx(null);
-                        }}
-                        onClick={() => {
-                          onPlaySentence?.(group.sentenceIdx);
-                        }}
+                        aria-expanded={isTranslationExpanded}
+                        aria-label={
+                          isTranslationExpanded
+                            ? "Hide translation"
+                            : "Show translation"
+                        }
+                        title={
+                          isTranslationExpanded
+                            ? "Hide translation"
+                            : "Show translation"
+                        }
                       >
-                        {group.tokens.map((t) => {
-                          const tokenLen = t.text.length;
-                          const isWordActive =
-                            isSentActive &&
-                            activeWordIdx !== -1 &&
-                            activeWordIdx >= charCount &&
-                            activeWordIdx < charCount + tokenLen;
+                        <Languages size={18} />
+                      </button>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p
+                        id={`paragraph-${originalIndex}`}
+                        className="dark:text-slate-200 text-left leading-relaxed"
+                      >
+                        {sentencesInPara.map((group, gIdx) => {
+                          const isSentActive =
+                            group.sentenceIdx === currentSentenceIdx &&
+                            currentSentenceIdx !== -1;
 
-                          // Correctly increment charCount after check to match TTS boundary reporting
-                          const currentTokenIdx = charCount;
-                          charCount += tokenLen;
+                          // Track char index for word highlighting within this sentence
+                          let charCount = 0;
 
-                          return renderToken(t.text, t.globalIdx, isWordActive);
+                          return (
+                            <span
+                              key={gIdx}
+                              className={cn(
+                                "cursor-pointer",
+                                isSentActive
+                                  ? "bg-slate-200 dark:bg-slate-800 rounded-sm"
+                                  : translationMode !== "minimalist" &&
+                                    hoveredSentenceIdx === group.sentenceIdx
+                                  ? "bg-blue-100/50 dark:bg-blue-900/30 rounded-sm"
+                                  : translationMode !== "minimalist"
+                                  ? "hover:bg-slate-100 dark:hover:bg-slate-800/50 rounded-sm"
+                                  : ""
+                              )}
+                              style={{
+                                WebkitBoxDecorationBreak: "clone",
+                                boxDecorationBreak: "clone",
+                              }}
+                              onMouseEnter={() => {
+                                if (group.sentenceIdx !== -1) {
+                                  setHoveredSentenceIdx(group.sentenceIdx);
+                                }
+                              }}
+                              onMouseLeave={() => {
+                                setHoveredSentenceIdx(null);
+                              }}
+                              onClick={() => {
+                                onPlaySentence?.(group.sentenceIdx);
+                              }}
+                            >
+                              {group.tokens.map((t) => {
+                                const tokenLen = t.text.length;
+                                const isWordActive =
+                                  isSentActive &&
+                                  activeWordIdx !== -1 &&
+                                  activeWordIdx >= charCount &&
+                                  activeWordIdx < charCount + tokenLen;
+
+                                // Correctly increment charCount after check to match TTS boundary reporting
+                                const currentTokenIdx = charCount;
+                                charCount += tokenLen;
+
+                                return renderToken(
+                                  t.text,
+                                  t.globalIdx,
+                                  isWordActive
+                                );
+                              })}
+                            </span>
+                          );
                         })}
-                      </span>
-                    );
-                  })}
-                </p>
+                      </p>
+
+                      {/* Translation Block */}
+                      <div
+                        className={cn(
+                          "overflow-hidden transition-all duration-300 ease-in-out",
+                          isTranslationExpanded
+                            ? "max-h-[1000px] opacity-100 mt-4"
+                            : "max-h-0 opacity-0 mt-0"
+                        )}
+                      >
+                        <div className="pl-4 border-l-2 border-blue-100 dark:border-blue-900/50 py-1">
+                          <p className="text-slate-500 dark:text-slate-400 italic text-[0.95em] leading-relaxed">
+                            {l1Paragraphs[originalIndex]}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </div>
