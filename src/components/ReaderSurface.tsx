@@ -18,6 +18,7 @@ import { ReaderHeader } from "./reader/ReaderHeader";
 import { DualModeView } from "./reader/DualModeView";
 import { SingleModeView } from "./reader/SingleModeView";
 import { Token } from "./reader/Token";
+import { Loader2 } from "lucide-react";
 import { InlineTranslation } from "./translation/InlineTranslation";
 import { cn } from "../lib/utils";
 
@@ -142,6 +143,83 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
 
   // Local state for persistent visual spans
   const [translatedSpans, setTranslatedSpans] = useState<TranslatedSpan[]>([]);
+  const [overlayPositions, setOverlayPositions] = useState<
+    Record<string, { x: number; y: number; width: number }>
+  >({});
+
+  // Measure positions for inline translations
+  useEffect(() => {
+    const updatePositions = () => {
+      if (!containerRef.current || translationMode !== "inline") return;
+
+      const newPositions: Record<
+        string,
+        { x: number; y: number; width: number }
+      > = {};
+      const containerRect = containerRef.current.getBoundingClientRect();
+
+      const measureSpan = (start: number, end: number, id: string) => {
+        const elements: HTMLElement[] = [];
+        for (let i = start; i <= end; i++) {
+          const el = document.querySelector(
+            `[data-token-index="${i}"]`
+          ) as HTMLElement;
+          if (el) elements.push(el);
+        }
+
+        if (elements.length === 0) return;
+
+        const rects = elements.map((el) => el.getBoundingClientRect());
+
+        // Find the bounding box of all tokens in the span
+        const left = Math.min(...rects.map((r) => r.left));
+        const right = Math.max(...rects.map((r) => r.right));
+        const top = Math.min(...rects.map((r) => r.top));
+
+        newPositions[id] = {
+          x: (left + right) / 2 - containerRect.left,
+          y: top - containerRect.top,
+          width: right - left,
+        };
+      };
+
+      // Measure active selection
+      if (selection) {
+        measureSpan(selection.start, selection.end, "active-selection");
+      }
+
+      // Measure persistent spans
+      translatedSpans.forEach((span) => {
+        const id = `span-${span.start}-${span.end}`;
+        measureSpan(span.start, span.end, id);
+      });
+
+      setOverlayPositions(newPositions);
+    };
+
+    // Update on changes, and also on resize/scroll
+    updatePositions();
+
+    // Use a small delay to ensure DOM is updated
+    const timer = setTimeout(updatePositions, 100);
+
+    // Also update when images or fonts might have loaded
+    window.addEventListener("load", updatePositions);
+    window.addEventListener("resize", updatePositions);
+    return () => {
+      window.removeEventListener("load", updatePositions);
+      window.removeEventListener("resize", updatePositions);
+      clearTimeout(timer);
+    };
+  }, [
+    selection,
+    translatedSpans,
+    translationMode,
+    fontSize,
+    columnWidth,
+    readingMode,
+    mode,
+  ]);
 
   // Track the latest selection version to implement only-latest-wins
   const latestSelectionVersionRef = useRef<number>(0);
@@ -416,6 +494,7 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
     const isSelected =
       selection && index >= selection.start && index <= selection.end;
     const isSelectionStart = selection?.start === index;
+    const isSelectionEnd = selection?.end === index;
 
     return (
       <Token
@@ -424,9 +503,8 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
         index={index}
         isSelected={isSelected}
         isSelectionStart={isSelectionStart}
-        selectionLoading={selection?.loading}
-        selectionTranslation={selection?.translation}
-        selectionIsChunkActive={selection?.isChunkActive}
+        isSelectionEnd={isSelectionEnd}
+        isSelectionChunkActive={selection?.isChunkActive}
         karaokeIndex={isKaraoke ? index : -1}
         translatedSpans={translatedSpans}
         metadata={metadata}
@@ -455,11 +533,85 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
       <div
         ref={containerRef}
         className={cn(
-          "mx-auto px-8 py-12 pb-32 transition-all duration-300",
+          "mx-auto px-8 py-12 pb-32 transition-all duration-300 relative",
           columnWidth === "centered" ? "max-w-3xl" : "max-w-[1400px]"
         )}
         style={{ fontSize: `${fontSize}px`, lineHeight: dynamicLineHeight }}
       >
+        {/* Translation Overlay */}
+        {translationMode === "inline" && (
+          <div className="absolute inset-0 pointer-events-none z-50">
+            {/* Active Selection Translation */}
+            {selection && overlayPositions["active-selection"] && (
+              <div
+                className="absolute transition-all duration-150 ease-out flex flex-col items-center"
+                style={{
+                  left: `${overlayPositions["active-selection"].x}px`,
+                  top: `${overlayPositions["active-selection"].y}px`,
+                  transform: "translate(-50%, -100%)",
+                  width: "max-content",
+                  maxWidth: "250px",
+                }}
+              >
+                {selection.loading ? (
+                  <div className="mb-2 opacity-100 transition-opacity duration-150">
+                    <Loader2 className="h-4 w-4 animate-spin text-blue-500/70" />
+                  </div>
+                ) : (
+                  selection.translation && (
+                    <div
+                      className="mb-[6px] mt-[2px] opacity-100 transition-all duration-150"
+                      style={{ textAlign: "center" }}
+                    >
+                      <span className="text-blue-600 dark:text-blue-400 text-[1.0em] font-handwriting font-bold leading-[1.35] block px-2 drop-shadow-sm whitespace-nowrap">
+                        {selection.translation}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            )}
+
+            {/* Persistent Span Translations */}
+            {translatedSpans.map((span) => {
+              const id = `span-${span.start}-${span.end}`;
+              const pos = overlayPositions[id];
+              if (!pos) return null;
+
+              // Don't show if it's the current selection (selection handles its own)
+              if (
+                selection &&
+                span.start === selection.start &&
+                span.end === selection.end
+              )
+                return null;
+
+              return (
+                <div
+                  key={id}
+                  className="absolute transition-all duration-150 ease-out flex flex-col items-center"
+                  style={{
+                    left: `${pos.x}px`,
+                    top: `${pos.y}px`,
+                    transform: "translate(-50%, -100%)",
+                    width: "max-content",
+                    maxWidth: "250px",
+                  }}
+                >
+                  <div
+                    className="mb-[6px] mt-[2px] opacity-100 transition-all duration-150"
+                    style={{ textAlign: "center" }}
+                  >
+                    <span className="text-blue-600 dark:text-blue-400 text-[1.0em] font-handwriting font-bold leading-[1.35] block px-2 drop-shadow-sm whitespace-nowrap">
+                      {span.translation}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <ReaderHeader
           title={title}
           l1Title={l1_title}

@@ -22,17 +22,16 @@ interface TokenProps {
   index: number;
   isSelected?: boolean;
   isSelectionStart?: boolean;
-  selectionLoading?: boolean;
-  selectionTranslation?: string;
-  selectionIsChunkActive?: boolean;
+  isSelectionEnd?: boolean;
+  isSelectionChunkActive?: boolean;
   karaokeIndex?: number;
   translatedSpans?: TranslatedSpan[];
   metadata: ArticleMetadata;
   mode: ReadingMode;
   onWordClick: (index: number) => void;
   onClearSelection: () => void;
-  sentenceIndex?: number; // Added: For sentence-level highlighting
-  sentenceText?: string; // Added: For translation context
+  sentenceIndex?: number;
+  sentenceText?: string;
 }
 
 export const Token: React.FC<TokenProps> = memo(
@@ -41,9 +40,8 @@ export const Token: React.FC<TokenProps> = memo(
     index,
     isSelected,
     isSelectionStart,
-    selectionLoading,
-    selectionTranslation,
-    selectionIsChunkActive,
+    isSelectionEnd,
+    isSelectionChunkActive,
     karaokeIndex,
     translatedSpans = [],
     metadata,
@@ -201,19 +199,7 @@ export const Token: React.FC<TokenProps> = memo(
 
     const isHighlightActive = isSelected || !!translatedSpan;
     const isChunkActive =
-      selectionIsChunkActive || translatedSpan?.isChunkActive;
-
-    const showSelectionTranslation = isSelected && isSelectionStart;
-    const showTranslatedSpan =
-      translatedSpan && index === translatedSpan.start && !isSelected;
-
-    const translationText = showSelectionTranslation
-      ? selectionLoading
-        ? "..."
-        : selectionTranslation
-      : showTranslatedSpan
-      ? translatedSpan?.translation
-      : null;
+      !!translatedSpan?.isChunkActive || !!isSelectionChunkActive;
 
     const isWordToken = isWord(token);
 
@@ -224,7 +210,7 @@ export const Token: React.FC<TokenProps> = memo(
     const tokenHighlightClass = isHighlightActive ? highlightColorClass : "";
 
     const tokenStyling = cn(
-      "px-0 mx-0 rounded-none",
+      "px-0.5 mx-0 rounded-sm transition-colors duration-150", // Added padding, removed margins, added transition
       isWordToken && "hover:bg-slate-100 dark:hover:bg-slate-800/50"
     );
 
@@ -249,10 +235,6 @@ export const Token: React.FC<TokenProps> = memo(
       mode === "clean" ||
       translationMode === "hover"
     ) {
-      const showTranslation =
-        (isSelected && isSelectionStart) ||
-        (translatedSpan && index === translatedSpan.start && !isSelected);
-
       return (
         <span
           ref={tokenRef}
@@ -266,7 +248,7 @@ export const Token: React.FC<TokenProps> = memo(
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           className={cn(
-            "relative cursor-pointer inline transition-all duration-200",
+            "relative cursor-pointer inline transition-all duration-150", // 150ms transition
             tokenStyling,
             tokenHighlightClass,
             isKaraoke && "bg-yellow-200 dark:bg-yellow-900/60 rounded",
@@ -362,29 +344,6 @@ export const Token: React.FC<TokenProps> = memo(
                 </div>
               </div>
             )}
-
-          {/* Inline Translation text above the word */}
-          {showTranslation && translationText && (
-            <span
-              className={cn(
-                "absolute bottom-full left-0 z-50 pointer-events-none w-max max-w-[250px] text-left mb-0.5 transition-all duration-300 ease-out",
-                selectionLoading && isSelected
-                  ? "opacity-0 translate-y-1"
-                  : "opacity-100 translate-y-0"
-              )}
-            >
-              <span className="text-blue-600 dark:text-blue-400 text-[0.95rem] font-handwriting font-bold leading-tight block px-1 drop-shadow-sm whitespace-nowrap">
-                {translationText}
-              </span>
-            </span>
-          )}
-
-          {/* Loading indicator */}
-          {selectionLoading && isSelected && isSelectionStart && (
-            <span className="absolute bottom-full left-0 mb-1 opacity-100 transition-opacity duration-200">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500/70" />
-            </span>
-          )}
         </span>
       );
     }
