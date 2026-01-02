@@ -76,10 +76,10 @@ export const ControlBar: React.FC = () => {
 
   // Default Mode Toolbar (Unified Audio Design)
   return (
-    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 z-50">
+    <div className="absolute bottom-[2rem] left-1/2 -translate-x-1/2 flex items-center gap-[1rem] z-50">
       <div
         className={cn(
-          "backdrop-blur-md border shadow-lg rounded-full p-2 flex items-center gap-4 transition-all duration-300",
+          "backdrop-blur-md border shadow-lg rounded-full p-[0.5rem] flex items-center gap-[1rem] transition-all duration-300",
           theme === "dark"
             ? "bg-[#1A1A1A]/90 border-[#333]"
             : "bg-white/90 border-slate-200"
@@ -90,25 +90,25 @@ export const ControlBar: React.FC = () => {
           <button
             onClick={() => setShowVoiceMenu(!showVoiceMenu)}
             className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center transition-all",
+              "w-[2.5rem] h-[2.5rem] rounded-full flex items-center justify-center transition-all",
               theme === "dark"
                 ? "text-slate-400 hover:bg-[#333] hover:text-white"
                 : "text-slate-600 hover:bg-slate-100"
             )}
             title="Select Voice"
           >
-            <Globe size={20} />
+            <Globe size={"1.25rem" as any} />
           </button>
           {showVoiceMenu && (
             <div
               className={cn(
-                "absolute bottom-14 left-0 w-80 max-h-[60vh] overflow-y-auto border shadow-xl rounded-xl p-2 flex flex-col text-sm z-[60]",
+                "absolute bottom-[3.5rem] left-0 w-[min(20rem,80vw)] max-h-[60vh] overflow-y-auto border shadow-xl rounded-xl p-[0.5rem] flex flex-col text-[0.875rem] z-[60]",
                 theme === "dark"
                   ? "bg-[#1A1A1A] border-[#333]"
                   : "bg-white border-slate-200"
               )}
             >
-              <div className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 mb-1">
+              <div className="px-[0.75rem] py-[0.5rem] text-[0.625rem] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 mb-[0.25rem]">
                 Voices
               </div>
               {voices.map((v, idx) => (
@@ -119,7 +119,7 @@ export const ControlBar: React.FC = () => {
                     setShowVoiceMenu(false);
                   }}
                   className={cn(
-                    "text-left px-3 py-2.5 rounded-lg transition-colors leading-snug flex items-center gap-2",
+                    "text-left px-[0.75rem] py-[0.625rem] rounded-lg transition-colors leading-snug flex items-center gap-[0.5rem]",
                     selectedVoice === v.voiceURI
                       ? "bg-blue-600 text-white font-medium"
                       : theme === "dark"
@@ -129,7 +129,7 @@ export const ControlBar: React.FC = () => {
                 >
                   <div className="truncate flex-1">{formatVoiceName(v)}</div>
                   {selectedVoice === v.voiceURI && (
-                    <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                    <div className="w-[0.375rem] h-[0.375rem] bg-white rounded-full" />
                   )}
                 </button>
               ))}
@@ -141,29 +141,29 @@ export const ControlBar: React.FC = () => {
         <button
           onClick={() => handleSkip("prev")}
           className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center transition-all relative group",
+            "w-[2.5rem] h-[2.5rem] rounded-full flex items-center justify-center transition-all relative group",
             theme === "dark"
               ? "text-slate-400 hover:bg-[#333] hover:text-white"
               : "text-slate-600 hover:bg-slate-100"
           )}
           title="Previous Sentence"
         >
-          <RotateCcw size={20} />
-          <span className="text-[9px] font-bold absolute mt-0.5">10</span>
+          <RotateCcw size={"1.25rem" as any} />
+          <span className="text-[0.5625rem] font-bold absolute mt-[0.125rem]">10</span>
         </button>
 
         {/* Play/Pause Main Button */}
         <button
           onClick={() => setKaraokeActive(!karaokeActive)}
           className={cn(
-            "w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg transition-all hover:scale-105 active:scale-95",
+            "w-[3rem] h-[3rem] rounded-full flex items-center justify-center text-white shadow-lg transition-all hover:scale-105 active:scale-95",
             karaokeActive ? "bg-blue-600" : "bg-blue-600"
           )}
         >
           {karaokeActive ? (
-            <Pause size={22} fill="currentColor" />
+            <Pause size={"1.375rem" as any} fill="currentColor" />
           ) : (
-            <Play size={22} fill="currentColor" className="ml-1" />
+            <Play size={"1.375rem" as any} fill="currentColor" className="ml-[0.25rem]" />
           )}
         </button>
 
@@ -171,22 +171,22 @@ export const ControlBar: React.FC = () => {
         <button
           onClick={() => handleSkip("next")}
           className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center transition-all relative group",
+            "w-[2.5rem] h-[2.5rem] rounded-full flex items-center justify-center transition-all relative group",
             theme === "dark"
               ? "text-slate-400 hover:bg-[#333] hover:text-white"
               : "text-slate-600 hover:bg-slate-100"
           )}
           title="Next Sentence"
         >
-          <RotateCw size={20} />
-          <span className="text-[9px] font-bold absolute mt-0.5">10</span>
+          <RotateCw size={"1.25rem" as any} />
+          <span className="text-[0.5625rem] font-bold absolute mt-[0.125rem]">10</span>
         </button>
 
         {/* Speed Control */}
         <button
           onClick={cycleSpeed}
           className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center transition-all font-bold text-[10px] tracking-tighter",
+            "w-[2.5rem] h-[2.5rem] rounded-full flex items-center justify-center transition-all font-bold text-[0.625rem] tracking-tighter",
             theme === "dark"
               ? "text-slate-400 hover:bg-[#333] hover:text-white"
               : "text-slate-600 hover:bg-slate-100"

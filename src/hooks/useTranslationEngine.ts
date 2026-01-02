@@ -8,7 +8,12 @@ interface TranslationResult {
 }
 
 interface UseTranslationEngineReturn {
-  translateText: (text: string, context?: string) => Promise<TranslationResult | null>;
+  translateText: (
+    text: string,
+    context?: string,
+    to?: string,
+    from?: string
+  ) => Promise<TranslationResult | null>;
   loading: boolean;
   error: string | null;
   getCachedTranslation: (text: string) => TranslationResult | null;
@@ -23,15 +28,25 @@ export const useTranslationEngine = (): UseTranslationEngineReturn => {
   }, []);
 
   const translateText = useCallback(
-    async (text: string, context?: string): Promise<TranslationResult | null> => {
+    async (
+      text: string,
+      context?: string,
+      to?: string,
+      from?: string
+    ): Promise<TranslationResult | null> => {
       if (!text) return null;
 
       setLoading(true);
       setError(null);
 
       try {
-        // Don't pass the target language to use the default from settings
-        const result = await translationService.translate(text, undefined, context);
+        // Pass the target and source language if provided
+        const result = await translationService.translate(
+          text,
+          to,
+          context,
+          from
+        );
         return result;
       } catch (err: any) {
         setError(err.message);

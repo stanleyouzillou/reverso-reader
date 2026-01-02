@@ -39,33 +39,33 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       {/* Panel */}
       <div
         className={cn(
-          "fixed right-0 top-0 h-full w-[350px] bg-white z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col",
+          "fixed right-0 top-0 h-full w-[min(21.875rem,100vw)] bg-white dark:bg-slate-900 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col",
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-100">
-          <h2 className="text-xl font-serif font-bold text-slate-900">
+        <div className="flex items-center justify-between p-[1.5rem] border-b border-slate-100 dark:border-slate-800">
+          <h2 className="text-[1.25rem] font-serif font-bold text-slate-900 dark:text-slate-100">
             Reader Settings
           </h2>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-50 transition-colors"
+            className="p-[0.5rem] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
           >
-            <X size={24} />
+            <X size={"1.5rem" as any} />
           </button>
         </div>
 
         {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto p-[1.5rem] space-y-[2rem]">
           <FontSettings />
-          <div className="h-px bg-slate-100" />
+          <div className="h-px bg-slate-100 dark:bg-slate-800" />
           <AppearanceSettings />
-          <div className="h-px bg-slate-100" />
+          <div className="h-px bg-slate-100 dark:bg-slate-800" />
           <TranslationSettings />
-          <div className="h-px bg-slate-100" />
+          <div className="h-px bg-slate-100 dark:bg-slate-800" />
           <LayoutSettings />
-          <div className="h-px bg-slate-100" />
+          <div className="h-px bg-slate-100 dark:bg-slate-800" />
           <DebugSettings />
         </div>
       </div>

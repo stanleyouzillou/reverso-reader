@@ -34,6 +34,8 @@ export interface ArticleMetadata {
 export interface Article {
   title: string;
   l1_title: string;
+  l1_language: string; // e.g., "fr"
+  l2_language: string; // e.g., "en"
   categories: string[];
   content: string;
   l1_content: string;

@@ -12,8 +12,17 @@ export const useArticleIngestion = () => {
     return articleService.getContext(processedData.allTokens, start, end);
   };
 
-  return {
+  const result = {
     ...processedData,
     getContext,
+    sourceLanguage: DEMO_ARTICLE.l2_language, // The language of the main text
+    targetLanguage: DEMO_ARTICLE.l1_language, // The default translation language
   };
+
+  console.log(`[useArticleIngestion] Article languages:`, {
+    sourceLanguage: result.sourceLanguage,
+    targetLanguage: result.targetLanguage
+  });
+
+  return result;
 };

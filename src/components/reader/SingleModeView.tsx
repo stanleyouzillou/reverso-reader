@@ -3,6 +3,7 @@ import { cn, isWord } from "../../lib/utils";
 import { ReadingMode } from "../../types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useStore } from "../../store/useStore";
+import { useReaderSettings } from "../../hooks/useReaderSettings";
 
 interface SingleModeViewProps {
   mode: ReadingMode;
@@ -39,6 +40,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
   onPlaySentence,
   isPaused = true,
 }) => {
+  const { translationMode } = useReaderSettings();
   const { hoveredSentenceIdx, setHoveredSentenceIdx } = useStore();
   const [currentPage, setCurrentPage] = useState(0);
   const paragraphsPerPage = 1;
@@ -137,21 +139,21 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
     <div className="flex flex-col w-full">
       {/* 1. Page Number Top */}
       {readingMode === "page" && (
-        <div className="text-center font-serif text-slate-400 text-sm mb-8 font-medium uppercase tracking-widest">
+        <div className="text-center font-serif text-slate-400 text-[0.875rem] mb-[2rem] font-medium uppercase tracking-widest">
           Page {currentPage + 1} / {totalPages}
         </div>
       )}
 
-      <div className="flex items-start gap-8">
+      <div className="flex items-start gap-[1rem] sm:gap-[2rem]">
         {/* 2. Left Arrow (Desktop) */}
         {readingMode === "page" && (
-          <div className="hidden md:flex flex-col justify-center h-[50vh] sticky top-32">
+          <div className="hidden md:flex flex-col justify-center h-[50vh] sticky top-[8rem]">
             <button
               onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
               disabled={currentPage === 0}
-              className="p-3 rounded-full hover:bg-slate-100 disabled:opacity-20 disabled:hover:bg-transparent text-slate-400 hover:text-slate-800 transition-all"
+              className="p-[0.75rem] rounded-full hover:bg-slate-100 disabled:opacity-20 disabled:hover:bg-transparent text-slate-400 hover:text-slate-800 transition-all"
             >
-              <ChevronLeft size={32} />
+              <ChevronLeft size="2rem" />
             </button>
           </div>
         )}
@@ -159,8 +161,8 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
         {/* 3. Content Area */}
         <div
           className={cn(
-            "grid gap-2 w-full transition-colors duration-300 flex-1",
-            mode === "dual" ? "grid-cols-2" : "grid-cols-1"
+            "grid gap-[0.5rem] w-full transition-colors duration-300 flex-1",
+            mode === "dual" ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
           )}
         >
           {/* L2 Content */}
@@ -215,7 +217,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                 <p
                   key={originalIndex}
                   id={`paragraph-${originalIndex}`}
-                  className="mb-8 rounded dark:text-slate-200"
+                  className="mb-[2rem] rounded dark:text-slate-200"
                 >
                   {sentencesInPara.map((group, gIdx) => {
                     const isSentActive =
@@ -229,12 +231,15 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                       <span
                         key={gIdx}
                         className={cn(
-                          "rounded cursor-pointer",
+                          "rounded cursor-pointer transition-colors duration-200",
                           isSentActive
                             ? "bg-slate-200 dark:bg-slate-800"
-                            : hoveredSentenceIdx === group.sentenceIdx
+                            : translationMode !== "minimalist" &&
+                              hoveredSentenceIdx === group.sentenceIdx
                             ? "bg-blue-100/50 dark:bg-blue-900/30"
-                            : "hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                            : translationMode !== "minimalist"
+                            ? "hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                            : ""
                         )}
                         onMouseEnter={() => {
                           if (group.sentenceIdx !== -1) {
@@ -272,7 +277,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
 
           {/* L1 Content (Dual Mode - Sync) */}
           {mode === "dual" && (
-            <div className="text-slate-500 dark:text-slate-400 text-left border-l border-slate-100 dark:border-slate-800 pl-8">
+            <div className="text-slate-500 dark:text-slate-400 text-left border-l border-slate-100 dark:border-slate-800 pl-[2rem]">
               {visibleIndices.map((originalIndex) => {
                 if (
                   !paragraphTokens[originalIndex] ||
@@ -292,14 +297,15 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                   );
 
                 return (
-                  <div key={originalIndex} className="mb-3">
+                  <div key={originalIndex} className="mb-[0.75rem]">
                     {sentencesInPara.length > 0 ? (
                       sentencesInPara.map((s) => (
                         <span
                           key={s.globalIdx}
                           className={cn(
-                            "transition-colors duration-200 rounded px-1 -mx-1 block md:inline cursor-pointer",
-                            hoveredSentenceIdx === s.globalIdx &&
+                            "transition-colors duration-200 rounded px-[0.25rem] -mx-[0.25rem] block md:inline cursor-pointer",
+                            translationMode !== "minimalist" &&
+                              hoveredSentenceIdx === s.globalIdx &&
                               "bg-blue-100/50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
                           )}
                           onMouseEnter={() =>
@@ -312,7 +318,9 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                         </span>
                       ))
                     ) : (
-                      <p>{l1Paragraphs[originalIndex]}</p>
+                      <p className="mb-[0.5rem]">
+                        {l1Paragraphs[originalIndex]}
+                      </p>
                     )}
                   </div>
                 );
@@ -323,15 +331,15 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
 
         {/* 4. Right Arrow (Desktop) */}
         {readingMode === "page" && (
-          <div className="hidden md:flex flex-col justify-center h-[50vh] sticky top-32">
+          <div className="hidden md:flex flex-col justify-center h-[50vh] sticky top-[8rem]">
             <button
               onClick={() =>
                 setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
               }
               disabled={currentPage >= totalPages - 1}
-              className="p-3 rounded-full hover:bg-slate-100 disabled:opacity-20 disabled:hover:bg-transparent text-slate-400 hover:text-slate-800 transition-all"
+              className="p-[0.75rem] rounded-full hover:bg-slate-100 disabled:opacity-20 disabled:hover:bg-transparent text-slate-400 hover:text-slate-800 transition-all"
             >
-              <ChevronRight size={32} />
+              <ChevronRight size="2rem" />
             </button>
           </div>
         )}

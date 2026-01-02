@@ -29,6 +29,11 @@ interface State {
   hoveredTokenId: string | null;
   hoveredSentenceIdx: number | null;
 
+  // Minimalist Translation State
+  minimalistTokenId: string | null;
+  minimalistTranslation: string | null;
+  isMinimalistLoading: boolean;
+
   // Actions
   setMode: (mode: ReadingMode) => void;
   setSidebarMode: (mode: SidebarMode) => void;
@@ -47,6 +52,9 @@ interface State {
   setSelectedDictionaryWord: (word: VocabItem | null) => void;
   setHoveredTokenId: (id: string | null) => void;
   setHoveredSentenceIdx: (idx: number | null) => void;
+  setMinimalistTokenId: (id: string | null) => void;
+  setMinimalistTranslation: (translation: string | null) => void;
+  setIsMinimalistLoading: (loading: boolean) => void;
   resetVocabNotification: () => void;
   clearHistory: () => void;
 }
@@ -71,6 +79,9 @@ export const useStore = create<State>()(
       selectedDictionaryWord: null,
       hoveredTokenId: null,
       hoveredSentenceIdx: null,
+      minimalistTokenId: null,
+      minimalistTranslation: null,
+      isMinimalistLoading: false,
 
       setMode: (mode) => {
         set({ mode });
@@ -85,6 +96,10 @@ export const useStore = create<State>()(
         set({ selectedDictionaryWord: word }),
       setHoveredTokenId: (id) => set({ hoveredTokenId: id }),
       setHoveredSentenceIdx: (idx) => set({ hoveredSentenceIdx: idx }),
+      setMinimalistTokenId: (id) => set({ minimalistTokenId: id }),
+      setMinimalistTranslation: (translation) =>
+        set({ minimalistTranslation: translation }),
+      setIsMinimalistLoading: (loading) => set({ isMinimalistLoading: loading }),
 
       addToHistory: (item) =>
         set((state) => {

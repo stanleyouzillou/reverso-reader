@@ -52,7 +52,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
   tokenToSentenceMap,
   allTokens,
 }) => {
-  const { showHintsEnabled } = useReaderSettings();
+  const { translationMode, showHintsEnabled, minimalistSettings } =
+    useReaderSettings();
   const { highlightedWords, hoveredSentenceIdx, setHoveredSentenceIdx } =
     useStore();
   const [currentPage, setCurrentPage] = useState(0);
@@ -126,7 +127,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
     const wordTokens = tokens.filter(isWord);
     let wordCount = 0;
 
-    const isSentenceHovered = hoveredSentenceIdx === sentenceIdx;
+    const isSentenceHovered =
+      translationMode !== "minimalist" && hoveredSentenceIdx === sentenceIdx;
 
     return (
       <span
@@ -179,7 +181,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
         <span
           className={cn(
             "transition-colors duration-200",
-            hoveredSentenceIdx === sentenceIdx &&
+            translationMode !== "minimalist" &&
+              hoveredSentenceIdx === sentenceIdx &&
               "bg-blue-100/50 dark:bg-blue-900/30 rounded px-1 -mx-1",
             activeSentenceIdx === sentenceIdx &&
               "bg-slate-200 dark:bg-slate-800 rounded px-1 -mx-1"
@@ -208,7 +211,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
     let wordCount = 0;
     let charCount = 0;
 
-    const isSentenceHovered = hoveredSentenceIdx === sentenceIdx;
+    const isSentenceHovered = translationMode !== "minimalist" && hoveredSentenceIdx === sentenceIdx;
 
     return (
       <span
@@ -288,10 +291,10 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
   const renderPaginationFrame = (children: React.ReactNode) => {
     if (readingMode === "scrolling") {
       return (
-        <div className="w-full mx-auto mt-12 space-y-4">
+        <div className="w-full mx-auto mt-[3rem] space-y-[1rem]">
           {children}
           {dualModeOption === "hover" && (
-            <p className="text-center text-xs text-slate-400 mt-8">
+            <p className="text-center text-[0.75rem] text-slate-400 mt-[2rem]">
               Hover to reveal translation, Click to keep open
             </p>
           )}
@@ -306,19 +309,19 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
     return (
       <div className="flex flex-col w-full">
         {/* 1. Page Number Top */}
-        <div className="text-center font-serif text-slate-400 text-sm mb-8 font-medium uppercase tracking-widest">
+        <div className="text-center font-serif text-slate-400 text-[0.875rem] mb-[2rem] font-medium uppercase tracking-widest">
           Page {currentPage + 1} / {totalPages}
         </div>
 
-        <div className="flex items-start gap-8">
+        <div className="flex items-start gap-[1rem] sm:gap-[2rem]">
           {/* 2. Left Arrow (Desktop) */}
-          <div className="hidden md:flex flex-col justify-center h-[50vh] sticky top-32">
+          <div className="hidden md:flex flex-col justify-center h-[50vh] sticky top-[8rem]">
             <button
               onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
               disabled={currentPage === 0}
-              className="p-3 rounded-full hover:bg-slate-100 disabled:opacity-20 disabled:hover:bg-transparent text-slate-400 hover:text-slate-800 transition-all"
+              className="p-[0.75rem] rounded-full hover:bg-slate-100 disabled:opacity-20 disabled:hover:bg-transparent text-slate-400 hover:text-slate-800 transition-all"
             >
-              <ChevronLeft size={32} />
+              <ChevronLeft size="2rem" />
             </button>
           </div>
 
@@ -326,15 +329,15 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
           <div className="flex-1 min-w-0">{children}</div>
 
           {/* 3. Right Arrow (Desktop) */}
-          <div className="hidden md:flex flex-col justify-center h-[50vh] sticky top-32">
+          <div className="hidden md:flex flex-col justify-center h-[50vh] sticky top-[8rem]">
             <button
               onClick={() =>
                 setCurrentPage((p) => Math.min(totalPages - 1, p + 1))
               }
               disabled={currentPage >= totalPages - 1}
-              className="p-3 rounded-full hover:bg-slate-100 disabled:opacity-20 disabled:hover:bg-transparent text-slate-400 hover:text-slate-800 transition-all"
+              className="p-[0.75rem] rounded-full hover:bg-slate-100 disabled:opacity-20 disabled:hover:bg-transparent text-slate-400 hover:text-slate-800 transition-all"
             >
-              <ChevronRight size={32} />
+              <ChevronRight size="2rem" />
             </button>
           </div>
         </div>
@@ -364,7 +367,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               key={actualIdx}
               id={`sentence-${actualIdx}`}
               className={cn(
-                "grid grid-cols-2 gap-4 py-2 border-b border-slate-50 dark:border-slate-800/50 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 group cursor-pointer",
+                "grid grid-cols-1 sm:grid-cols-2 gap-[1rem] py-[0.5rem] border-b border-slate-50 dark:border-slate-800/50 hover:bg-blue-50/30 dark:hover:bg-blue-900/10 group cursor-pointer",
                 isPlaying ? "bg-slate-200/50 dark:bg-slate-800/50" : ""
               )}
               onClick={() => onPlaySentence?.(actualIdx)}
@@ -374,8 +377,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               <div
                 className={cn(
                   "text-slate-800 dark:text-slate-200 text-left",
-                  hoveredSentenceIndex === actualIdx ||
-                    hoveredSentenceIdx === actualIdx
+                  translationMode !== "minimalist" && (hoveredSentenceIndex === actualIdx ||
+                    hoveredSentenceIdx === actualIdx)
                     ? "text-blue-900 dark:text-blue-400"
                     : ""
                 )}
@@ -385,8 +388,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               <div
                 className={cn(
                   "text-slate-500 dark:text-slate-400 text-left",
-                  hoveredSentenceIndex === actualIdx ||
-                    hoveredSentenceIdx === actualIdx
+                  translationMode !== "minimalist" && (hoveredSentenceIndex === actualIdx ||
+                    hoveredSentenceIdx === actualIdx)
                     ? "text-blue-700 dark:text-blue-300"
                     : ""
                 )}
@@ -524,8 +527,8 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                 className={cn(
                   "text-base text-slate-600 italic bg-blue-50/50 rounded-lg transition-all duration-300 overflow-hidden cursor-pointer",
                   visibleTranslations.has(actualIdx)
-                    ? "max-h-[500px] opacity-100 p-4 mt-2"
-                    : "max-h-0 opacity-0 p-0 mt-0 group-hover:max-h-[500px] group-hover:opacity-100 group-hover:p-4 group-hover:mt-2"
+                    ? "max-h-[32rem] opacity-100 p-4 mt-2"
+                    : "max-h-0 opacity-0 p-0 mt-0 group-hover:max-h-[32rem] group-hover:opacity-100 group-hover:p-4 group-hover:mt-2"
                 )}
                 onClick={() => {
                   // Toggle logic repeated

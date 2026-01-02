@@ -1,5 +1,6 @@
 import { useReaderSettings } from "../hooks/useReaderSettings";
 import { translationRegistry } from "./translation/TranslationRegistry";
+import { normalizeLanguageCode } from "../lib/utils";
 
 interface TranslationResult {
   text: string;
@@ -11,7 +12,12 @@ class TranslationService {
   private readonly LS_CACHE_PREFIX = "trans_";
   private readonly CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-  async translate(text: string, to?: string, context?: string): Promise<TranslationResult> {
+  async translate(
+    text: string,
+    to?: string,
+    context?: string,
+    from: string = "auto"
+  ): Promise<TranslationResult> {
     if (!text) {
       throw new Error("No text provided");
     }
@@ -19,18 +25,21 @@ class TranslationService {
     // Get current provider and L2 language from settings
     const provider = useReaderSettings.getState().translationProvider;
     const l2Language = useReaderSettings.getState().l2Language || "fr";
-    const targetLanguage = to || l2Language;
-
-    // Check if this is a chunk translation (multiple words)
-    const selectedWords = text.trim().split(/\s+/);
-    const isChunkTranslation = selectedWords.length > 1;
+    const targetLanguage = normalizeLanguageCode(to || l2Language);
+    const sourceLang = normalizeLanguageCode(from);
 
     // Create cache key using the format "word1_word2_word3"
     const slug = text.trim().toLowerCase().replace(/\s+/g, "_");
     // If there is context, include a hash or identifier of the context in the cache key
-    const contextId = context ? `:${context.length}_${context.slice(0, 10)}` : "";
-    const cacheKey = `${provider}:${slug}:${targetLanguage}${contextId}`;
-    const lsCacheKey = `${this.LS_CACHE_PREFIX}${provider}_${slug}_${targetLanguage}${contextId ? "_" + context.length : ""}`;
+    const contextId = context
+      ? `:${context.length}_${context.slice(0, 10)}`
+      : "";
+    const cacheKey = `${provider}:${slug}:${targetLanguage}:${sourceLang}${contextId}`;
+    const lsCacheKey = `${
+      this.LS_CACHE_PREFIX
+    }${provider}_${slug}_${targetLanguage}_${sourceLang}${
+      contextId ? "_" + context.length : ""
+    }`;
 
     // 1. Check in-memory cache
     if (this.cache[cacheKey]) {
@@ -57,10 +66,16 @@ class TranslationService {
 
     try {
       const service = translationRegistry.getService(provider);
+      console.log(`[TranslationService] Calling provider ${provider}:`, {
+        text: text.slice(0, 20),
+        targetLanguage,
+        from: sourceLang,
+        context: context ? context.slice(0, 20) : "none",
+      });
       const result = await service.translate(
         text,
         targetLanguage,
-        "auto",
+        sourceLang,
         context
       );
 
@@ -92,15 +107,17 @@ class TranslationService {
     }
   }
 
-  getCached(text: string, to: string = "fr"): TranslationResult | null {
+  getCached(text: string, to?: string): TranslationResult | null {
     const provider = useReaderSettings.getState().translationProvider;
-    const slug = text.trim().toLowerCase().replace(/\s+/g, '_');
-    const cacheKey = `${provider}:${slug}:${to}`;
-    const lsCacheKey = `${this.LS_CACHE_PREFIX}${provider}_${slug}_${to}`;
-    
+    const l2Language = useReaderSettings.getState().l2Language || "fr";
+    const targetLanguage = to || l2Language;
+    const slug = text.trim().toLowerCase().replace(/\s+/g, "_");
+    const cacheKey = `${provider}:${slug}:${targetLanguage}`;
+    const lsCacheKey = `${this.LS_CACHE_PREFIX}${provider}_${slug}_${targetLanguage}`;
+
     // Check memory
     if (this.cache[cacheKey]) return this.cache[cacheKey];
-    
+
     // Check LocalStorage (synchronous check)
     try {
       const cached = localStorage.getItem(lsCacheKey);

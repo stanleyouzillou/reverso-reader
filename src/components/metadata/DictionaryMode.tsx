@@ -2,8 +2,10 @@ import React from "react";
 import { BookOpen, Search } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useStore } from "../../store/useStore";
+import { useReaderSettings } from "../../hooks/useReaderSettings";
 import { DefinitionCard } from "../dictionary/DefinitionCard";
 import { VocabContextSentence } from "../vocabulary/VocabContextSentence";
+import { DEMO_ARTICLE } from "../../constants/demoContent";
 
 interface DictionaryModeProps {
   className?: string;
@@ -19,6 +21,8 @@ export const DictionaryMode: React.FC<DictionaryModeProps> = ({
     setSelectedDictionaryWord,
     toggleSaved,
   } = useStore();
+
+  const { l2Language } = useReaderSettings();
 
   const isWordSaved = selectedDictionaryWord
     ? saved.some((item) => item.word === selectedDictionaryWord.word)
@@ -60,15 +64,15 @@ export const DictionaryMode: React.FC<DictionaryModeProps> = ({
     >
       {selectedDictionaryWord ? (
         <div
-          className="flex-1 overflow-y-auto p-6"
+          className="flex-1 overflow-y-auto p-[1.5rem]"
           role="tabpanel"
           aria-labelledby="dictionary-tab"
         >
           <DefinitionCard
             word={selectedDictionaryWord.word}
             sourceSentence={selectedDictionaryWord.context || ""}
-            sourceLanguage="en" // Should be dynamic based on article
-            targetLanguage="fr" // Should be dynamic based on user settings
+            sourceLanguage={DEMO_ARTICLE.l2_language}
+            targetLanguage={l2Language}
             textPosition={selectedDictionaryWord.position || 0}
             onAddToVocabulary={handleAddToVocabulary}
             onNavigateToSource={handleNavigateToSource}
@@ -76,15 +80,15 @@ export const DictionaryMode: React.FC<DictionaryModeProps> = ({
           />
 
           {history.length > 1 && (
-            <div className="pt-8 mt-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="pt-[2rem] mt-[1rem] border-t border-slate-100 dark:border-slate-800">
               <h4
-                className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-6"
+                className="text-[0.6875rem] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-[1.5rem]"
                 id="recent-lookups-heading"
               >
                 Recent Lookups
               </h4>
               <div
-                className="space-y-3"
+                className="flex flex-col gap-[0.75rem]"
                 aria-labelledby="recent-lookups-heading"
               >
                 {history
@@ -93,7 +97,7 @@ export const DictionaryMode: React.FC<DictionaryModeProps> = ({
                   .map((item, idx) => (
                     <div
                       key={`${item.word}-${idx}`}
-                      className="p-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl hover:bg-white dark:hover:bg-slate-800 hover:shadow-md hover:border-white dark:hover:border-slate-700 cursor-pointer transition-all duration-300"
+                      className="p-[1rem] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-[1rem] hover:bg-white dark:hover:bg-slate-800 hover:shadow-md hover:border-white dark:hover:border-slate-700 cursor-pointer transition-all duration-300"
                       role="button"
                       tabIndex={0}
                       aria-label={`View definition for ${item.word}`}
@@ -105,17 +109,17 @@ export const DictionaryMode: React.FC<DictionaryModeProps> = ({
                       }}
                     >
                       <div className="flex justify-between items-center">
-                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                        <span className="font-bold text-slate-800 dark:text-slate-200 text-[1rem]">
                           {item.word}
                         </span>
-                        <span className="text-blue-500 dark:text-blue-400 font-medium text-sm">
+                        <span className="text-blue-500 dark:text-blue-400 font-medium text-[0.875rem]">
                           {item.translation}
                         </span>
                       </div>
                       <VocabContextSentence
                         sentence={item.context || ""}
                         word={item.word}
-                        className="mt-2 text-[12px]"
+                        className="mt-[0.5rem] text-[0.75rem]"
                       />
                     </div>
                   ))}
@@ -125,26 +129,26 @@ export const DictionaryMode: React.FC<DictionaryModeProps> = ({
         </div>
       ) : (
         <div
-          className="flex-1 flex flex-col items-center justify-center p-8 text-center"
+          className="flex-1 flex flex-col items-center justify-center p-[2rem] text-center"
           role="tabpanel"
           aria-labelledby="dictionary-tab"
         >
-          <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-full mb-6">
+          <div className="bg-slate-100 dark:bg-slate-800 p-[1.5rem] rounded-full mb-[1.5rem]">
             <BookOpen
-              size={40}
+              size="2.5rem"
               className="text-slate-400 dark:text-slate-500"
               aria-hidden="true"
             />
           </div>
-          <h3 className="text-xl font-bold text-slate-700 dark:text-slate-300 mb-3">
+          <h3 className="text-[1.25rem] font-bold text-slate-700 dark:text-slate-300 mb-[0.75rem]">
             No word selected
           </h3>
-          <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-xs text-base">
+          <p className="text-slate-500 dark:text-slate-400 mb-[1.5rem] max-w-[20rem] text-[1rem]">
             Click on any word in the article to look up its definition and see
             it appear here.
           </p>
-          <div className="flex items-center text-slate-500 dark:text-slate-400 text-base bg-slate-50 dark:bg-slate-800/50 px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-800">
-            <Search size={16} className="mr-2" aria-hidden="true" />
+          <div className="flex items-center text-slate-500 dark:text-slate-400 text-[1rem] bg-slate-50 dark:bg-slate-800/50 px-[1rem] py-[0.75rem] rounded-[0.5rem] border border-slate-200 dark:border-slate-800">
+            <Search size="1rem" className="mr-[0.5rem]" aria-hidden="true" />
             <span>Try clicking on a word</span>
           </div>
         </div>

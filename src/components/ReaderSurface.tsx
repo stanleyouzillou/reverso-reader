@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useStore } from "../store/useStore";
 import { WordStatus, TranslatedSpan } from "../types";
 import { useReaderSettings } from "../hooks/useReaderSettings";
-import { isWord } from "../lib/utils";
+import { isWord, normalizeLanguageCode } from "../lib/utils";
 import { multiTranslationService } from "../services/MultiTranslationService";
 
 // Hooks
@@ -64,36 +64,63 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
     readingMode,
     translationMode,
     l2Language,
+    minimalistSettings,
   } = useReaderSettings();
 
-  // 1.5. Dynamic Line Height Calculation
+  // 1.5. Dynamic Line Height Calculation System
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200
+  );
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const dynamicLineHeight = useMemo(() => {
-    // Base line height for readability
-    let base = 1.625; // Default "relaxed"
+    // FORMULA: base + (lang_factor) + (font_size_factor) + (viewport_factor) + (density_factor)
 
-    // If inline translations are enabled, we need significant vertical space
+    // 1. Base Line Height (Default "relaxed" rhythm)
+    let base = 1.625;
+
+    // 2. Inline Translation Buffer
+    // We need space for: Word (1em) + Translation (~1em) + Baseline Gap (~0.25em) + Collision Buffer (~0.15em)
+    // To prevent overlap with the line above, we need at least 1.0em of space above the word.
+    // Total line-height = 1.0 (text) + gap. Gap is split into half-leading (gap/2).
+    // So (lineHeight - 1) / 2 > translation_height.
+    // If translation is 0.9em, then (lineHeight - 1) / 2 > 0.9 => lineHeight - 1 > 1.8 => lineHeight > 2.8.
+    // We use 2.85 for a safe margin.
     if (translationMode === "inline") {
-      // Inline translations (text-[0.95rem]) appear above the word.
-      // We need space for: Word Height (1em) + Translation (~0.95em) + Buffer (~0.25em)
-      // Total roughly 2.2 - 2.5em depending on language.
-      base = 2.4;
+      base = 2.85;
     }
 
-    // Adjust for specific languages with taller characters or complex scripts
-    const complexScripts = ["ja", "zh", "ko", "ar", "hi", "th"];
-    if (complexScripts.includes(l2Language)) {
-      base += 0.2;
-    }
+    // 3. Language-Specific Compensation (Glyph Complexity & Ascender/Descender ratios)
+    const complexScripts = ["ja", "zh", "ko", "ar", "hi", "th", "fa", "ur"];
+    const scriptFactor = complexScripts.includes(l2Language) ? 0.25 : 0;
 
-    // Further adjustment based on font size - larger fonts need slightly less relative padding
-    if (fontSize > 24) {
-      base -= 0.1;
-    } else if (fontSize < 14) {
-      base += 0.1;
-    }
+    // 4. Font Size & Density Compensation (Visual Balance)
+    // Larger text needs less relative line height to maintain vertical rhythm
+    const sizeFactor =
+      fontSize > 32 ? -0.15 : fontSize > 24 ? -0.1 : fontSize < 14 ? 0.15 : 0;
 
-    return base;
-  }, [translationMode, l2Language, fontSize]);
+    // 5. Responsive / Viewport Compensation
+    // Mobile viewports ( < 768px ) benefit from tighter leading to maximize content visibility
+    const viewportFactor = viewportWidth < 768 ? -0.1 : 0;
+
+    // 6. Font Weight Compensation
+    // Bolder text has higher visual "density" and requires more breathing room
+    const weightFactor =
+      fontWeight === "bold" || fontWeight === "700" ? 0.05 : 0;
+
+    // Final Calculation (clamped for WCAG 2.1 accessibility - min 1.5 for body text)
+    const finalValue = Math.max(
+      1.5,
+      base + scriptFactor + sizeFactor + viewportFactor + weightFactor
+    );
+
+    return finalValue;
+  }, [translationMode, l2Language, fontSize, viewportWidth, fontWeight]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   // Track the abort controller for pending requests
@@ -128,6 +155,8 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
     l1_title,
     categories,
     metadata,
+    sourceLanguage,
+    targetLanguage,
   } = useArticleIngestion();
 
   // 3. Audio / Karaoke
@@ -176,9 +205,13 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
         const right = Math.max(...rects.map((r) => r.right));
         const top = Math.min(...rects.map((r) => r.top));
 
+        // Compensate for glyph heights (ascenders) and vertical alignment
+        // We use a relative offset based on font size to ensure consistency during zoom
+        const verticalBuffer = fontSize * 0.5;
+
         newPositions[id] = {
           x: (left + right) / 2 - containerRect.left,
-          y: top - containerRect.top,
+          y: top - containerRect.top - verticalBuffer,
           width: right - left,
         };
       };
@@ -337,9 +370,8 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
         const dictionaryWordText = allTokens[newSelection.clickedIndex];
 
         // Check for cached translation before making API call
-        const sourceLang =
-          useReaderSettings.getState().l2Language.split("-")[0] || "en";
-        const targetLang = "fr"; // Default target language
+        const sourceLang = normalizeLanguageCode(sourceLanguage || "en");
+        const targetLang = normalizeLanguageCode(l2Language || "fr");
 
         // For caching, we'll use the multiTranslationService which should handle chunk caching
         const cached = multiTranslationService.getCachedTranslations(
@@ -357,7 +389,18 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
           // Format the context for the translation API
           const contextForApi = `Translate this phrase as it appears in context: "${contextSentence}"`;
 
-          result = await translateText(phraseText, contextForApi);
+          console.log(`[ReaderSurface] Requesting translation for:`, {
+            phraseText,
+            targetLang,
+            sourceLang,
+          });
+
+          result = await translateText(
+            phraseText,
+            contextForApi,
+            targetLang,
+            sourceLang
+          );
 
           // Cache the result if successful
           if (result) {
@@ -513,6 +556,7 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
         onClearSelection={clearSelection}
         sentenceIndex={sentenceIndex}
         sentenceText={sentenceText}
+        sourceLanguage={sourceLanguage}
       />
     );
   };
@@ -528,15 +572,29 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
         fontFamily,
         fontWeight: fontWeight || "normal",
         ["--reader-line-height" as any]: dynamicLineHeight,
+        ["--reader-font-size" as any]: `${fontSize / 16}rem`,
+        ["--reader-bg" as any]: theme === "dark" ? "#1A1A1A" : bgColor,
+        ["--reader-text" as any]: theme === "dark" ? "#E5E5E5" : "#0f172a",
+        ["--minimalist-highlight-color" as any]:
+          minimalistSettings.highlightColor,
+        fontSize: `${fontSize / 16}rem`, // Use rem for fluid scaling with zoom
       }}
     >
       <div
         ref={containerRef}
         className={cn(
-          "mx-auto px-8 py-12 pb-32 transition-all duration-300 relative",
-          columnWidth === "centered" ? "max-w-3xl" : "max-w-[1400px]"
+          "mx-auto py-[3rem] pb-[12rem] transition-all duration-300 relative",
+          columnWidth === "centered"
+            ? "reader-container"
+            : "reader-container-extended"
         )}
-        style={{ fontSize: `${fontSize}px`, lineHeight: dynamicLineHeight }}
+        style={{
+          fontSize: "inherit",
+          lineHeight: "var(--reader-line-height)",
+          minHeight: "100%",
+          display: "flex",
+          flexDirection: "column",
+        }}
       >
         {/* Translation Overlay */}
         {translationMode === "inline" && (
@@ -544,26 +602,30 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
             {/* Active Selection Translation */}
             {selection && overlayPositions["active-selection"] && (
               <div
-                className="absolute transition-all duration-150 ease-out flex flex-col items-center"
+                className="absolute transition-all duration-150 ease-out flex flex-col items-center z-50 pointer-events-none"
                 style={{
                   left: `${overlayPositions["active-selection"].x}px`,
                   top: `${overlayPositions["active-selection"].y}px`,
                   transform: "translate(-50%, -100%)",
                   width: "max-content",
-                  maxWidth: "250px",
+                  maxWidth: "min(95vw, 30rem)",
                 }}
               >
                 {selection.loading ? (
-                  <div className="mb-2 opacity-100 transition-opacity duration-150">
-                    <Loader2 className="h-4 w-4 animate-spin text-blue-500/70" />
+                  <div className="mb-[0.5em] opacity-100 transition-opacity duration-150">
+                    <Loader2 className="h-[1.2em] w-[1.2em] animate-spin text-blue-500/70" />
                   </div>
                 ) : (
                   selection.translation && (
                     <div
-                      className="mb-[6px] mt-[2px] opacity-100 transition-all duration-150"
-                      style={{ textAlign: "center" }}
+                      className="mb-[0.4em] mt-[0.2em] opacity-100 transition-all duration-150 pointer-events-auto"
+                      style={{
+                        textAlign: "center",
+                        wordWrap: "break-word",
+                        overflowWrap: "anywhere",
+                      }}
                     >
-                      <span className="text-blue-600 dark:text-blue-400 text-[1.0em] font-handwriting font-bold leading-[1.35] block px-2 drop-shadow-sm whitespace-nowrap">
+                      <span className="text-blue-600 dark:text-blue-400 text-[clamp(0.75em,2.5vw,0.9em)] font-handwriting font-bold leading-[1.2] block px-[0.5em] drop-shadow-sm">
                         {selection.translation}
                       </span>
                     </div>
@@ -589,20 +651,24 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
               return (
                 <div
                   key={id}
-                  className="absolute transition-all duration-150 ease-out flex flex-col items-center"
+                  className="absolute transition-all duration-150 ease-out flex flex-col items-center z-50 pointer-events-none"
                   style={{
                     left: `${pos.x}px`,
                     top: `${pos.y}px`,
                     transform: "translate(-50%, -100%)",
                     width: "max-content",
-                    maxWidth: "250px",
+                    maxWidth: "min(95vw, 30rem)",
                   }}
                 >
                   <div
-                    className="mb-[6px] mt-[2px] opacity-100 transition-all duration-150"
-                    style={{ textAlign: "center" }}
+                    className="mb-[0.4em] mt-[0.2em] opacity-100 transition-all duration-150 pointer-events-auto"
+                    style={{
+                      textAlign: "center",
+                      wordWrap: "break-word",
+                      overflowWrap: "anywhere",
+                    }}
                   >
-                    <span className="text-blue-600 dark:text-blue-400 text-[1.0em] font-handwriting font-bold leading-[1.35] block px-2 drop-shadow-sm whitespace-nowrap">
+                    <span className="text-blue-600 dark:text-blue-400 text-[clamp(0.75em,2.5vw,0.9em)] font-handwriting font-bold leading-[1.2] block px-[0.5em] drop-shadow-sm">
                       {span.translation}
                     </span>
                   </div>

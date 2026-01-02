@@ -18,8 +18,19 @@ export type Theme = "light" | "dark";
 export type ReadingMode = "scrolling" | "page";
 export type ColumnWidth = "centered" | "extended";
 export type TranslationProvider = "google" | "gemini";
-export type TranslationMode = "inline" | "hover";
+export type TranslationMode = "inline" | "hover" | "minimalist";
 export type TranslationGranularity = "word" | "chunk";
+
+interface MinimalistSettings {
+  enabled: boolean;
+  popupDelay: number;
+  highlightColor: string;
+  position: "above" | "below";
+}
+
+interface DebugSettings {
+  mockDictionary: boolean;
+}
 
 interface ReaderSettingsState {
   fontFamily: FontFamily;
@@ -34,6 +45,8 @@ interface ReaderSettingsState {
   translationGranularity: TranslationGranularity;
   l2Language: string;
   showHintsEnabled: boolean;
+  minimalistSettings: MinimalistSettings;
+  debugSettings: DebugSettings;
 
   setFontFamily: (font: FontFamily) => void;
   setFontWeight: (weight: string) => void;
@@ -47,6 +60,8 @@ interface ReaderSettingsState {
   setTranslationGranularity: (granularity: TranslationGranularity) => void;
   setL2Language: (language: string) => void;
   setShowHintsEnabled: (enabled: boolean) => void;
+  updateMinimalistSettings: (settings: Partial<MinimalistSettings>) => void;
+  updateDebugSettings: (settings: Partial<DebugSettings>) => void;
 }
 
 export const useReaderSettings = create<ReaderSettingsState>()(
@@ -64,6 +79,15 @@ export const useReaderSettings = create<ReaderSettingsState>()(
       translationGranularity: "chunk",
       l2Language: "fr", // Default to French
       showHintsEnabled: false,
+      minimalistSettings: {
+        enabled: true,
+        popupDelay: 0,
+        highlightColor: "rgba(59, 130, 246, 0.2)", // Subtle blue tint
+        position: "above",
+      },
+      debugSettings: {
+        mockDictionary: false,
+      },
 
       setFontFamily: (font) => set({ fontFamily: font }),
       setFontWeight: (weight) => set({ fontWeight: weight }),
@@ -79,6 +103,14 @@ export const useReaderSettings = create<ReaderSettingsState>()(
         set({ translationGranularity: granularity }),
       setL2Language: (language) => set({ l2Language: language }),
       setShowHintsEnabled: (enabled) => set({ showHintsEnabled: enabled }),
+      updateMinimalistSettings: (settings) =>
+        set((state) => ({
+          minimalistSettings: { ...state.minimalistSettings, ...settings },
+        })),
+      updateDebugSettings: (settings) =>
+        set((state) => ({
+          debugSettings: { ...state.debugSettings, ...settings },
+        })),
     }),
     {
       name: "reader-settings",

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef, memo } from "react";
 import { Loader2, Bookmark } from "lucide-react";
-import { cn, isWord } from "../../lib/utils";
+import { cn, isWord, normalizeLanguageCode } from "../../lib/utils";
 import {
   Selection,
   TranslatedSpan,
@@ -15,6 +15,7 @@ import { useTranslationEngine } from "../../hooks/useTranslationEngine";
 import { useStore } from "../../store/useStore";
 import { multiTranslationService } from "../../services/MultiTranslationService";
 import { InlineTranslation } from "../translation/InlineTranslation";
+import { MinimalistTranslation } from "../translation/MinimalistTranslation";
 import { useInlineTranslation } from "../../hooks/useInlineTranslation";
 
 interface TokenProps {
@@ -32,6 +33,7 @@ interface TokenProps {
   onClearSelection: () => void;
   sentenceIndex?: number;
   sentenceText?: string;
+  sourceLanguage?: string;
 }
 
 export const Token: React.FC<TokenProps> = memo(
@@ -50,9 +52,14 @@ export const Token: React.FC<TokenProps> = memo(
     onClearSelection,
     sentenceIndex,
     sentenceText,
+    sourceLanguage,
   }) => {
-    const { translationMode, showHintsEnabled, l2Language } =
-      useReaderSettings();
+    const {
+      translationMode,
+      showHintsEnabled,
+      l2Language,
+      minimalistSettings,
+    } = useReaderSettings();
     const dualModeOption = useStore((state) => state.dualModeOption);
     const { translateText } = useTranslationEngine();
     const hoveredTokenId = useStore((state) => state.hoveredTokenId);
@@ -60,6 +67,20 @@ export const Token: React.FC<TokenProps> = memo(
     const hoveredSentenceIdx = useStore((state) => state.hoveredSentenceIdx);
     const setHoveredSentenceIdx = useStore(
       (state) => state.setHoveredSentenceIdx
+    );
+    const minimalistTokenId = useStore((state) => state.minimalistTokenId);
+    const setMinimalistTokenId = useStore(
+      (state) => state.setMinimalistTokenId
+    );
+    const minimalistTranslation = useStore(
+      (state) => state.minimalistTranslation
+    );
+    const setMinimalistTranslation = useStore(
+      (state) => state.setMinimalistTranslation
+    );
+    const isMinimalistLoading = useStore((state) => state.isMinimalistLoading);
+    const setIsMinimalistLoading = useStore(
+      (state) => state.setIsMinimalistLoading
     );
     const saved = useStore((state) => state.saved);
     const highlightedWords = useStore((state) => state.highlightedWords);
@@ -72,10 +93,12 @@ export const Token: React.FC<TokenProps> = memo(
 
     const tokenId = `token-${index}`;
     const isCurrentlyHovered = hoveredTokenId === tokenId;
+    const isMinimalistActive = minimalistTokenId === tokenId;
     const isKaraoke = index === karaokeIndex;
 
     // Determine if this sentence is hovered in dual/sync mode
     const isSentenceHovered =
+      translationMode !== "minimalist" && // Disable sentence highlight in minimalist mode
       (mode === "dual" || dualModeOption === "sync") &&
       sentenceIndex !== undefined &&
       hoveredSentenceIdx === sentenceIndex;
@@ -93,6 +116,11 @@ export const Token: React.FC<TokenProps> = memo(
         leaveTimeoutRef.current = null;
       }
 
+      if (translationMode === "minimalist" && isWord(token)) {
+        setHoveredTokenId(tokenId);
+        return;
+      }
+
       if (translationMode === "hover" && mode !== "clean" && isWord(token)) {
         setHoveredTokenId(tokenId);
 
@@ -100,8 +128,8 @@ export const Token: React.FC<TokenProps> = memo(
           setHoveredSentenceIdx(sentenceIndex);
         }
 
-        const sourceLang = l2Language.split("-")[0] || "en";
-        const targetLang = "fr";
+        const sourceLang = normalizeLanguageCode(sourceLanguage || "en");
+        const targetLang = normalizeLanguageCode(l2Language || "fr");
 
         const cached = multiTranslationService.getCachedTranslations(
           token,
@@ -148,14 +176,18 @@ export const Token: React.FC<TokenProps> = memo(
       sentenceIndex,
       sentenceText,
       setHoveredSentenceIdx,
+      sourceLanguage,
     ]);
 
     const handleMouseLeave = useCallback(() => {
-      if (translationMode === "hover") {
-        leaveTimeoutRef.current = setTimeout(() => {
-          setHoveredTokenId(null);
-          setHoveredSentenceIdx(null);
-        }, 300);
+      if (translationMode === "hover" || translationMode === "minimalist") {
+        leaveTimeoutRef.current = setTimeout(
+          () => {
+            setHoveredTokenId(null);
+            setHoveredSentenceIdx(null);
+          },
+          translationMode === "minimalist" ? 100 : 300
+        );
       }
     }, [translationMode, setHoveredTokenId, setHoveredSentenceIdx]);
 
@@ -203,6 +235,99 @@ export const Token: React.FC<TokenProps> = memo(
 
     const isWordToken = isWord(token);
 
+    const handleTokenClick = useCallback(
+      async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!isWordToken) return;
+
+        if (translationMode === "minimalist") {
+          setMinimalistTokenId(tokenId);
+          setMinimalistTranslation(null);
+          setIsMinimalistLoading(true);
+
+          // sourceLang is the language of the article (L2 for the user)
+          // targetLang is the user's chosen target language from settings (L1/l2Language)
+          const sourceLang = normalizeLanguageCode(sourceLanguage || "en");
+          const targetLang = normalizeLanguageCode(l2Language || "fr");
+
+          console.log(`[Token] Minimal mode translation request:`, {
+            token,
+            sourceLang,
+            targetLang,
+            sourceLanguageProp: sourceLanguage,
+            l2LanguageSetting: l2Language,
+          });
+
+          // Try cache first
+          const cached = multiTranslationService.getCachedTranslations(
+            token,
+            targetLang,
+            sourceLang,
+            sentenceText
+          );
+
+          if (cached && cached.translations.length > 0) {
+            setMinimalistTranslation(cached.translations[0]);
+            setIsMinimalistLoading(false);
+          } else {
+            // Add artificial delay if configured
+            if (minimalistSettings.popupDelay > 0) {
+              await new Promise((resolve) =>
+                setTimeout(resolve, minimalistSettings.popupDelay)
+              );
+            }
+
+            const result =
+              await multiTranslationService.getMultipleTranslations(
+                token,
+                targetLang,
+                sourceLang,
+                sentenceText
+              );
+
+            if (useStore.getState().minimalistTokenId !== tokenId) return;
+
+            if (result && !result.error && result.translations.length > 0) {
+              setMinimalistTranslation(result.translations[0]);
+            } else {
+              const fallbackResult = await translateText(
+                token,
+                sentenceText,
+                targetLang,
+                sourceLang
+              );
+              if (useStore.getState().minimalistTokenId !== tokenId) return;
+              if (fallbackResult && !fallbackResult.error) {
+                setMinimalistTranslation(fallbackResult.text);
+              } else {
+                setMinimalistTranslation("No translation found");
+              }
+            }
+            setIsMinimalistLoading(false);
+          }
+          return;
+        }
+
+        onWordClick(index);
+      },
+      [
+        index,
+        isWordToken,
+        onWordClick,
+        translationMode,
+        tokenId,
+        token,
+        l2Language,
+        sentenceText,
+        translateText,
+        setMinimalistTokenId,
+        setMinimalistTranslation,
+        setIsMinimalistLoading,
+        minimalistSettings.popupDelay,
+        sourceLanguage,
+      ]
+    );
+
     const highlightColorClass = isChunkActive
       ? "bg-blue-100/80 text-blue-900 dark:bg-blue-900/40 dark:text-blue-100"
       : "bg-blue-200/90 text-blue-900 dark:bg-blue-800/80 dark:text-blue-50";
@@ -210,9 +335,18 @@ export const Token: React.FC<TokenProps> = memo(
     const tokenHighlightClass = isHighlightActive ? highlightColorClass : "";
 
     const tokenStyling = cn(
-      "px-0.5 mx-0 rounded-sm transition-colors duration-150", // Added padding, removed margins, added transition
-      isWordToken && "hover:bg-slate-100 dark:hover:bg-slate-800/50"
+      "px-[0.125em] mx-0 rounded-sm transition-colors duration-150", // Using em for padding
+      isWordToken &&
+        translationMode !== "minimalist" &&
+        "hover:bg-slate-100 dark:hover:bg-slate-800/50"
     );
+
+    const minimalistHoverStyle =
+      translationMode === "minimalist" && isCurrentlyHovered
+        ? {
+            backgroundColor: "var(--minimalist-highlight-color)",
+          }
+        : {};
 
     // Early return for non-word tokens that aren't highlighted
     if (!isWordToken && !isHighlightActive && !isKaraoke) {
@@ -233,18 +367,14 @@ export const Token: React.FC<TokenProps> = memo(
       isHighlightActive ||
       isKaraoke ||
       mode === "clean" ||
-      translationMode === "hover"
+      translationMode === "hover" ||
+      translationMode === "minimalist"
     ) {
       return (
         <span
           ref={tokenRef}
           id={tokenId}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (isWordToken) {
-              onWordClick(index);
-            }
-          }}
+          onClick={handleTokenClick}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           className={cn(
@@ -258,6 +388,7 @@ export const Token: React.FC<TokenProps> = memo(
           style={{
             WebkitBoxDecorationBreak: "clone",
             boxDecorationBreak: "clone",
+            ...minimalistHoverStyle,
           }}
           data-token-index={index}
           data-sentence-id={sentenceIndex}
@@ -266,11 +397,34 @@ export const Token: React.FC<TokenProps> = memo(
           role="button"
           onKeyDown={(e) => {
             if ((e.key === "Enter" || e.key === " ") && isWordToken) {
-              onWordClick(index);
+              handleTokenClick(e as any);
             }
           }}
         >
           {token}
+
+          {/* Minimalist Popup */}
+          {translationMode === "minimalist" && isMinimalistActive && (
+            <MinimalistTranslation
+              word={token}
+              translation={minimalistTranslation}
+              isLoading={isMinimalistLoading}
+              isSaved={isSaved}
+              onSave={() => {
+                const vocabItem: VocabItem = {
+                  word: token,
+                  translation: minimalistTranslation || "",
+                  level: metadata.level,
+                  status: WordStatus.Unknown,
+                  context: sentenceText,
+                  timestamp: Date.now(),
+                };
+                toggleSaved(vocabItem);
+              }}
+              onClose={() => setMinimalistTokenId(null)}
+              position={minimalistSettings.position}
+            />
+          )}
 
           {/* Hover Popup */}
           {translationMode === "hover" &&
@@ -278,37 +432,37 @@ export const Token: React.FC<TokenProps> = memo(
             (hoverTranslations.length > 0 || isHoverLoading) && (
               <div
                 id={`popup-${index}`}
-                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none"
+                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[0.5rem] z-50 pointer-events-none"
                 role="tooltip"
               >
                 <div className="relative">
                   <div
-                    className="bg-black text-white text-xs p-3 rounded-lg shadow-2xl min-w-[180px] max-w-[280px] pointer-events-auto"
+                    className="bg-black text-white text-[0.75rem] p-[0.75rem] rounded-lg shadow-2xl min-w-[12rem] max-w-[18rem] pointer-events-auto"
                     onMouseEnter={handlePopupMouseEnter}
                     onMouseLeave={handlePopupMouseLeave}
                   >
-                    <div className="font-bold mb-1.5 border-b border-white/10 pb-1 text-[0.85rem] tracking-wide">
+                    <div className="font-bold mb-[0.5rem] border-b border-white/10 pb-[0.25rem] text-[0.85rem] tracking-wide">
                       {token}
                     </div>
                     {isHoverLoading ? (
-                      <div className="flex items-center justify-center py-2">
-                        <Loader2 className="h-4 w-4 animate-spin text-white/50" />
+                      <div className="flex items-center justify-center py-[0.5rem]">
+                        <Loader2 className="h-[1rem] w-[1rem] animate-spin text-white/50" />
                       </div>
                     ) : (
                       <>
-                        <div className="space-y-1.5">
+                        <div className="space-y-[0.4rem]">
                           {hoverTranslations
                             .slice(0, 3)
                             .map((translation, idx) => (
                               <div
                                 key={idx}
-                                className="py-0.5 text-white/90 font-medium leading-tight"
+                                className="py-[0.125rem] text-white/90 font-medium leading-tight"
                               >
                                 {translation}
                               </div>
                             ))}
                         </div>
-                        <div className="mt-2.5 pt-2 border-t border-white/10 flex justify-end">
+                        <div className="mt-[0.6rem] pt-[0.5rem] border-t border-white/10 flex justify-end">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -332,7 +486,7 @@ export const Token: React.FC<TokenProps> = memo(
                             )}
                           >
                             <Bookmark
-                              size={16}
+                              size={"1rem" as any}
                               fill={isSaved ? "currentColor" : "none"}
                             />
                           </button>
@@ -340,7 +494,7 @@ export const Token: React.FC<TokenProps> = memo(
                       </>
                     )}
                   </div>
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-0 h-0 border-l-6 border-r-6 border-t-6 border-l-transparent border-r-transparent border-t-black" />
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[0.25rem] w-0 h-0 border-l-[0.375rem] border-r-[0.375rem] border-t-[0.375rem] border-l-transparent border-r-transparent border-t-black" />
                 </div>
               </div>
             )}

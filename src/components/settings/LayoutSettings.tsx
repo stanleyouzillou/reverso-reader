@@ -24,7 +24,7 @@ export const LayoutSettings: React.FC = () => {
                 : "text-slate-500 hover:text-slate-700"
             )}
           >
-            <AlignCenter size={16} />
+            <AlignCenter size={"1rem" as any} />
             Centered
           </button>
           <button
@@ -36,7 +36,7 @@ export const LayoutSettings: React.FC = () => {
                 : "text-slate-500 hover:text-slate-700"
             )}
           >
-            <Maximize2 size={16} />
+            <Maximize2 size={"1rem" as any} />
             Extended
           </button>
         </div>
@@ -57,7 +57,7 @@ export const LayoutSettings: React.FC = () => {
                 : "text-slate-500 hover:text-slate-700"
             )}
           >
-            <ScrollText size={16} />
+            <ScrollText size={"1rem" as any} />
             Scrolling
           </button>
           <button
@@ -69,7 +69,7 @@ export const LayoutSettings: React.FC = () => {
                 : "text-slate-500 hover:text-slate-700"
             )}
           >
-            <BookOpen size={16} />
+            <BookOpen size={"1rem" as any} />
             Page
           </button>
         </div>

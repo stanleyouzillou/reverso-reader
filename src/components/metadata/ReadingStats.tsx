@@ -16,11 +16,11 @@ export const ReadingStats: React.FC<ReadingStatsProps> = ({
   return (
     <div className={cn('flex items-center gap-3 text-xs text-slate-500', className)}>
       <div className="flex items-center gap-1">
-        <Hash size={12} className="text-slate-400" />
+        <Hash size={"0.75rem" as any} className="text-slate-400" />
         <span>{wordCount}</span>
       </div>
       <div className="flex items-center gap-1">
-        <Clock size={12} className="text-slate-400" />
+        <Clock size={"0.75rem" as any} className="text-slate-400" />
         <span>{estimatedMinutes} min</span>
       </div>
     </div>

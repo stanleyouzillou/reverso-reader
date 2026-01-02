@@ -60,26 +60,39 @@ export const Layout: React.FC = () => {
           {/* Toggle button positioned relative to the sidebar */}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="absolute -left-8 top-4 z-20 bg-white rounded-l-lg shadow-md p-2 hover:bg-slate-50 border border-slate-200 transition-all duration-200 flex items-center justify-center"
-            aria-label={
-              sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
-            }
+            className={cn(
+              "absolute -left-[1.25rem] top-[50%] z-50 flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-full border bg-white shadow-lg transition-transform hover:scale-110 dark:bg-slate-900 dark:border-slate-800",
+              sidebarCollapsed ? "" : "rotate-0"
+            )}
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {sidebarCollapsed ? (
-              <ChevronRight className="h-4 w-4 text-slate-600" />
+              <ChevronLeft className="h-[1.25rem] w-[1.25rem] text-slate-600" />
             ) : (
-              <ChevronLeft className="h-4 w-4 text-slate-600" />
+              <ChevronRight className="h-[1.25rem] w-[1.25rem] text-slate-600" />
             )}
           </button>
 
-          {/* Sidebar with conditional width - this doesn't affect the main content margins */}
+          {/* Sidebar with conditional width */}
           <div
-            className={`${
-              sidebarCollapsed ? "w-12" : "w-80"
-            } h-full transition-all duration-300 ease-in-out`}
+            className={cn(
+              "h-full transition-all duration-300 ease-in-out",
+              sidebarCollapsed ? "w-[3rem]" : "w-[min(20rem,80vw)]",
+              // Media queries for extreme zoom / small screens
+              !sidebarCollapsed &&
+                "max-md:fixed max-md:inset-0 max-md:z-[60] max-md:w-full"
+            )}
           >
             <Sidebar collapsed={sidebarCollapsed} />
           </div>
+
+          {/* Backdrop for mobile/extreme zoom sidebar */}
+          {!sidebarCollapsed && (
+            <div
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[55] md:hidden"
+              onClick={() => setSidebarCollapsed(true)}
+            />
+          )}
         </div>
       </div>
     </div>

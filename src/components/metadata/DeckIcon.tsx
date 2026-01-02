@@ -2,11 +2,11 @@ import React from 'react';
 import { cn } from '../../lib/utils';
 
 interface DeckIconProps {
-  size?: number;
+  size?: number | string;
   className?: string;
 }
 
-export const DeckIcon: React.FC<DeckIconProps> = ({ size = 24, className = '' }) => {
+export const DeckIcon: React.FC<DeckIconProps> = ({ size = "1.5rem", className = "" }) => {
   return (
     <svg
       width={size}

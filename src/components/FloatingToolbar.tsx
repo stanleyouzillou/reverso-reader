@@ -35,7 +35,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   };
 
   const commonButtonClasses = cn(
-    "w-10 h-10 rounded-xl transition-all duration-200 flex items-center justify-center group relative active:scale-95",
+    "w-[2.5rem] h-[2.5rem] rounded-xl transition-all duration-200 flex items-center justify-center group relative active:scale-95",
     theme === "dark"
       ? "bg-[#333] text-slate-400 hover:text-white"
       : "bg-white text-slate-500 hover:text-slate-800"
@@ -46,14 +46,14 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
       {/* Central Controls (Interaction & Reading Mode) */}
       <div
         className={cn(
-          "fixed top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2 transition-all duration-300 ease-in-out",
-          sidebarCollapsed ? "right-[58px]" : "right-[330px]",
-          "max-sm:bottom-24 max-sm:top-auto max-sm:right-4 max-sm:translate-y-0"
+          "fixed top-1/2 -translate-y-1/2 z-50 flex flex-col gap-[0.5rem] transition-all duration-300 ease-in-out",
+          sidebarCollapsed ? "right-[3.625rem]" : "right-[min(20.625rem,85vw)]",
+          "max-sm:bottom-[6rem] max-sm:top-auto max-sm:right-[1rem] max-sm:translate-y-0"
         )}
       >
         <div
           className={cn(
-            "backdrop-blur-sm rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border p-1.5 flex flex-col gap-1",
+            "backdrop-blur-sm rounded-[1rem] shadow-[0_0.5rem_1.875rem_rgba(0,0,0,0.12)] border p-[0.375rem] flex flex-col gap-[0.25rem]",
             theme === "dark"
               ? "bg-[#1A1A1A]/90 border-[#333]"
               : "bg-white/90 border-slate-100"
@@ -76,8 +76,8 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
               translationMode === "inline" ? "Hover" : "Inline"
             } interaction`}
           >
-            <MousePointerClick size={20} strokeWidth={2.5} />
-            <span className="absolute left-0 -translate-x-full ml-[-8px] px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden md:block">
+            <MousePointerClick size={"1.25rem" as any} strokeWidth={2.5} />
+            <span className="absolute left-0 -translate-x-full ml-[-0.5rem] px-[0.5rem] py-[0.25rem] bg-slate-800 text-white text-[0.625rem] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden md:block">
               {translationMode === "inline" ? "Enable Hover" : "Enable Inline"}
             </span>
           </button>
@@ -99,8 +99,8 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
               readingMode === "scrolling" ? "Page" : "Scrolling"
             } reading`}
           >
-            <BookOpen size={20} strokeWidth={2.5} />
-            <span className="absolute left-0 -translate-x-full ml-[-8px] px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden md:block">
+            <BookOpen size={"1.25rem" as any} strokeWidth={2.5} />
+            <span className="absolute left-0 -translate-x-full ml-[-0.5rem] px-[0.5rem] py-[0.25rem] bg-slate-800 text-white text-[0.625rem] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden md:block">
               {readingMode === "scrolling" ? "Page Mode" : "Scroll Mode"}
             </span>
           </button>
@@ -118,8 +118,8 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
             title={showHintsEnabled ? "Hide Hints" : "Show Hints"}
             aria-label={showHintsEnabled ? "Hide Hints" : "Show Hints"}
           >
-            <Lightbulb size={20} strokeWidth={2.5} />
-            <span className="absolute left-0 -translate-x-full ml-[-8px] px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden md:block">
+            <Lightbulb size={"1.25rem" as any} strokeWidth={2.5} />
+            <span className="absolute left-0 -translate-x-full ml-[-0.5rem] px-[0.5rem] py-[0.25rem] bg-slate-800 text-white text-[0.625rem] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap hidden md:block">
               {showHintsEnabled ? "Hide Hints" : "Show Hints"}
             </span>
           </button>
@@ -129,17 +129,17 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
       {/* Bottom Font Controls (Floating near sidebar) */}
       <div
         className={cn(
-          "fixed bottom-24 z-50 flex flex-col gap-2 transition-all duration-300 ease-in-out",
-          sidebarCollapsed ? "right-16" : "right-[336px]",
-          "max-sm:bottom-4 max-sm:right-4"
+          "fixed bottom-[6rem] z-50 flex flex-col gap-[0.5rem] transition-all duration-300 ease-in-out",
+          sidebarCollapsed ? "right-[1.5rem]" : "right-[min(21.5rem,85vw)]",
+          "max-sm:bottom-[1rem] max-sm:right-[1rem]"
         )}
       >
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-[0.5rem]">
           {/* Smaller Text Button (First) */}
           <button
             onClick={() => handleFontSizeChange(-2)}
             className={cn(
-              "w-8 h-8 rounded-lg shadow-lg border transition-all active:scale-90 flex items-center justify-center",
+              "w-[2rem] h-[2rem] rounded-[0.5rem] shadow-lg border transition-all active:scale-90 flex items-center justify-center",
               theme === "dark"
                 ? "bg-[#333] border-[#444] text-slate-300 hover:text-white"
                 : "bg-white border-slate-100 text-slate-600 hover:text-blue-600"
@@ -147,14 +147,14 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
             title="Decrease text size"
             aria-label="Decrease text size"
           >
-            <Type size={14} strokeWidth={2.5} />
+            <Type size={"0.875rem" as any} strokeWidth={2.5} />
           </button>
 
           {/* Larger Text Button (Second) */}
           <button
             onClick={() => handleFontSizeChange(2)}
             className={cn(
-              "w-8 h-8 rounded-lg shadow-lg border transition-all active:scale-90 flex items-center justify-center",
+              "w-[2rem] h-[2rem] rounded-[0.5rem] shadow-lg border transition-all active:scale-90 flex items-center justify-center",
               theme === "dark"
                 ? "bg-[#333] border-[#444] text-slate-300 hover:text-white"
                 : "bg-white border-slate-100 text-slate-600 hover:text-blue-600"
@@ -162,7 +162,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
             title="Increase text size"
             aria-label="Increase text size"
           >
-            <Type size={18} strokeWidth={3} />
+            <Type size={"1.125rem" as any} strokeWidth={3} />
           </button>
         </div>
       </div>

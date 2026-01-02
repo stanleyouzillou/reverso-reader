@@ -1,3 +1,5 @@
+import { useReaderSettings } from "../hooks/useReaderSettings";
+
 export interface GeminiDefinitionResponse {
   word: string;
   pronunciation: string; // "yoo-BIK-wi-tus" format
@@ -46,6 +48,16 @@ export async function fetchDefinition(
   const startTime = Date.now();
   metrics.totalCalls++;
 
+  // Check if mock dictionary is enabled in debug settings
+  const { debugSettings } = useReaderSettings.getState();
+  if (debugSettings.mockDictionary) {
+    console.log(
+      `[Gemini Service] Mock dictionary enabled. Skipping LLM call and returning placeholder for: ${word}`
+    );
+    metrics.fallbackToMock++;
+    return getMockDefinition(word, targetLanguage);
+  }
+
   const cacheKey = `def_${word.toLowerCase()}_${sourceLanguage}_${targetLanguage}`;
   const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -72,7 +84,7 @@ export async function fetchDefinition(
     console.error(`[Gemini Service] ${errorMsg} Falling back to mock data.`);
     metrics.fallbackToMock++;
     metrics.lastError = errorMsg;
-    return getMockDefinition(word);
+    return getMockDefinition(word, targetLanguage);
   }
 
   const prompt = `Word: ${word}
@@ -216,11 +228,29 @@ Requirements for the response:
       `[Gemini Service] Error fetching definition for "${word}":`,
       error.message
     );
-    return getMockDefinition(word);
+    return getMockDefinition(word, targetLanguage);
   }
 }
 
-function getMockDefinition(word: string): GeminiDefinitionResponse {
+function getMockDefinition(
+  word: string,
+  targetLanguage: string
+): GeminiDefinitionResponse {
+  const isFrench = targetLanguage.toLowerCase().startsWith("fr");
+  const isSpanish = targetLanguage.toLowerCase().startsWith("es");
+
+  const translation = isFrench
+    ? "traduction"
+    : isSpanish
+    ? "traducción"
+    : `translation (${targetLanguage})`;
+
+  const usageTranslation = isFrench
+    ? `Exemple d'utilisation de ${word}.`
+    : isSpanish
+    ? `Ejemplo de uso de ${word}.`
+    : `Example usage of ${word} in ${targetLanguage}.`;
+
   return {
     word: word,
     pronunciation:
@@ -233,13 +263,13 @@ function getMockDefinition(word: string): GeminiDefinitionResponse {
         senseLabel: "definition",
         meaning: `Definition for ${word} (Mock Data)`,
         example: `This is a mock example sentence for the word ${word}.`,
-        translations: ["traduction"],
+        translations: [translation],
       },
     ],
     usageExamples: [
       {
         sentence: `Example usage of ${word}.`,
-        translation: `Exemple d'utilisation de ${word}.`,
+        translation: usageTranslation,
       },
     ],
   };

@@ -56,7 +56,7 @@ export const FontSettings: React.FC = () => {
             >
               Aa
             </span>
-            <span className="text-[10px] font-medium leading-tight text-center opacity-80">
+            <span className="text-[0.625rem] font-medium leading-tight text-center opacity-80">
               {font.label}
             </span>
           </button>

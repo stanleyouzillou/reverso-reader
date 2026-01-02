@@ -105,6 +105,14 @@ interface TranslationResult {
 }
 
 /**
+ * Normalizes language codes to be compatible with Google Cloud Translation API
+ */
+function normalizeLanguageCode(code: string): string {
+  if (!code || code === "auto") return "auto";
+  return code.split(/[-_]/)[0].toLowerCase();
+}
+
+/**
  * Translates text using Google Cloud Translation API (v3)
  */
 export async function translateText(
@@ -113,13 +121,12 @@ export async function translateText(
   sourceLanguage: string = "auto"
 ): Promise<TranslationResult> {
   // Normalize language codes (Google v3 prefers BCP-47, e.g., 'en' instead of 'en-GB' for simple cases)
-  const normalizedTarget = targetLanguage.split("-")[0];
-  const normalizedSource =
-    sourceLanguage === "auto" ? "auto" : sourceLanguage.split("-")[0];
+  const normalizedTarget = normalizeLanguageCode(targetLanguage);
+  const normalizedSource = normalizeLanguageCode(sourceLanguage);
 
   const cacheKey = `${
     Array.isArray(text) ? text.join("|") : text
-  }|${targetLanguage}|${sourceLanguage}`.toLowerCase();
+  }|${normalizedTarget}|${normalizedSource}`.toLowerCase();
 
   // Determine if input is a single word (for dictionary lookup)
   const isSingleWord = typeof text === "string" && !text.includes(" ");
@@ -130,7 +137,7 @@ export async function translateText(
     console.log(`Cache hit for key: ${cacheKey}`);
     // If it's a single word, also try to get dictionary data from cache
     if (isSingleWord) {
-      const dictCacheKey = `dict_${text}_${targetLanguage}`;
+      const dictCacheKey = `dict_${text}_${normalizedTarget}`;
       const cachedDict = translationCache.get<any>(dictCacheKey);
       return {
         translation: cachedResult.translation,
@@ -140,7 +147,28 @@ export async function translateText(
     return cachedResult;
   }
 
-  console.log(`Cache miss for key: ${cacheKey}, making API call...`);
+  // Prevent "Target language can't be equal to source language" error
+  if (normalizedSource !== "auto" && normalizedSource === normalizedTarget) {
+    console.log(
+      `[Backend] Source and target languages are identical (${normalizedSource}). Skipping API call for text: "${text.slice(
+        0,
+        20
+      )}..."`
+    );
+    return {
+      translation: text,
+      dictionary: null,
+    };
+  }
+
+  console.log(
+    `[Backend] Cache miss for key: ${cacheKey}, making API call with:`,
+    {
+      text: text.slice(0, 20) + (text.length > 20 ? "..." : ""),
+      source: normalizedSource,
+      target: normalizedTarget,
+    }
+  );
 
   try {
     const client = getTranslationClient();
@@ -193,15 +221,15 @@ export async function translateText(
     // If input is a single word, fetch dictionary data in parallel
     if (isSingleWord && typeof text === "string") {
       try {
-        const dictionaryData = await getDictionaryData(text);
-        result.dictionary = dictionaryData;
-
-        // Cache the dictionary data separately with a longer TTL
-        const dictCacheKey = `dict_${text}_${targetLanguage}`;
-        translationCache.set(dictCacheKey, dictionaryData, 7200); // 2 hours TTL
-      } catch (dictError) {
-        console.warn(`Dictionary lookup failed for word "${text}":`, dictError);
-        // Continue without dictionary data
+        const dictionaryData = await getDictionaryData(text, normalizedTarget);
+        if (dictionaryData) {
+          result.dictionary = dictionaryData;
+          // Cache dictionary data separately
+          const dictCacheKey = `dict_${text}_${normalizedTarget}`;
+          translationCache.set(dictCacheKey, dictionaryData);
+        }
+      } catch (e) {
+        console.warn("Failed to fetch dictionary data:", e);
       }
     }
 

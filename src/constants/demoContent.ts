@@ -3,6 +3,8 @@ import { Article, CEFRLevel, WordStatus } from "../types";
 export const DEMO_ARTICLE: Article = {
   title: "Apollo: The Moon Missions That Changed History",
   l1_title: "Apollo : Les Missions Lunaires Qui Ont Changé l'Histoire",
+  l1_language: "fr",
+  l2_language: "en",
   categories: ["SCIENCE", "HISTORY", "SPACE"],
   content: `Since ancient times, humanity has gazed at the night sky, wondering about the mysteries that lay beyond our planet. Space exploration emerged as a remarkable achievement of the 20th century, particularly demonstrated by one of its most iconic projects: NASA's Apollo missions. These missions, conducted between 1961 and 1972, represented an unprecedented effort to transport human beings beyond Earth's atmosphere and onto the surface of the Moon.
 

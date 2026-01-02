@@ -11,7 +11,12 @@ import {
 import { getLLMMetrics } from "../../services/gemini";
 
 export const DebugSettings: React.FC = () => {
-  const { translationProvider, setTranslationProvider } = useReaderSettings();
+  const {
+    translationProvider,
+    setTranslationProvider,
+    debugSettings,
+    updateDebugSettings,
+  } = useReaderSettings();
   const [clearing, setClearing] = useState(false);
   const [metrics, setMetrics] = useState(getLLMMetrics());
 
@@ -78,13 +83,53 @@ export const DebugSettings: React.FC = () => {
         </div>
 
         <div className="pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+              <ShieldAlert
+                size={"1rem" as any}
+                className={
+                  debugSettings.mockDictionary
+                    ? "text-amber-500"
+                    : "text-slate-400"
+                }
+              />
+              Mock Dictionary Data
+            </label>
+            <button
+              onClick={() =>
+                updateDebugSettings({
+                  mockDictionary: !debugSettings.mockDictionary,
+                })
+              }
+              className={cn(
+                "relative inline-flex h-[1.5rem] w-[2.75rem] items-center rounded-full transition-colors focus:outline-none",
+                debugSettings.mockDictionary ? "bg-amber-600" : "bg-slate-200"
+              )}
+            >
+              <span
+                className={cn(
+                  "inline-block h-[1rem] w-[1rem] transform rounded-full bg-white transition-transform",
+                  debugSettings.mockDictionary
+                    ? "translate-x-[1.5rem]"
+                    : "translate-x-[0.25rem]"
+                )}
+              />
+            </button>
+          </div>
+          <p className="text-xs text-slate-400">
+            When enabled, dictionary lookups will return mock placeholder data
+            instead of calling the LLM. Useful for development and testing.
+          </p>
+        </div>
+
+        <div className="pt-4 border-t border-slate-100">
           <div className="flex items-center justify-between mb-3">
             <label className="block text-sm font-medium text-slate-700">
               LLM Service Monitoring
             </label>
             <button
               onClick={handleRefreshMetrics}
-              className="text-[10px] font-bold text-blue-600 uppercase tracking-wider hover:text-blue-700 transition-colors"
+              className="text-[0.625rem] font-bold text-blue-600 uppercase tracking-wider hover:text-blue-700 transition-colors"
             >
               Refresh
             </button>
@@ -93,8 +138,8 @@ export const DebugSettings: React.FC = () => {
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
               <div className="flex items-center gap-2 text-slate-500 mb-1">
-                <Activity size={14} />
-                <span className="text-[10px] font-semibold uppercase tracking-tight">
+                <Activity size={"0.875rem" as any} />
+                <span className="text-[0.625rem] font-semibold uppercase tracking-tight">
                   Total Calls
                 </span>
               </div>
@@ -105,8 +150,8 @@ export const DebugSettings: React.FC = () => {
 
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
               <div className="flex items-center gap-2 text-green-600 mb-1">
-                <CheckCircle2 size={14} />
-                <span className="text-[10px] font-semibold uppercase tracking-tight">
+                <CheckCircle2 size={"0.875rem" as any} />
+                <span className="text-[0.625rem] font-semibold uppercase tracking-tight">
                   Success
                 </span>
               </div>
@@ -117,8 +162,8 @@ export const DebugSettings: React.FC = () => {
 
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
               <div className="flex items-center gap-2 text-red-600 mb-1">
-                <ShieldAlert size={14} />
-                <span className="text-[10px] font-semibold uppercase tracking-tight">
+                <ShieldAlert size={"0.875rem" as any} />
+                <span className="text-[0.625rem] font-semibold uppercase tracking-tight">
                   Failed
                 </span>
               </div>
@@ -129,8 +174,8 @@ export const DebugSettings: React.FC = () => {
 
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
               <div className="flex items-center gap-2 text-blue-600 mb-1">
-                <Clock size={14} />
-                <span className="text-[10px] font-semibold uppercase tracking-tight">
+                <Clock size={"0.875rem" as any} />
+                <span className="text-[0.625rem] font-semibold uppercase tracking-tight">
                   Avg Time
                 </span>
               </div>
@@ -143,8 +188,8 @@ export const DebugSettings: React.FC = () => {
           {metrics.lastError && (
             <div className="p-3 bg-red-50 rounded-lg border border-red-100 mb-4">
               <div className="flex items-center gap-2 text-red-600 mb-1">
-                <ShieldAlert size={14} />
-                <span className="text-[10px] font-semibold uppercase tracking-tight">
+                <ShieldAlert size={"0.875rem" as any} />
+                <span className="text-[0.625rem] font-semibold uppercase tracking-tight">
                   Last Error
                 </span>
               </div>
@@ -154,7 +199,7 @@ export const DebugSettings: React.FC = () => {
             </div>
           )}
 
-          <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
+          <div className="flex items-center justify-between text-[0.6875rem] text-slate-500 px-1">
             <span>Cache Hits: {metrics.cacheHits}</span>
             <span>Mock Fallbacks: {metrics.fallbackToMock}</span>
           </div>
@@ -166,7 +211,7 @@ export const DebugSettings: React.FC = () => {
             disabled={clearing}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
           >
-            <Trash2 size={16} />
+            <Trash2 size={"1rem" as any} />
             {clearing ? "Clearing..." : "Clear Translation Cache"}
           </button>
           <p className="text-xs text-slate-400 mt-2">

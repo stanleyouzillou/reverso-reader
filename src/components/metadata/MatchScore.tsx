@@ -3,19 +3,21 @@ import { cn } from "../../lib/utils";
 
 interface MatchScoreProps {
   score: number;
-  size?: number;
+  size?: number | string;
   showText?: boolean;
   className?: string;
 }
 
 export const MatchScore: React.FC<MatchScoreProps> = ({
   score,
-  size = 32,
+  size = "2rem",
   showText = true,
   className = "",
 }) => {
-  const strokeWidth = Math.max(2, size / 10);
-  const radius = (size - strokeWidth) / 2;
+  // Use a fixed internal coordinate system for SVG math
+  const internalSize = 100;
+  const strokeWidth = 10;
+  const radius = (internalSize - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (score / 100) * circumference;
 
@@ -27,18 +29,21 @@ export const MatchScore: React.FC<MatchScoreProps> = ({
       )}
       role="img"
       aria-label={`${score}% match`}
-      style={{ width: size, height: size }}
+      style={{ 
+        width: typeof size === 'number' ? `${size}px` : size, 
+        height: typeof size === 'number' ? `${size}px` : size 
+      }}
     >
       <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
+        width="100%"
+        height="100%"
+        viewBox={`0 0 ${internalSize} ${internalSize}`}
         className="transform -rotate-90"
         aria-hidden="true"
       >
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={internalSize / 2}
+          cy={internalSize / 2}
           r={radius}
           stroke="currentColor"
           strokeWidth={strokeWidth}
@@ -46,8 +51,8 @@ export const MatchScore: React.FC<MatchScoreProps> = ({
           className="text-slate-200"
         />
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={internalSize / 2}
+          cy={internalSize / 2}
           r={radius}
           stroke="currentColor"
           strokeWidth={strokeWidth}
@@ -60,8 +65,8 @@ export const MatchScore: React.FC<MatchScoreProps> = ({
       </svg>
       {showText && (
         <span
-          className="absolute inset-0 flex items-center justify-center font-bold text-slate-700"
-          style={{ fontSize: `${size / 3.5}px` }}
+          className="absolute inset-0 flex items-center justify-center font-bold text-slate-700 dark:text-slate-300"
+          style={{ fontSize: "0.3em" }}
         >
           {score}
         </span>

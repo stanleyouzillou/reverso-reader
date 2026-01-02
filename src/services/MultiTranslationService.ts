@@ -2,6 +2,7 @@ import {
   translationRegistry,
   type TranslationProvider,
 } from "./translation/TranslationRegistry";
+import { normalizeLanguageCode } from "../lib/utils";
 
 interface TranslationResult {
   text: string;
@@ -22,8 +23,8 @@ export class MultiTranslationService {
 
   async getMultipleTranslations(
     text: string,
-    to: string = "fr",
-    from: string = "en",
+    to: string,
+    from: string = "auto",
     context?: string
   ): Promise<MultiTranslationResult> {
     if (!text) {
@@ -32,12 +33,14 @@ export class MultiTranslationService {
 
     // Create cache key for multiple translations
     // Include context hash if available for context-aware caching
+    const normalizedTo = normalizeLanguageCode(to);
+    const normalizedFrom = normalizeLanguageCode(from);
     const contextId = context
       ? `:${context.length}_${context.slice(0, 10)}`
       : "";
     const cacheKey = `multi:${text
       .trim()
-      .toLowerCase()}:${to}:${from}${contextId}`;
+      .toLowerCase()}:${normalizedTo}:${normalizedFrom}${contextId}`;
 
     if (this.cache[cacheKey]) {
       return {
@@ -51,9 +54,22 @@ export class MultiTranslationService {
       const results: string[] = [];
       let dictionaryData: any | null = null;
 
+      console.log(`[MultiTranslationService] Fetching translations:`, {
+        text,
+        to: normalizedTo,
+        from: normalizedFrom,
+        context: context ? context.slice(0, 20) : "none",
+        cacheKey,
+      });
+
       try {
         const service = translationRegistry.getService("google");
-        const result = await service.translate(text, to, from, context);
+        const result = await service.translate(
+          text,
+          normalizedTo,
+          normalizedFrom,
+          context
+        );
         if (result.text && !results.includes(result.text)) {
           results.push(result.text);
         }
@@ -85,16 +101,18 @@ export class MultiTranslationService {
 
   getCachedTranslations(
     text: string,
-    to: string = "fr",
-    from: string = "en",
+    to: string,
+    from: string = "auto",
     context?: string
   ): { translations: string[]; dictionary?: any | null } | null {
+    const normalizedTo = normalizeLanguageCode(to);
+    const normalizedFrom = normalizeLanguageCode(from);
     const contextId = context
       ? `:${context.length}_${context.slice(0, 10)}`
       : "";
     const cacheKey = `multi:${text
       .trim()
-      .toLowerCase()}:${to}:${from}${contextId}`;
+      .toLowerCase()}:${normalizedTo}:${normalizedFrom}${contextId}`;
     return this.cache[cacheKey] || null;
   }
 
@@ -105,12 +123,14 @@ export class MultiTranslationService {
     translation: string,
     context?: string
   ): void {
+    const normalizedTo = normalizeLanguageCode(to);
+    const normalizedFrom = normalizeLanguageCode(from);
     const contextId = context
       ? `:${context.length}_${context.slice(0, 10)}`
       : "";
     const cacheKey = `multi:${text
       .trim()
-      .toLowerCase()}:${to}:${from}${contextId}`;
+      .toLowerCase()}:${normalizedTo}:${normalizedFrom}${contextId}`;
 
     // If there's already a cached entry, add the new translation to it
     if (this.cache[cacheKey]) {

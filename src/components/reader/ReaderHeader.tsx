@@ -55,25 +55,25 @@ export const ReaderHeader: React.FC<ReaderHeaderProps> = ({
 
       {/* Dual Mode Sub-options Controls */}
       {mode === "dual" && (
-        <div className="flex justify-center gap-2 mb-6">
-          <div className="flex bg-slate-100 p-1 rounded-full">
+        <div className="flex justify-center gap-[0.5rem] mb-[1.5rem]">
+          <div className="flex bg-slate-100 dark:bg-slate-800/50 p-[0.25rem] rounded-full">
             {(["sentences", "hover", "interleaved", "sync"] as const).map(
               (opt) => (
                 <button
                   key={opt}
                   onClick={() => setDualModeOption(opt)}
                   className={cn(
-                    "p-2 rounded-full transition-all",
+                    "p-[0.5rem] rounded-full transition-all",
                     dualModeOption === opt
-                      ? "bg-white text-blue-600 shadow-sm"
-                      : "text-slate-400 hover:text-slate-600"
+                      ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
+                      : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                   )}
                   title={opt.charAt(0).toUpperCase() + opt.slice(1)}
                 >
-                  {opt === "sentences" && <ArrowRightLeft size={16} />}
-                  {opt === "hover" && <MousePointerClick size={16} />}
-                  {opt === "interleaved" && <AlignJustify size={16} />}
-                  {opt === "sync" && <ScrollText size={16} />}
+                  {opt === "sentences" && <ArrowRightLeft size="1rem" />}
+                  {opt === "hover" && <MousePointerClick size="1rem" />}
+                  {opt === "interleaved" && <AlignJustify size="1rem" />}
+                  {opt === "sync" && <ScrollText size="1rem" />}
                 </button>
               )
             )}
@@ -82,7 +82,7 @@ export const ReaderHeader: React.FC<ReaderHeaderProps> = ({
       )}
 
       {mode === "dual" && dualModeOption === "sync" && (
-        <h2 className="text-xl font-serif text-slate-500 dark:text-slate-400 mb-8 text-center italic">
+        <h2 className="text-[1.25rem] font-serif text-slate-500 dark:text-slate-400 mb-[2rem] text-center italic">
           {l1Title}
         </h2>
       )}

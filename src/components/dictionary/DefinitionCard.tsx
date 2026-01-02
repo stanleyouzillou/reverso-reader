@@ -104,7 +104,7 @@ export function DefinitionCard({
       <div className="px-4 pt-4 pb-1">
         <div className="flex items-center justify-between mb-0">
           <div className="flex items-center gap-2">
-            <h2 className="text-[22px] font-bold text-slate-900 tracking-tight leading-tight">
+            <h2 className="text-[1.375rem] font-bold text-slate-900 tracking-tight leading-tight">
               {definition.word}
             </h2>
             <button
@@ -115,7 +115,10 @@ export function DefinitionCard({
               )}
               title={isSaved ? "Remove from vocabulary" : "Add to vocabulary"}
             >
-              <Bookmark size={18} fill={isSaved ? "currentColor" : "none"} />
+              <Bookmark
+                size={"1.125rem" as any}
+                fill={isSaved ? "currentColor" : "none"}
+              />
             </button>
           </div>
           <button
@@ -125,16 +128,16 @@ export function DefinitionCard({
               isSpeaking === "word" && "bg-blue-50"
             )}
           >
-            <Volume2 size={20} />
+            <Volume2 size={"1.25rem" as any} />
           </button>
         </div>
 
-        <div className="flex items-center gap-1.5 text-[12px] text-slate-500 mb-2 font-medium">
+        <div className="flex items-center gap-1.5 text-[0.75rem] text-slate-500 mb-2 font-medium">
           <span className="uppercase tracking-wider">
             {definition.pronunciation}
           </span>
           <span className="w-1 h-1 bg-slate-300 rounded-full" />
-          <span className="text-blue-600 font-bold uppercase tracking-widest text-[10px]">
+          <span className="text-blue-600 font-bold uppercase tracking-widest text-[0.625rem]">
             {definition.partOfSpeech}
           </span>
         </div>
@@ -146,7 +149,7 @@ export function DefinitionCard({
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={cn(
-                "px-3 py-2 text-[13px] font-semibold transition-all relative",
+                "px-3 py-2 text-[0.8125rem] font-semibold transition-all relative",
                 activeTab === tab
                   ? "text-blue-600"
                   : "text-slate-400 hover:text-slate-600"
@@ -164,24 +167,24 @@ export function DefinitionCard({
       {/* CONTENT AREA */}
       <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-2">
         {activeTab === "Definition" && (
-          <div className="space-y-[14px]">
+          <div className="space-y-[0.875rem]">
             {definition.definitions.map((def, idx) => (
               <div key={idx} className="relative group">
                 <div className="flex items-center gap-1.5 m-0">
-                  <span className="text-slate-500 font-semibold text-[12px]">
+                  <span className="text-slate-500 font-semibold text-[0.75rem]">
                     {idx + 1}.
                   </span>
-                  <span className="text-slate-400 italic text-[11px]">
+                  <span className="text-slate-400 italic text-[0.6875rem]">
                     {def.senseLabel}
                   </span>
                 </div>
 
-                <p className="text-gray-900 text-[13px] leading-[1.4] font-semibold mt-[2px] mb-[6px] ml-0 mr-0">
+                <p className="text-gray-900 text-[0.8125rem] leading-[1.4] font-semibold mt-[0.125rem] mb-[0.375rem] ml-0 mr-0">
                   {def.meaning}
                 </p>
 
                 <div className="flex items-start gap-1.5 group/example m-0">
-                  <p className="text-gray-600 text-[12px] leading-[1.5] flex-1 italic m-0">
+                  <p className="text-gray-600 text-[0.75rem] leading-[1.5] flex-1 italic m-0">
                     "{def.example}"
                   </p>
                   <button
@@ -191,15 +194,15 @@ export function DefinitionCard({
                       isSpeaking === `ex-${idx}` && "opacity-100 text-blue-500"
                     )}
                   >
-                    <Volume2 size={14} />
+                    <Volume2 size={"0.875rem" as any} />
                   </button>
                 </div>
 
-                <div className="flex flex-wrap gap-[5px] m-0 p-0">
+                <div className="flex flex-wrap gap-[0.3125rem] m-0 p-0">
                   {def.translations.map((t, i) => (
                     <span
                       key={i}
-                      className="bg-blue-50 text-blue-800 text-[11px] px-2 py-0.5 rounded-[10px] font-medium"
+                      className="bg-blue-50 text-blue-800 text-[0.6875rem] px-2 py-0.5 rounded-[0.625rem] font-medium"
                     >
                       {t}
                     </span>
@@ -218,7 +221,7 @@ export function DefinitionCard({
                 className="p-3 rounded-lg bg-slate-50 border border-slate-100 group/usage relative"
               >
                 <div className="flex items-start gap-1.5 mb-1">
-                  <p className="text-slate-800 text-[12px] leading-relaxed font-semibold flex-1">
+                  <p className="text-slate-800 text-[0.75rem] leading-relaxed font-semibold flex-1">
                     {ex.sentence}
                   </p>
                   <button
@@ -229,10 +232,10 @@ export function DefinitionCard({
                         "opacity-100 text-blue-500"
                     )}
                   >
-                    <Volume2 size={14} />
+                    <Volume2 size={"0.875rem" as any} />
                   </button>
                 </div>
-                <p className="text-blue-700 text-[11px] font-medium">
+                <p className="text-blue-700 text-[0.6875rem] font-medium">
                   {ex.translation}
                 </p>
               </div>
@@ -243,16 +246,16 @@ export function DefinitionCard({
         {activeTab === "Source" && (
           <div className="space-y-3">
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 group/source relative">
-              <p className="text-slate-800 text-[13px] leading-relaxed mb-3 font-semibold italic">
+              <p className="text-slate-800 text-[0.8125rem] leading-relaxed mb-3 font-semibold italic">
                 "{sourceSentence}"
               </p>
 
               <div className="flex items-center justify-between pt-3 border-t border-slate-200/50">
                 <button
                   onClick={() => onNavigateToSource(textPosition)}
-                  className="flex items-center gap-1.5 text-blue-600 font-bold text-[12px] hover:gap-2 transition-all"
+                  className="flex items-center gap-1.5 text-blue-600 font-bold text-[0.75rem] hover:gap-2 transition-all"
                 >
-                  View in text <ArrowRight size={14} />
+                  View in text <ArrowRight size={"0.875rem" as any} />
                 </button>
 
                 <div className="flex items-center gap-1">
@@ -263,7 +266,7 @@ export function DefinitionCard({
                       isSpeaking === "source" && "text-blue-600 bg-white"
                     )}
                   >
-                    <Volume2 size={16} />
+                    <Volume2 size={"1rem" as any} />
                   </button>
                   <button
                     onClick={() =>
@@ -271,13 +274,13 @@ export function DefinitionCard({
                     }
                     className="p-1.5 rounded-full hover:bg-white text-slate-400 hover:text-blue-600 transition-colors"
                   >
-                    <Languages size={16} />
+                    <Languages size={"1rem" as any} />
                   </button>
                 </div>
               </div>
 
               {translations["source"] && (
-                <div className="mt-3 p-3 bg-white rounded-lg border border-blue-100 text-blue-800 text-[11px] font-medium animate-in slide-in-from-top-2 duration-300">
+                <div className="mt-3 p-3 bg-white rounded-lg border border-blue-100 text-blue-800 text-[0.6875rem] font-medium animate-in slide-in-from-top-2 duration-300">
                   {translations["source"]}
                 </div>
               )}

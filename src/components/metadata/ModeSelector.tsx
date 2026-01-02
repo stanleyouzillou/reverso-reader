@@ -36,8 +36,8 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
             key={mode.id}
             onClick={() => onModeChange(mode.id)}
             className={cn(
-              "flex-1 py-4 flex flex-col items-center gap-1 text-sm font-medium transition-all border-b-2 relative",
-              "min-h-[60px] flex items-center justify-center", // Larger click target
+              "flex-1 py-[1rem] flex flex-col items-center gap-[0.25rem] text-[0.875rem] font-medium transition-all border-b-2 relative",
+              "min-h-[3.75rem] flex items-center justify-center", // Larger click target
               activeMode === mode.id
                 ? "text-blue-600 border-blue-600 bg-blue-50"
                 : "text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50"
@@ -47,31 +47,22 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
             aria-controls={`panel-${mode.id}`}
             id={`tab-${mode.id}`}
           >
-            <div className="mb-1 relative">
-              {mode.id === "vocabulary" ? (
-                <Icon
-                  size={20}
-                  className={
-                    activeMode === mode.id ? "text-blue-600" : "text-slate-500"
-                  }
-                />
-              ) : (
-                <Icon
-                  size={18}
-                  className={
-                    activeMode === mode.id ? "text-blue-600" : "text-slate-500"
-                  }
-                />
-              )}
+            <div className="mb-[0.25rem] relative">
+              <Icon
+                size={(mode.id === "vocabulary" ? "1.25rem" : "1.125rem") as any}
+                className={
+                  activeMode === mode.id ? "text-blue-600" : "text-slate-500"
+                }
+              />
               {mode.id === "vocabulary" && saved.length > 0 && (
-                <span className="absolute -top-1.5 -right-2 min-w-[16px] h-[16px] bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-slate-900 px-1">
+                <span className="absolute -top-[0.375rem] -right-[0.5rem] min-w-[1rem] h-[1rem] bg-red-500 text-white text-[0.625rem] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-slate-900 px-[0.25rem]">
                   {saved.length}
                 </span>
               )}
             </div>
-            <span className="text-xs">{mode.label}</span>
+            <span className="text-[0.75rem]">{mode.label}</span>
             {mode.id === "ai" && (
-              <span className="absolute top-1 right-3 text-[6px] bg-blue-500 text-white px-1 rounded-full">
+              <span className="absolute top-[0.25rem] right-[0.75rem] text-[0.375rem] bg-blue-500 text-white px-[0.25rem] rounded-full">
                 BETA
               </span>
             )}

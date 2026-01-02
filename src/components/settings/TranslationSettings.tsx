@@ -8,6 +8,7 @@ import {
   TextCursor,
   Globe,
   Lightbulb,
+  Zap,
 } from "lucide-react";
 
 export const TranslationSettings: React.FC = () => {
@@ -20,6 +21,8 @@ export const TranslationSettings: React.FC = () => {
     setL2Language,
     showHintsEnabled,
     setShowHintsEnabled,
+    minimalistSettings,
+    updateMinimalistSettings,
   } = useReaderSettings();
 
   // List of supported languages for translation
@@ -147,7 +150,7 @@ export const TranslationSettings: React.FC = () => {
         {/* Language Selection */}
         <div>
           <label className="text-sm font-medium text-slate-700 mb-3 flex items-center gap-2">
-            <Globe size={16} />
+            <Globe size={"1rem" as any} />
             Target Language
           </label>
           <select
@@ -171,7 +174,7 @@ export const TranslationSettings: React.FC = () => {
           <label className="block text-sm font-medium text-slate-700 mb-3">
             Interaction Mode
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <button
               onClick={() => setTranslationMode("inline")}
               className={cn(
@@ -181,8 +184,8 @@ export const TranslationSettings: React.FC = () => {
                   : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
               )}
             >
-              <MousePointerClick size={20} />
-              <span>Inline (Click)</span>
+              <MousePointerClick size={"1.25rem" as any} />
+              <span>Inline</span>
             </button>
             <button
               onClick={() => setTranslationMode("hover")}
@@ -193,23 +196,139 @@ export const TranslationSettings: React.FC = () => {
                   : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
               )}
             >
-              <ScanSearch size={20} />
-              <span>Hover (Popup)</span>
+              <ScanSearch size={"1.25rem" as any} />
+              <span>Hover</span>
+            </button>
+            <button
+              onClick={() => setTranslationMode("minimalist")}
+              className={cn(
+                "p-3 rounded-lg text-sm font-medium transition-all border flex flex-col items-center gap-2 text-center",
+                translationMode === "minimalist"
+                  ? "bg-blue-50 border-blue-200 text-blue-700 shadow-sm"
+                  : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+              )}
+            >
+              <Zap size={"1.25rem" as any} />
+              <span>Minimal</span>
             </button>
           </div>
           <p className="text-xs text-slate-400 mt-2">
             {translationMode === "inline"
               ? "Click words to translate them directly in the text flow."
-              : "Hover over words to see a temporary translation popup."}
+              : translationMode === "hover"
+              ? "Hover over words to see a temporary translation popup."
+              : "A minimalist click-to-translate experience with focus on speed."}
           </p>
         </div>
+
+        {/* Minimalist Mode Settings */}
+        {translationMode === "minimalist" && (
+          <div className="space-y-4 pt-4 border-t border-slate-100 animate-in slide-in-from-top-2 duration-300">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Minimalist Settings
+            </h4>
+
+            <div className="space-y-4">
+              {/* Position Preference */}
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">
+                  Popup Position
+                </label>
+                <div className="flex bg-slate-100 p-1 rounded-lg">
+                  <button
+                    onClick={() =>
+                      updateMinimalistSettings({ position: "above" })
+                    }
+                    className={cn(
+                      "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
+                      minimalistSettings.position === "above"
+                        ? "bg-white text-blue-600 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    )}
+                  >
+                    Above Word
+                  </button>
+                  <button
+                    onClick={() =>
+                      updateMinimalistSettings({ position: "below" })
+                    }
+                    className={cn(
+                      "flex-1 py-1.5 text-xs font-medium rounded-md transition-all",
+                      minimalistSettings.position === "below"
+                        ? "bg-white text-blue-600 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
+                    )}
+                  >
+                    Below Word
+                  </button>
+                </div>
+              </div>
+
+              {/* Popup Delay */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Popup Delay
+                  </label>
+                  <span className="text-xs font-mono text-slate-500">
+                    {minimalistSettings.popupDelay}ms
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="1000"
+                  step="50"
+                  value={minimalistSettings.popupDelay}
+                  onChange={(e) =>
+                    updateMinimalistSettings({
+                      popupDelay: parseInt(e.target.value),
+                    })
+                  }
+                  className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+              </div>
+
+              {/* Highlight Color */}
+              <div>
+                <label className="text-sm font-medium text-slate-700 mb-2 block">
+                  Highlight Color
+                </label>
+                <div className="flex gap-2">
+                  {[
+                    "rgba(59, 130, 246, 0.2)", // Blue
+                    "rgba(16, 185, 129, 0.2)", // Green
+                    "rgba(245, 158, 11, 0.2)", // Amber
+                    "rgba(239, 68, 68, 0.2)", // Red
+                    "rgba(139, 92, 246, 0.2)", // Violet
+                    "rgba(0, 0, 0, 0.05)", // Gray
+                  ].map((color) => (
+                    <button
+                      key={color}
+                      onClick={() =>
+                        updateMinimalistSettings({ highlightColor: color })
+                      }
+                      className={cn(
+                        "w-6 h-6 rounded-full border-2 transition-transform hover:scale-110",
+                        minimalistSettings.highlightColor === color
+                          ? "border-slate-400 scale-110"
+                          : "border-transparent"
+                      )}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Granularity Selection (Only for Inline) */}
         <div
           className={cn(
             "transition-all duration-300 overflow-hidden",
             translationMode === "inline"
-              ? "max-h-[200px] opacity-100"
+              ? "max-h-[12.5rem] opacity-100"
               : "max-h-0 opacity-50"
           )}
         >
@@ -226,7 +345,7 @@ export const TranslationSettings: React.FC = () => {
                   : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
               )}
             >
-              <Highlighter size={20} />
+              <Highlighter size={"1.25rem" as any} />
               <span>Chunk (Smart)</span>
             </button>
             <button
@@ -238,7 +357,7 @@ export const TranslationSettings: React.FC = () => {
                   : "bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
               )}
             >
-              <TextCursor size={20} />
+              <TextCursor size={"1.25rem" as any} />
               <span>Single Word</span>
             </button>
           </div>
@@ -254,7 +373,7 @@ export const TranslationSettings: React.FC = () => {
           <div className="flex items-center justify-between mb-2">
             <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
               <Lightbulb
-                size={16}
+                size={"1rem" as any}
                 className={
                   showHintsEnabled ? "text-yellow-500" : "text-slate-400"
                 }
@@ -264,14 +383,16 @@ export const TranslationSettings: React.FC = () => {
             <button
               onClick={() => setShowHintsEnabled(!showHintsEnabled)}
               className={cn(
-                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
+                "relative inline-flex h-[1.5rem] w-[2.75rem] items-center rounded-full transition-colors focus:outline-none",
                 showHintsEnabled ? "bg-blue-600" : "bg-slate-200"
               )}
             >
               <span
                 className={cn(
-                  "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                  showHintsEnabled ? "translate-x-6" : "translate-x-1"
+                  "inline-block h-[1rem] w-[1rem] transform rounded-full bg-white transition-transform",
+                  showHintsEnabled
+                    ? "translate-x-[1.5rem]"
+                    : "translate-x-[0.25rem]"
                 )}
               />
             </button>
