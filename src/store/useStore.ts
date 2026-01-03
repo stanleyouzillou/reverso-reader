@@ -36,6 +36,9 @@ interface State {
   hoveredTokenId: string | null;
   hoveredSentenceIdx: number | null;
 
+  // Optimized Lookups
+  savedWordsRecord: Record<string, boolean>; // word.toLowerCase().trim() -> boolean
+
   // Minimalist Translation State
   minimalistTokenId: string | null;
   minimalistTranslation: string | null;
@@ -78,143 +81,172 @@ interface State {
 
 export const useStore = create<State>()(
   persist(
-    (set) => ({
-      mode: "dual",
-      sidebarMode: "vocabulary",
-      highlightMode: "saved",
-      history: [],
-      saved: [],
-      toLearn: DEMO_ARTICLE.metadata.keyVocab,
-      vocabNotificationCount: 0,
-      karaokeActive: false,
-      playbackSpeed: 1,
-      dualModeOption: "sentences",
-      highlightedWords: [],
-      currentSentenceIdx: 0,
-      currentWordIdx: -1, // Default: no word highlighted
-      isPaused: true, // Start paused
-      selectedVoice: null,
-      selectedDictionaryWord: null,
-      sidebarCollapsed: false,
-      hoveredTokenId: null,
-      hoveredSentenceIdx: null,
-      minimalistTokenId: null,
-      minimalistTranslation: null,
-      isMinimalistLoading: false,
-      translatedWords: {},
-      lastActivity: Date.now(),
+    (set) => {
+      const initialSaved: VocabItem[] = [];
+      const initialRecord: Record<string, boolean> = {};
+      initialSaved.forEach((item) => {
+        initialRecord[item.word.toLowerCase().trim()] = true;
+      });
 
-      setMode: (mode) => {
-        set({ mode, lastActivity: Date.now() });
-      },
-      setSidebarMode: (mode) =>
-        set({ sidebarMode: mode, lastActivity: Date.now() }),
-      setHighlightMode: (mode) =>
-        set({ highlightMode: mode, lastActivity: Date.now() }),
-      setDualModeOption: (option) =>
-        set({ dualModeOption: option, lastActivity: Date.now() }),
-      setSelectedDictionaryWord: (word) =>
-        set({ selectedDictionaryWord: word, lastActivity: Date.now() }),
-      setSidebarCollapsed: (collapsed) => set({ sidebarCollapsed: collapsed }),
-      setHoveredTokenId: (id) => set({ hoveredTokenId: id }),
-      setHoveredSentenceIdx: (idx) => set({ hoveredSentenceIdx: idx }),
-      setMinimalistTokenId: (id) => set({ minimalistTokenId: id }),
-      setMinimalistTranslation: (translation) =>
-        set({ minimalistTranslation: translation }),
-      setIsMinimalistLoading: (loading) =>
-        set({ isMinimalistLoading: loading }),
+      return {
+        mode: "dual",
+        sidebarMode: "vocabulary",
+        highlightMode: "saved",
+        history: [],
+        saved: initialSaved,
+        savedWordsRecord: initialRecord,
+        toLearn: DEMO_ARTICLE.metadata.keyVocab,
+        vocabNotificationCount: 0,
+        karaokeActive: false,
+        playbackSpeed: 1,
+        dualModeOption: "sentences",
+        highlightedWords: [],
+        currentSentenceIdx: 0,
+        currentWordIdx: -1, // Default: no word highlighted
+        isPaused: true, // Start paused
+        selectedVoice: null,
+        selectedDictionaryWord: null,
+        sidebarCollapsed: false,
+        hoveredTokenId: null,
+        hoveredSentenceIdx: null,
+        savedWordsRecord: {},
+        minimalistTokenId: null,
+        minimalistTranslation: null,
+        isMinimalistLoading: false,
+        translatedWords: {},
+        lastActivity: Date.now(),
 
-      addTranslatedWord: (word) =>
-        set((state) => {
-          const normalizedWord = word.toLowerCase().trim();
-          return {
-            translatedWords: {
-              ...state.translatedWords,
-              [normalizedWord]: Date.now(),
-            },
-            lastActivity: Date.now(),
-          };
-        }),
+        setMode: (mode) => {
+          set({ mode, lastActivity: Date.now() });
+        },
+        setSidebarMode: (mode) =>
+          set({ sidebarMode: mode, lastActivity: Date.now() }),
+        setHighlightMode: (mode) =>
+          set({ highlightMode: mode, lastActivity: Date.now() }),
+        setDualModeOption: (option) =>
+          set({ dualModeOption: option, lastActivity: Date.now() }),
+        setSelectedDictionaryWord: (word) =>
+          set({ selectedDictionaryWord: word, lastActivity: Date.now() }),
+        setSidebarCollapsed: (collapsed) =>
+          set({ sidebarCollapsed: collapsed }),
+        setHoveredTokenId: (id) => set({ hoveredTokenId: id }),
+        setHoveredSentenceIdx: (idx) => set({ hoveredSentenceIdx: idx }),
+        setMinimalistTokenId: (id) => set({ minimalistTokenId: id }),
+        setMinimalistTranslation: (translation) =>
+          set({ minimalistTranslation: translation }),
+        setIsMinimalistLoading: (loading) =>
+          set({ isMinimalistLoading: loading }),
 
-      clearTranslatedWords: () => set({ translatedWords: {} }),
-
-      updateActivity: () => set({ lastActivity: Date.now() }),
-
-      checkSessionTimeout: () =>
-        set((state) => {
-          const now = Date.now();
-          const thirtyMinutes = 30 * 60 * 1000;
-          if (now - state.lastActivity > thirtyMinutes) {
-            return { translatedWords: {}, lastActivity: now };
-          }
-          return state;
-        }),
-
-      addToHistory: (item) =>
-        set((state) => {
-          // Avoid duplicates at the top of the list
-          const filtered = state.history.filter((i) => i.word !== item.word);
-          return { history: [item, ...filtered] };
-        }),
-
-      toggleSaved: (item) =>
-        set((state) => {
-          const normalizedWord = item.word.toLowerCase().trim();
-          const isSaved = state.saved.some(
-            (i) => i.word.toLowerCase().trim() === normalizedWord
-          );
-
-          if (isSaved) {
+        addTranslatedWord: (word) =>
+          set((state) => {
+            const normalizedWord = word.toLowerCase().trim();
             return {
-              saved: state.saved.filter(
-                (i) => i.word.toLowerCase().trim() !== normalizedWord
-              ),
+              translatedWords: {
+                ...state.translatedWords,
+                [normalizedWord]: Date.now(),
+              },
               lastActivity: Date.now(),
             };
-          }
+          }),
 
-          return {
-            saved: [item, ...state.saved],
-            vocabNotificationCount: state.vocabNotificationCount + 1,
-            lastActivity: Date.now(),
-          };
-        }),
+        clearTranslatedWords: () => set({ translatedWords: {} }),
 
-      toggleHighlightedWord: (word) =>
-        set((state) => {
-          const normalizedWord = word.toLowerCase().trim();
-          const isHighlighted = state.highlightedWords.includes(normalizedWord);
-          if (isHighlighted) {
+        updateActivity: () => set({ lastActivity: Date.now() }),
+
+        checkSessionTimeout: () =>
+          set((state) => {
+            const now = Date.now();
+            const thirtyMinutes = 30 * 60 * 1000;
+            if (now - state.lastActivity > thirtyMinutes) {
+              return { translatedWords: {}, lastActivity: now };
+            }
+            return state;
+          }),
+
+        addToHistory: (item) =>
+          set((state) => {
+            // Avoid duplicates at the top of the list
+            const filtered = state.history.filter((i) => i.word !== item.word);
+            return { history: [item, ...filtered] };
+          }),
+
+        toggleSaved: (item) =>
+          set((state) => {
+            const normalizedWord = item.word.toLowerCase().trim();
+            const isSaved = !!state.savedWordsRecord[normalizedWord];
+
+            if (isSaved) {
+              const newSaved = state.saved.filter(
+                (i) => i.word.toLowerCase().trim() !== normalizedWord
+              );
+              const newRecord = { ...state.savedWordsRecord };
+              delete newRecord[normalizedWord];
+
+              return {
+                saved: newSaved,
+                savedWordsRecord: newRecord,
+                lastActivity: Date.now(),
+              };
+            }
+
             return {
-              highlightedWords: state.highlightedWords.filter(
-                (w) => w !== normalizedWord
-              ),
+              saved: [item, ...state.saved],
+              savedWordsRecord: {
+                ...state.savedWordsRecord,
+                [normalizedWord]: true,
+              },
+              vocabNotificationCount: state.vocabNotificationCount + 1,
+              lastActivity: Date.now(),
             };
-          }
-          return {
-            highlightedWords: [...state.highlightedWords, normalizedWord],
-          };
-        }),
+          }),
 
-      setKaraokeActive: (active) => set({ karaokeActive: active }),
+        toggleHighlightedWord: (word) =>
+          set((state) => {
+            const normalizedWord = word.toLowerCase().trim();
+            const isHighlighted =
+              state.highlightedWords.includes(normalizedWord);
+            if (isHighlighted) {
+              return {
+                highlightedWords: state.highlightedWords.filter(
+                  (w) => w !== normalizedWord
+                ),
+              };
+            }
+            return {
+              highlightedWords: [...state.highlightedWords, normalizedWord],
+            };
+          }),
 
-      setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
+        setKaraokeActive: (active) => set({ karaokeActive: active }),
 
-      setCurrentSentenceIdx: (idx) =>
-        set({ currentSentenceIdx: idx, currentWordIdx: -1 }), // Reset word index on sentence change
-      setCurrentWordIdx: (idx) => set({ currentWordIdx: idx }),
-      setIsPaused: (paused) => set({ isPaused: paused }),
-      setSelectedVoice: (voice) => set({ selectedVoice: voice }),
+        setPlaybackSpeed: (speed) => set({ playbackSpeed: speed }),
 
-      resetVocabNotification: () => set({ vocabNotificationCount: 0 }),
+        setCurrentSentenceIdx: (idx) =>
+          set({ currentSentenceIdx: idx, currentWordIdx: -1 }), // Reset word index on sentence change
+        setCurrentWordIdx: (idx) => set({ currentWordIdx: idx }),
+        setIsPaused: (paused) => set({ isPaused: paused }),
+        setSelectedVoice: (voice) => set({ selectedVoice: voice }),
 
-      clearHistory: () => set({ history: [] }),
-    }),
+        resetVocabNotification: () => set({ vocabNotificationCount: 0 }),
+
+        clearHistory: () => set({ history: [] }),
+      };
+    },
     {
       name: "reverso-reader-storage",
       partialize: (state) => {
         const { translatedWords, lastActivity, ...rest } = state;
         return rest;
+      },
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          // Rebuild the optimized record if it's missing or out of sync
+          const record: Record<string, boolean> = {};
+          state.saved.forEach((item) => {
+            record[item.word.toLowerCase().trim()] = true;
+          });
+          state.savedWordsRecord = record;
+        }
       },
     }
   )

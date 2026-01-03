@@ -92,13 +92,12 @@ export const Token: React.FC<TokenProps> = memo(
       (state) => state.setIsMinimalistLoading
     );
     const highlightMode = useStore((state) => state.highlightMode);
-    const isSaved = useStore((state) =>
-      state.saved.some(
-        (item) => item.word.toLowerCase() === token.toLowerCase().trim()
-      )
+    const normalizedToken = token.toLowerCase().trim();
+    const isSaved = useStore(
+      (state) => !!state.savedWordsRecord[normalizedToken]
     );
     const isTranslated = useStore(
-      (state) => token.toLowerCase().trim() in state.translatedWords
+      (state) => normalizedToken in state.translatedWords
     );
     const addTranslatedWord = useStore((state) => state.addTranslatedWord);
     const addToHistory = useStore((state) => state.addToHistory);
@@ -109,6 +108,7 @@ export const Token: React.FC<TokenProps> = memo(
     const [shouldAnimate, setShouldAnimate] = useState(false);
     const tokenRef = useRef<HTMLSpanElement>(null);
     const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const enterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const isKaraoke = index === karaokeIndex;
 
@@ -150,55 +150,60 @@ export const Token: React.FC<TokenProps> = memo(
         leaveTimeoutRef.current = null;
       }
 
-      // Minimalist mode hover should only trigger UI state (hoveredTokenId)
-      // and NOT any translation logic or other side effects.
-      if (translationMode === "minimalist") {
-        setHoveredTokenId(tokenId);
-        return;
-      }
+      // Debounce the enter event slightly to prevent rapid re-renders when sweeping
+      if (enterTimeoutRef.current) clearTimeout(enterTimeoutRef.current);
 
-      // Hover mode logic (only for learning/dual modes and valid words)
-      if (translationMode === "hover" && mode !== "clean" && isWord(token)) {
-        setHoveredTokenId(tokenId);
-        addTranslatedWord(token);
+      enterTimeoutRef.current = setTimeout(async () => {
+        // Minimalist mode hover should only trigger UI state (hoveredTokenId)
+        if (translationMode === "minimalist") {
+          setHoveredTokenId(tokenId);
+          return;
+        }
 
-        const sourceLang = normalizeLanguageCode(sourceLanguage || "en");
-        const targetLang = normalizeLanguageCode(l2Language || "fr");
+        // Hover mode logic (only for learning/dual modes and valid words)
+        if (translationMode === "hover" && mode !== "clean" && isWord(token)) {
+          setHoveredTokenId(tokenId);
+          addTranslatedWord(token);
 
-        const cached = multiTranslationService.getCachedTranslations(
-          token,
-          targetLang,
-          sourceLang,
-          sentenceText
-        );
-        if (cached && cached.translations.length > 0) {
-          setHoverTranslations(cached.translations);
-        } else {
-          setIsHoverLoading(true);
-          const result = await multiTranslationService.getMultipleTranslations(
+          const sourceLang = normalizeLanguageCode(sourceLanguage || "en");
+          const targetLang = normalizeLanguageCode(l2Language || "fr");
+
+          const cached = multiTranslationService.getCachedTranslations(
             token,
             targetLang,
             sourceLang,
             sentenceText
           );
-
-          if (useStore.getState().hoveredTokenId !== tokenId) return;
-
-          if (result && !result.error && result.translations.length > 0) {
-            setHoverTranslations(result.translations);
+          if (cached && cached.translations.length > 0) {
+            setHoverTranslations(cached.translations);
           } else {
-            const fallbackResult = await translateText(token, sentenceText);
+            setIsHoverLoading(true);
+            const result =
+              await multiTranslationService.getMultipleTranslations(
+                token,
+                targetLang,
+                sourceLang,
+                sentenceText
+              );
+
             if (useStore.getState().hoveredTokenId !== tokenId) return;
 
-            if (fallbackResult && !fallbackResult.error) {
-              setHoverTranslations([fallbackResult.text]);
+            if (result && !result.error && result.translations.length > 0) {
+              setHoverTranslations(result.translations);
             } else {
-              setHoverTranslations(["No translation found"]);
+              const fallbackResult = await translateText(token, sentenceText);
+              if (useStore.getState().hoveredTokenId !== tokenId) return;
+
+              if (fallbackResult && !fallbackResult.error) {
+                setHoverTranslations([fallbackResult.text]);
+              } else {
+                setHoverTranslations(["No translation found"]);
+              }
             }
+            setIsHoverLoading(false);
           }
-          setIsHoverLoading(false);
         }
-      }
+      }, 25); // Tiny debounce (25ms) is enough to skip tokens when moving fast
     }, [
       translationMode,
       mode,
@@ -214,6 +219,11 @@ export const Token: React.FC<TokenProps> = memo(
     ]);
 
     const handleMouseLeave = useCallback(() => {
+      if (enterTimeoutRef.current) {
+        clearTimeout(enterTimeoutRef.current);
+        enterTimeoutRef.current = null;
+      }
+
       if (translationMode === "hover" || translationMode === "minimalist") {
         leaveTimeoutRef.current = setTimeout(
           () => {
@@ -248,13 +258,14 @@ export const Token: React.FC<TokenProps> = memo(
 
     useEffect(() => {
       return () => {
+        if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+        if (enterTimeoutRef.current) clearTimeout(enterTimeoutRef.current);
         if (useStore.getState().hoveredTokenId === tokenId) {
           useStore.getState().setHoveredTokenId(null);
         }
       };
     }, [tokenId]);
 
-    const normalizedToken = token.toLowerCase().trim();
     const keyVocab = metadata.keyVocab.find(
       (v) => v.word.toLowerCase() === normalizedToken
     );

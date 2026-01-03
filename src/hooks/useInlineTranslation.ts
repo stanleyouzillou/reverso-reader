@@ -17,7 +17,7 @@ export const useInlineTranslation = (): UseInlineTranslationReturn => {
   const [showTranslation, setShowTranslation] = useState(false);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const saved = useStore((state) => state.saved);
+  const savedWordsRecord = useStore((state) => state.savedWordsRecord);
   const addToHistoryStore = useStore((state) => state.addToHistory);
   const toggleSaved = useStore((state) => state.toggleSaved);
   const [isSaved, setIsSaved] = useState(false);
@@ -34,9 +34,9 @@ export const useInlineTranslation = (): UseInlineTranslationReturn => {
     setPosition(pos);
     setShowTranslation(true);
     
-    // Check if the word is already saved
-    setIsSaved(saved.some(item => item.word.toLowerCase() === word.toLowerCase()));
-  }, [saved]);
+    // Check if the word is already saved using optimized record
+    setIsSaved(!!savedWordsRecord[word.toLowerCase().trim()]);
+  }, [savedWordsRecord]);
 
   const closeTranslation = useCallback(() => {
     // Add a small delay to allow for brief mouse exits
