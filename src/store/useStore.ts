@@ -109,7 +109,6 @@ export const useStore = create<State>()(
         sidebarCollapsed: false,
         hoveredTokenId: null,
         hoveredSentenceIdx: null,
-        savedWordsRecord: {},
         minimalistTokenId: null,
         minimalistTranslation: null,
         isMinimalistLoading: false,
