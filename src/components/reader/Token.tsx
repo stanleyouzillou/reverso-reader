@@ -54,21 +54,30 @@ export const Token: React.FC<TokenProps> = memo(
     sentenceText,
     sourceLanguage,
   }) => {
-    const {
-      translationMode,
-      showHintsEnabled,
-      l2Language,
-      minimalistSettings,
-    } = useReaderSettings();
-    const dualModeOption = useStore((state) => state.dualModeOption);
-    const { translateText } = useTranslationEngine();
-    const hoveredTokenId = useStore((state) => state.hoveredTokenId);
-    const setHoveredTokenId = useStore((state) => state.setHoveredTokenId);
-    const hoveredSentenceIdx = useStore((state) => state.hoveredSentenceIdx);
-    const setHoveredSentenceIdx = useStore(
-      (state) => state.setHoveredSentenceIdx
+    const tokenId = `token-${index}`;
+    const translationMode = useReaderSettings((state) => state.translationMode);
+    const showHintsEnabled = useReaderSettings(
+      (state) => state.showHintsEnabled
     );
-    const minimalistTokenId = useStore((state) => state.minimalistTokenId);
+    const l2Language = useReaderSettings((state) => state.l2Language);
+    const minimalistSettings = useReaderSettings(
+      (state) => state.minimalistSettings
+    );
+
+    const { translateText } = useTranslationEngine();
+    const isCurrentlyHovered = useStore(
+      (state) => state.hoveredTokenId === tokenId
+    );
+    const setHoveredTokenId = useStore((state) => state.setHoveredTokenId);
+    const isSentenceHovered = useStore(
+      (state) =>
+        translationMode !== "minimalist" &&
+        sentenceIndex !== undefined &&
+        state.hoveredSentenceIdx === sentenceIndex
+    );
+    const isMinimalistActive = useStore(
+      (state) => state.minimalistTokenId === tokenId
+    );
     const setMinimalistTokenId = useStore(
       (state) => state.setMinimalistTokenId
     );
@@ -101,9 +110,6 @@ export const Token: React.FC<TokenProps> = memo(
     const tokenRef = useRef<HTMLSpanElement>(null);
     const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const tokenId = `token-${index}`;
-    const isCurrentlyHovered = hoveredTokenId === tokenId;
-    const isMinimalistActive = minimalistTokenId === tokenId;
     const isKaraoke = index === karaokeIndex;
 
     // Handle outside clicks to close minimalist popup
@@ -126,13 +132,6 @@ export const Token: React.FC<TokenProps> = memo(
       };
     }, [isMinimalistActive, setMinimalistTokenId]);
 
-    // Determine if this sentence is hovered in dual/sync mode
-    const isSentenceHovered =
-      translationMode !== "minimalist" && // Disable sentence highlight in minimalist mode
-      (mode === "dual" || dualModeOption === "sync") &&
-      sentenceIndex !== undefined &&
-      hoveredSentenceIdx === sentenceIndex;
-
     // Track when a word becomes translated to trigger animation
     const prevIsTranslatedRef = useRef(isTranslated);
     useEffect(() => {
@@ -145,16 +144,20 @@ export const Token: React.FC<TokenProps> = memo(
     }, [isTranslated]);
 
     const handleMouseEnter = useCallback(async () => {
+      // Clear any pending leave timeout immediately to prevent flicker
       if (leaveTimeoutRef.current) {
         clearTimeout(leaveTimeoutRef.current);
         leaveTimeoutRef.current = null;
       }
 
-      if (translationMode === "minimalist" && isWord(token)) {
+      // Minimalist mode hover should only trigger UI state (hoveredTokenId)
+      // and NOT any translation logic or other side effects.
+      if (translationMode === "minimalist") {
         setHoveredTokenId(tokenId);
         return;
       }
 
+      // Hover mode logic (only for learning/dual modes and valid words)
       if (translationMode === "hover" && mode !== "clean" && isWord(token)) {
         setHoveredTokenId(tokenId);
         addTranslatedWord(token);
@@ -206,8 +209,8 @@ export const Token: React.FC<TokenProps> = memo(
       translateText,
       sentenceIndex,
       sentenceText,
-      setHoveredSentenceIdx,
       sourceLanguage,
+      addTranslatedWord,
     ]);
 
     const handleMouseLeave = useCallback(() => {
@@ -276,7 +279,7 @@ export const Token: React.FC<TokenProps> = memo(
         if (!isWordToken) return;
 
         // Ensure hover state is set when clicking
-        if (hoveredTokenId !== tokenId) {
+        if (!isCurrentlyHovered) {
           setHoveredTokenId(tokenId);
         }
 
@@ -503,13 +506,19 @@ export const Token: React.FC<TokenProps> = memo(
           }
         : {};
 
-    // Early return for non-word tokens that aren't highlighted
+    // Early return for non-word tokens that aren't highlighted and not in minimalist/hover mode
     // We return them as plain text nodes to prevent wrapping-induced indentation
-    if (!isWordToken && !isHighlightActive && !isKaraoke) {
+    if (
+      !isWordToken &&
+      !isHighlightActive &&
+      !isKaraoke &&
+      translationMode !== "minimalist" &&
+      translationMode !== "hover"
+    ) {
       return <>{token}</>;
     }
 
-    // Render for Highlighted/Selected/Karaoke state
+    // Render for Highlighted/Selected/Karaoke state or minimalist hover surface
     if (
       isHighlightActive ||
       isKaraoke ||
@@ -522,8 +531,8 @@ export const Token: React.FC<TokenProps> = memo(
           ref={tokenRef}
           id={tokenId}
           onClick={handleTokenClick}
-          onPointerEnter={handleMouseEnter}
-          onPointerLeave={handleMouseLeave}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
           className={cn(
             "relative cursor-pointer inline transition-all duration-200 ease-out z-10",
             tokenStyling,
@@ -549,6 +558,7 @@ export const Token: React.FC<TokenProps> = memo(
           data-token-index={index}
           data-sentence-id={sentenceIndex}
           data-is-hard-stop={/[.!?;]/.test(token) ? "true" : undefined}
+          data-is-word={isWordToken}
           tabIndex={0}
           role="button"
           onKeyDown={(e) => {
@@ -589,39 +599,39 @@ export const Token: React.FC<TokenProps> = memo(
           {translationMode === "hover" &&
             isCurrentlyHovered &&
             (hoverTranslations.length > 0 || isHoverLoading) && (
-              <div
+              <span
                 id={`popup-${index}`}
                 className="absolute bottom-full left-1/2 -translate-x-1/2 mb-[0.5rem] z-50 pointer-events-none"
                 role="tooltip"
               >
-                <div className="relative">
-                  <div
-                    className="bg-black text-white text-[0.75rem] p-[0.75rem] rounded-lg shadow-2xl min-w-[12rem] max-w-[18rem] pointer-events-auto"
+                <span className="relative">
+                  <span
+                    className="bg-black text-white text-[0.75rem] p-[0.75rem] rounded-lg shadow-2xl min-w-[12rem] max-w-[18rem] pointer-events-auto block"
                     onMouseEnter={handlePopupMouseEnter}
                     onMouseLeave={handlePopupMouseLeave}
                   >
-                    <div className="font-bold mb-[0.5rem] border-b border-white/10 pb-[0.25rem] text-[0.85rem] tracking-wide">
+                    <span className="font-bold mb-[0.5rem] border-b border-white/10 pb-[0.25rem] text-[0.85rem] tracking-wide block">
                       {token}
-                    </div>
+                    </span>
                     {isHoverLoading ? (
-                      <div className="flex items-center justify-center py-[0.5rem]">
+                      <span className="flex items-center justify-center py-[0.5rem]">
                         <Loader2 className="h-[1rem] w-[1rem] animate-spin text-white/50" />
-                      </div>
+                      </span>
                     ) : (
                       <>
-                        <div className="space-y-[0.4rem]">
+                        <span className="space-y-[0.4rem] block">
                           {hoverTranslations
                             .slice(0, 3)
                             .map((translation, idx) => (
-                              <div
+                              <span
                                 key={idx}
-                                className="py-[0.125rem] text-white/90 font-medium leading-tight"
+                                className="py-[0.125rem] text-white/90 font-medium leading-tight block"
                               >
                                 {translation}
-                              </div>
+                              </span>
                             ))}
-                        </div>
-                        <div className="mt-[0.6rem] pt-[0.5rem] border-t border-white/10 flex justify-end">
+                        </span>
+                        <span className="mt-[0.6rem] pt-[0.5rem] border-t border-white/10 flex justify-end">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -649,13 +659,13 @@ export const Token: React.FC<TokenProps> = memo(
                               fill={isSaved ? "currentColor" : "none"}
                             />
                           </button>
-                        </div>
+                        </span>
                       </>
                     )}
-                  </div>
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-[0.25rem] w-0 h-0 border-l-[0.375rem] border-r-[0.375rem] border-t-[0.375rem] border-l-transparent border-r-transparent border-t-black" />
-                </div>
-              </div>
+                  </span>
+                  <span className="absolute top-full left-1/2 -translate-x-1/2 -mt-[0.25rem] w-0 h-0 border-l-[0.375rem] border-r-[0.375rem] border-t-[0.375rem] border-l-transparent border-r-transparent border-t-black" />
+                </span>
+              </span>
             )}
         </span>
       );

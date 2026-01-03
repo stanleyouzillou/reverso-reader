@@ -11,9 +11,10 @@ import { cn } from "../lib/utils";
 
 export const Layout: React.FC = () => {
   const [showStickyTitle, setShowStickyTitle] = useState(false);
-  const { sidebarCollapsed, setSidebarCollapsed } = useStore();
+  const sidebarCollapsed = useStore((state) => state.sidebarCollapsed);
+  const setSidebarCollapsed = useStore((state) => state.setSidebarCollapsed);
   const mainRef = useRef<HTMLElement>(null);
-  const { theme } = useReaderSettings();
+  const theme = useReaderSettings((state) => state.theme);
 
   // Sync dark mode with document root
   useEffect(() => {

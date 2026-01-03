@@ -14,13 +14,15 @@ interface DictionaryModeProps {
 export const DictionaryMode: React.FC<DictionaryModeProps> = ({
   className = "",
 }) => {
-  const {
-    selectedDictionaryWord,
-    history,
-    saved,
-    setSelectedDictionaryWord,
-    toggleSaved,
-  } = useStore();
+  const selectedDictionaryWord = useStore(
+    (state) => state.selectedDictionaryWord
+  );
+  const history = useStore((state) => state.history);
+  const saved = useStore((state) => state.saved);
+  const setSelectedDictionaryWord = useStore(
+    (state) => state.setSelectedDictionaryWord
+  );
+  const toggleSaved = useStore((state) => state.toggleSaved);
 
   const { l2Language } = useReaderSettings();
 

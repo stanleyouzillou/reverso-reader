@@ -16,7 +16,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
   onModeChange,
   className = "",
 }) => {
-  const { saved } = useStore();
+  const saved = useStore((state) => state.saved);
   const modes = [
     { id: "dictionary" as SidebarMode, label: "Dictionary", icon: BookOpen },
     { id: "vocabulary" as SidebarMode, label: "Vocabulary", icon: DeckIcon },

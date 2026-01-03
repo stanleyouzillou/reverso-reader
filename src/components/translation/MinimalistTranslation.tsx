@@ -85,7 +85,7 @@ export const MinimalistTranslation: React.FC<MinimalistTranslationProps> = ({
   };
 
   return (
-    <div
+    <span
       className={cn(
         "absolute left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-1.5 rounded-full shadow-lg border animate-in fade-in zoom-in duration-200",
         "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800",
@@ -100,7 +100,7 @@ export const MinimalistTranslation: React.FC<MinimalistTranslationProps> = ({
         </span>
       )}
 
-      <div
+      <span
         className="flex items-center gap-1 ml-1 pl-2 border-l border-slate-200 dark:border-slate-800"
         onClick={handleActionClick}
       >
@@ -137,10 +137,10 @@ export const MinimalistTranslation: React.FC<MinimalistTranslationProps> = ({
           label="Close"
           className="text-slate-400"
         />
-      </div>
+      </span>
 
       {/* Triangle arrow */}
-      <div
+      <span
         className={cn(
           "absolute left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900",
           position === "above"
@@ -148,6 +148,6 @@ export const MinimalistTranslation: React.FC<MinimalistTranslationProps> = ({
             : "bottom-full -mb-1 border-l border-t"
         )}
       />
-    </div>
+    </span>
   );
 };

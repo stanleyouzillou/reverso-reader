@@ -23,17 +23,15 @@ export const VocabularyMode: React.FC<VocabularyModeProps> = ({
   className = "",
 }) => {
   const [activeTab, setActiveTab] = useState<Tab>("history");
-  const {
-    history,
-    saved,
-    toLearn,
-    clearHistory,
-    addToHistory,
-    toggleSaved,
-    setSidebarMode,
-    setSelectedDictionaryWord,
-    setSidebarCollapsed,
-  } = useStore();
+  const history = useStore((state) => state.history);
+  const saved = useStore((state) => state.saved);
+  const toLearn = useStore((state) => state.toLearn);
+  const clearHistory = useStore((state) => state.clearHistory);
+  const addToHistory = useStore((state) => state.addToHistory);
+  const toggleSaved = useStore((state) => state.toggleSaved);
+  const setSidebarMode = useStore((state) => state.setSidebarMode);
+  const setSelectedDictionaryWord = useStore((state) => state.setSelectedDictionaryWord);
+  const setSidebarCollapsed = useStore((state) => state.setSidebarCollapsed);
 
   const [isSpeaking, setIsSpeaking] = useState<string | null>(null);
 

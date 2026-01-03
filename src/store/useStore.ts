@@ -8,7 +8,6 @@ import {
   WordStatus,
 } from "../types";
 import { DEMO_ARTICLE } from "../constants/demoContent";
-import { useReaderSettings } from "../hooks/useReaderSettings";
 
 interface State {
   mode: ReadingMode;

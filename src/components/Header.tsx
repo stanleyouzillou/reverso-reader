@@ -22,8 +22,10 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ showStickyTitle = false }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { title } = useArticleIngestion();
-  const { theme, setTheme } = useReaderSettings();
-  const { mode, setMode } = useStore();
+  const theme = useReaderSettings((state) => state.theme);
+  const setTheme = useReaderSettings((state) => state.setTheme);
+  const mode = useStore((state) => state.mode);
+  const setMode = useStore((state) => state.setMode);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";

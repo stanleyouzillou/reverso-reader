@@ -40,8 +40,11 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
   onPlaySentence,
   isPaused = true,
 }) => {
-  const { translationMode } = useReaderSettings();
-  const { hoveredSentenceIdx, setHoveredSentenceIdx } = useStore();
+  const translationMode = useReaderSettings((state) => state.translationMode);
+  const hoveredSentenceIdx = useStore((state) => state.hoveredSentenceIdx);
+  const setHoveredSentenceIdx = useStore(
+    (state) => state.setHoveredSentenceIdx
+  );
   const [currentPage, setCurrentPage] = useState(0);
   const [expandedTranslations, setExpandedTranslations] = useState<Set<number>>(
     new Set()
@@ -290,7 +293,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p
+                      <div
                         id={`paragraph-${originalIndex}`}
                         className="dark:text-slate-200 text-left leading-relaxed"
                       >
@@ -314,7 +317,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                                 isSentActive
                                   ? "bg-amber-100/80 dark:bg-amber-900/40 rounded-sm shadow-[0_0_0_1px_rgba(245,158,11,0.2)]"
                                   : showMatchingHighlight && isHovered
-                                  ? "bg-blue-100/60 dark:bg-blue-900/40 rounded-sm shadow-[0_0_0_2px_rgba(59,130,246,0.15)]"
+                                  ? "bg-blue-100/50 dark:bg-blue-900/30 rounded-sm shadow-[0_0_0_2px_rgba(59,130,246,0.15)]"
                                   : ""
                               )}
                               style={{
@@ -323,6 +326,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                               }}
                               onMouseEnter={() => {
                                 if (
+                                  translationMode !== "minimalist" &&
                                   isTranslationExpanded &&
                                   group.sentenceIdx !== -1
                                 ) {
@@ -330,7 +334,9 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                                 }
                               }}
                               onMouseLeave={() => {
-                                setHoveredSentenceIdx(null);
+                                if (translationMode !== "minimalist") {
+                                  setHoveredSentenceIdx(null);
+                                }
                               }}
                               onClick={(e) => {
                                 // In minimalist mode, we want clicks to go to tokens for translation
@@ -361,7 +367,7 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                             </span>
                           );
                         })}
-                      </p>
+                      </div>
 
                       {/* Translation Block */}
                       <div
@@ -374,24 +380,40 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                       >
                         <div className="pl-4 border-l-2 border-blue-100 dark:border-blue-900/50 py-1">
                           <div className="text-slate-500 dark:text-slate-400 italic text-[0.95em] leading-relaxed">
-                            {sentencesInPara.map((pair, pIdx) => (
-                              <span
-                                key={pIdx}
-                                className={cn(
-                                  "transition-all duration-200 ease-in-out rounded-sm px-0.5",
-                                  hoveredSentenceIdx === pair.sentenceIdx
-                                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-[0_0_0_2px_rgba(59,130,246,0.05)]"
-                                    : "hover:bg-slate-50 dark:hover:bg-slate-800/30"
-                                )}
-                                onMouseEnter={() =>
-                                  setHoveredSentenceIdx(pair.sentenceIdx)
-                                }
-                                onMouseLeave={() => setHoveredSentenceIdx(null)}
-                              >
-                                {pair.l1}
-                                {pIdx < sentencesInPara.length - 1 && " "}
-                              </span>
-                            ))}
+                            {sentencesInPara.map((pair, pIdx) => {
+                              const isSentActive =
+                                pair.sentenceIdx === currentSentenceIdx &&
+                                currentSentenceIdx !== -1;
+                              const isHovered =
+                                hoveredSentenceIdx === pair.sentenceIdx;
+
+                              return (
+                                <span
+                                  key={pIdx}
+                                  className={cn(
+                                    "transition-all duration-200 ease-in-out rounded-sm px-0.5",
+                                    isSentActive
+                                      ? "bg-amber-100/60 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 shadow-[0_0_0_1px_rgba(245,158,11,0.2)]"
+                                      : isHovered
+                                      ? "bg-blue-100/50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-[0_0_0_2px_rgba(59,130,246,0.05)]"
+                                      : "hover:bg-slate-50 dark:hover:bg-slate-800/30"
+                                  )}
+                                  onMouseEnter={() => {
+                                    if (translationMode !== "minimalist") {
+                                      setHoveredSentenceIdx(pair.sentenceIdx);
+                                    }
+                                  }}
+                                  onMouseLeave={() => {
+                                    if (translationMode !== "minimalist") {
+                                      setHoveredSentenceIdx(null);
+                                    }
+                                  }}
+                                >
+                                  {pair.l1}
+                                  {pIdx < sentencesInPara.length - 1 && " "}
+                                </span>
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
@@ -430,15 +452,25 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
                         <span
                           key={s.globalIdx}
                           className={cn(
-                            "transition-colors duration-200 rounded-sm block md:inline cursor-pointer",
+                            "transition-all duration-200 rounded-sm block md:inline cursor-pointer px-0.5",
                             translationMode !== "minimalist" &&
-                              hoveredSentenceIdx === s.globalIdx &&
-                              "bg-blue-100/50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                              hoveredSentenceIdx === s.globalIdx
+                              ? "bg-blue-100/50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                              : s.globalIdx === currentSentenceIdx &&
+                                currentSentenceIdx !== -1
+                              ? "bg-amber-100/60 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 shadow-[0_0_0_1px_rgba(245,158,11,0.2)]"
+                              : ""
                           )}
-                          onMouseEnter={() =>
-                            setHoveredSentenceIdx(s.globalIdx)
-                          }
-                          onMouseLeave={() => setHoveredSentenceIdx(null)}
+                          onMouseEnter={() => {
+                            if (translationMode !== "minimalist") {
+                              setHoveredSentenceIdx(s.globalIdx);
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            if (translationMode !== "minimalist") {
+                              setHoveredSentenceIdx(null);
+                            }
+                          }}
                         >
                           {s.l1}
                           <span className="select-none">&nbsp;</span>

@@ -17,19 +17,17 @@ export const useAudioPlayer = (
   pairedSentences: { l2: string }[],
   containerRef?: React.RefObject<HTMLDivElement>
 ): UseAudioPlayerReturn => {
-  const {
-    karaokeActive,
-    playbackSpeed,
-    setKaraokeActive,
-    setPlaybackSpeed,
-    currentSentenceIdx,
-    setCurrentSentenceIdx,
-    setCurrentWordIdx,
-    selectedVoice,
-    setSelectedVoice,
-    isPaused,
-    setIsPaused,
-  } = useStore();
+  const karaokeActive = useStore((state) => state.karaokeActive);
+  const playbackSpeed = useStore((state) => state.playbackSpeed);
+  const setKaraokeActive = useStore((state) => state.setKaraokeActive);
+  const setPlaybackSpeed = useStore((state) => state.setPlaybackSpeed);
+  const currentSentenceIdx = useStore((state) => state.currentSentenceIdx);
+  const setCurrentSentenceIdx = useStore((state) => state.setCurrentSentenceIdx);
+  const setCurrentWordIdx = useStore((state) => state.setCurrentWordIdx);
+  const selectedVoice = useStore((state) => state.selectedVoice);
+  const setSelectedVoice = useStore((state) => state.setSelectedVoice);
+  const isPaused = useStore((state) => state.isPaused);
+  const setIsPaused = useStore((state) => state.setIsPaused);
 
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);

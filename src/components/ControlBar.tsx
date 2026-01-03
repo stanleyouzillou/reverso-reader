@@ -7,19 +7,17 @@ import { ReadingMode } from "../types";
 import { useArticleIngestion } from "../hooks/useArticleIngestion";
 
 export const ControlBar: React.FC = () => {
-  const { theme } = useReaderSettings();
-  const {
-    mode,
-    setMode,
-    karaokeActive,
-    setKaraokeActive,
-    playbackSpeed,
-    setPlaybackSpeed,
-    selectedVoice,
-    setSelectedVoice,
-    currentSentenceIdx,
-    setCurrentSentenceIdx,
-  } = useStore();
+  const theme = useReaderSettings((state) => state.theme);
+  const mode = useStore((state) => state.mode);
+  const setMode = useStore((state) => state.setMode);
+  const karaokeActive = useStore((state) => state.karaokeActive);
+  const setKaraokeActive = useStore((state) => state.setKaraokeActive);
+  const playbackSpeed = useStore((state) => state.playbackSpeed);
+  const setPlaybackSpeed = useStore((state) => state.setPlaybackSpeed);
+  const selectedVoice = useStore((state) => state.selectedVoice);
+  const setSelectedVoice = useStore((state) => state.setSelectedVoice);
+  const currentSentenceIdx = useStore((state) => state.currentSentenceIdx);
+  const setCurrentSentenceIdx = useStore((state) => state.setCurrentSentenceIdx);
 
   const { pairedSentences } = useArticleIngestion();
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);

@@ -11,8 +11,6 @@ interface DualModeViewProps {
   pairedSentences: { l2: string; l1: string }[];
   paragraphs: string[];
   l1Paragraphs: string[];
-  hoveredSentenceIndex: number | null;
-  setHoveredSentenceIndex: (index: number | null) => void;
   visibleTranslations: Set<number>;
   setVisibleTranslations: (indices: Set<number>) => void;
   activeSentenceIdx?: number | null; // Added prop for audio highlighting
@@ -37,8 +35,6 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
   pairedSentences,
   paragraphs,
   l1Paragraphs,
-  hoveredSentenceIndex,
-  setHoveredSentenceIndex,
   visibleTranslations,
   setVisibleTranslations,
   activeSentenceIdx,
@@ -52,10 +48,16 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
   tokenToSentenceMap,
   allTokens,
 }) => {
-  const { translationMode, showHintsEnabled, minimalistSettings } =
-    useReaderSettings();
-  const { highlightedWords, hoveredSentenceIdx, setHoveredSentenceIdx } =
-    useStore();
+  const translationMode = useReaderSettings((state) => state.translationMode);
+  const showHintsEnabled = useReaderSettings((state) => state.showHintsEnabled);
+  const minimalistSettings = useReaderSettings(
+    (state) => state.minimalistSettings
+  );
+  const highlightedWords = useStore((state) => state.highlightedWords);
+  const hoveredSentenceIdx = useStore((state) => state.hoveredSentenceIdx);
+  const setHoveredSentenceIdx = useStore(
+    (state) => state.setHoveredSentenceIdx
+  );
   const [currentPage, setCurrentPage] = useState(0);
   const [hoveredWord, setHoveredWord] = useState<{
     source: "l1" | "l2";
@@ -133,10 +135,10 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
     return (
       <span
         className={cn(
-          "transition-colors duration-200",
-          isSentenceHovered && "bg-blue-100/50 dark:bg-blue-900/30 rounded-sm",
+          "transition-all duration-200 rounded-sm px-0.5",
+          isSentenceHovered && "bg-blue-100/50 dark:bg-blue-900/30",
           activeSentenceIdx === sentenceIdx &&
-            "bg-slate-200 dark:bg-slate-800 rounded-sm"
+            "bg-amber-100/60 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200 shadow-[0_0_0_1px_rgba(245,158,11,0.2)]"
         )}
       >
         {tokens.map((token, idx) => {
@@ -150,6 +152,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                 "cursor-pointer hover:text-blue-600 hover:font-bold transition-all"
               )}
               onMouseEnter={() => {
+                if (translationMode === "minimalist") return;
                 setHoveredWord({
                   source: "l1",
                   sentenceIdx,
@@ -179,12 +182,12 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
       return (
         <span
           className={cn(
-            "transition-colors duration-200",
+            "transition-all duration-200 rounded-sm px-0.5",
             translationMode !== "minimalist" &&
               hoveredSentenceIdx === sentenceIdx &&
-              "bg-blue-100/50 dark:bg-blue-900/30 rounded-sm",
+              "bg-blue-100/50 dark:bg-blue-900/30",
             activeSentenceIdx === sentenceIdx &&
-              "bg-slate-200 dark:bg-slate-800 rounded-sm"
+              "bg-amber-100/80 dark:bg-amber-900/40 shadow-[0_0_0_1px_rgba(245,158,11,0.2)]"
           )}
         >
           {tokens.map((token, idx) => {
@@ -260,9 +263,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               key={idx}
               className={cn(
                 "transition-colors duration-200 cursor-pointer hover:text-blue-900 hover:font-bold",
-                isKaraokeWord
-                  ? "bg-yellow-400 text-slate-900 rounded-sm"
-                  : "",
+                isKaraokeWord ? "bg-yellow-400 text-slate-900 rounded-sm" : "",
                 isHinted && "hint-underline"
               )}
               onMouseEnter={() => {
@@ -370,31 +371,29 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                 isPlaying ? "bg-slate-200/50 dark:bg-slate-800/50" : ""
               )}
               onClick={() => onPlaySentence?.(actualIdx)}
-              onMouseEnter={() => setHoveredSentenceIndex(actualIdx)}
-              onMouseLeave={() => setHoveredSentenceIndex(null)}
+              onMouseEnter={() => {
+                if (translationMode !== "minimalist") {
+                  setHoveredSentenceIdx(actualIdx);
+                }
+              }}
+              onMouseLeave={() => {
+                if (translationMode !== "minimalist") {
+                  setHoveredSentenceIdx(null);
+                }
+              }}
             >
               <div
                 className={cn(
                   "text-slate-800 dark:text-slate-200 text-left",
                   translationMode !== "minimalist" &&
-                    (hoveredSentenceIndex === actualIdx ||
-                      hoveredSentenceIdx === actualIdx)
+                    hoveredSentenceIdx === actualIdx
                     ? "text-blue-900 dark:text-blue-400"
                     : ""
                 )}
               >
                 {renderL2Tokens(actualIdx, l2Tokens)}
               </div>
-              <div
-                className={cn(
-                  "text-slate-500 dark:text-slate-400 text-left",
-                  translationMode !== "minimalist" &&
-                    (hoveredSentenceIndex === actualIdx ||
-                      hoveredSentenceIdx === actualIdx)
-                    ? "text-blue-700 dark:text-blue-300"
-                    : ""
-                )}
-              >
+              <div className="text-slate-500 dark:text-slate-400 text-left transition-colors duration-200">
                 {renderL1Sentence(pair.l1, actualIdx)}
               </div>
             </div>
@@ -428,11 +427,21 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                 isPlaying ? "bg-slate-200/50 dark:bg-slate-800/50" : ""
               )}
               onClick={() => onPlaySentence?.(actualIdx)}
+              onMouseEnter={() => {
+                if (translationMode !== "minimalist") {
+                  setHoveredSentenceIdx(actualIdx);
+                }
+              }}
+              onMouseLeave={() => {
+                if (translationMode !== "minimalist") {
+                  setHoveredSentenceIdx(null);
+                }
+              }}
             >
               <div className="text-slate-800 dark:text-slate-200 text-left">
                 {renderL2Tokens(actualIdx, l2Tokens)}
               </div>
-              <div className="text-slate-500 dark:text-slate-400 text-left">
+              <div className="text-slate-500 dark:text-slate-400 text-left transition-colors duration-200">
                 {renderL1Sentence(pair.l1, actualIdx)}
               </div>
             </div>
@@ -482,13 +491,10 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               id={`paragraph-${actualIdx}`}
               className={cn(
                 "relative mb-4 group cursor-pointer p-2 rounded transition-colors"
-                // isPlayingParagraph ? "bg-yellow-100" : "" // Removed paragraph highlight in favor of sentence highlight
               )}
-              onMouseEnter={() => setHoveredSentenceIndex(actualIdx)}
-              onMouseLeave={() => setHoveredSentenceIndex(null)}
             >
               {/* L2 Content (Sentences flowing inline) */}
-              <p className="text-slate-800 dark:text-slate-200 text-left transition-colors duration-200">
+              <div className="text-slate-800 dark:text-slate-200 text-left transition-colors duration-200">
                 {sentencesInPara.length > 0 ? (
                   sentencesInPara.map((s) => {
                     const isSentActive = activeSentenceIdx === s.globalIdx;
@@ -503,6 +509,16 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                             ? "bg-slate-200 dark:bg-slate-800"
                             : "hover:bg-slate-100 dark:hover:bg-slate-800/50"
                         )}
+                        onMouseEnter={() => {
+                          if (translationMode !== "minimalist") {
+                            setHoveredSentenceIdx(s.globalIdx);
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          if (translationMode !== "minimalist") {
+                            setHoveredSentenceIdx(null);
+                          }
+                        }}
                       >
                         {renderL2Tokens(s.globalIdx, l2Tokens)}
                       </span>
@@ -521,7 +537,7 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                     {para}
                   </span>
                 )}
-              </p>
+              </div>
 
               {/* L1 Content (Hidden/Popup) */}
               <div
@@ -578,27 +594,28 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
                 "mb-1 group p-3 rounded-lg transition-colors",
                 isPlaying ? "bg-slate-200/50 dark:bg-slate-800/50" : ""
               )}
-              onMouseEnter={() => setHoveredSentenceIndex(actualIdx)}
-              onMouseLeave={() => setHoveredSentenceIndex(null)}
+              onMouseEnter={() => {
+                if (translationMode !== "minimalist") {
+                  setHoveredSentenceIdx(actualIdx);
+                }
+              }}
+              onMouseLeave={() => {
+                if (translationMode !== "minimalist") {
+                  setHoveredSentenceIdx(null);
+                }
+              }}
             >
               <div
                 className={cn(
                   "text-xl text-slate-900 dark:text-white text-left mb-1 transition-colors",
-                  hoveredSentenceIndex === actualIdx
+                  hoveredSentenceIdx === actualIdx
                     ? "text-blue-900 dark:text-blue-400"
                     : ""
                 )}
               >
                 {renderL2Tokens(actualIdx, l2Tokens)}
               </div>
-              <div
-                className={cn(
-                  "font-sans text-sm text-indigo-600 dark:text-indigo-400 pl-4 border-l-2 border-indigo-200 dark:border-indigo-900 italic mb-2 transition-colors",
-                  hoveredSentenceIndex === actualIdx
-                    ? "text-indigo-800 dark:text-indigo-300 border-indigo-400 dark:border-indigo-700"
-                    : ""
-                )}
-              >
+              <div className="font-sans text-sm text-indigo-600 dark:text-indigo-400 pl-4 border-l-2 border-indigo-200 dark:border-indigo-900 italic mb-2 transition-colors">
                 {renderL1Sentence(pair.l1, actualIdx)}
               </div>
             </div>

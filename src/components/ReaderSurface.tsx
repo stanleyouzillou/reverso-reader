@@ -30,18 +30,18 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
   sidebarCollapsed = false,
 }) => {
   // 1. Global Store & Layout State
-  const {
-    mode,
-    dualModeOption,
-    setDualModeOption,
-    currentSentenceIdx,
-    currentWordIdx,
-    karaokeActive,
-    setCurrentSentenceIdx,
-    setKaraokeActive,
-    isPaused,
-    setIsPaused,
-  } = useStore();
+  const mode = useStore((state) => state.mode);
+  const dualModeOption = useStore((state) => state.dualModeOption);
+  const setDualModeOption = useStore((state) => state.setDualModeOption);
+  const currentSentenceIdx = useStore((state) => state.currentSentenceIdx);
+  const currentWordIdx = useStore((state) => state.currentWordIdx);
+  const karaokeActive = useStore((state) => state.karaokeActive);
+  const setCurrentSentenceIdx = useStore(
+    (state) => state.setCurrentSentenceIdx
+  );
+  const setKaraokeActive = useStore((state) => state.setKaraokeActive);
+  const isPaused = useStore((state) => state.isPaused);
+  const setIsPaused = useStore((state) => state.setIsPaused);
 
   // Inline translation functionality
   const {
@@ -54,18 +54,18 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
     toggleSave,
     addToHistory: addToHistoryInline,
   } = useInlineTranslation();
-  const {
-    fontFamily,
-    fontWeight,
-    fontSize,
-    bgColor,
-    theme,
-    columnWidth,
-    readingMode,
-    translationMode,
-    l2Language,
-    minimalistSettings,
-  } = useReaderSettings();
+  const fontFamily = useReaderSettings((state) => state.fontFamily);
+  const fontWeight = useReaderSettings((state) => state.fontWeight);
+  const fontSize = useReaderSettings((state) => state.fontSize);
+  const bgColor = useReaderSettings((state) => state.bgColor);
+  const theme = useReaderSettings((state) => state.theme);
+  const columnWidth = useReaderSettings((state) => state.columnWidth);
+  const readingMode = useReaderSettings((state) => state.readingMode);
+  const translationMode = useReaderSettings((state) => state.translationMode);
+  const l2Language = useReaderSettings((state) => state.l2Language);
+  const minimalistSettings = useReaderSettings(
+    (state) => state.minimalistSettings
+  );
 
   // 1.5. Dynamic Line Height Calculation System
   const [viewportWidth, setViewportWidth] = useState(
@@ -273,10 +273,9 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
   // Track the latest selection version to implement only-latest-wins
   const latestSelectionVersionRef = useRef<number>(0);
 
-  // 5. Dual Mode UI State
-  const [hoveredSentenceIndex, setHoveredSentenceIndex] = useState<
-    number | null
-  >(null);
+  const setHoveredSentenceIdx = useStore(
+    (state) => state.setHoveredSentenceIdx
+  );
   const [visibleTranslations, setVisibleTranslations] = useState<Set<number>>(
     new Set()
   );
@@ -284,9 +283,9 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
   // Reset local UI state on mode change
   useEffect(() => {
     clearSelection();
-    setHoveredSentenceIndex(null);
+    setHoveredSentenceIdx(null);
     setVisibleTranslations(new Set());
-  }, [mode, dualModeOption, clearSelection]);
+  }, [mode, dualModeOption, clearSelection, setHoveredSentenceIdx]);
 
   // Handle keyboard events for clearing selection
   useEffect(() => {
@@ -722,8 +721,6 @@ export const ReaderSurface: React.FC<ReaderSurfaceProps> = ({
             pairedSentences={pairedSentences}
             paragraphs={paragraphs}
             l1Paragraphs={l1Paragraphs}
-            hoveredSentenceIndex={hoveredSentenceIndex}
-            setHoveredSentenceIndex={setHoveredSentenceIndex}
             visibleTranslations={visibleTranslations}
             setVisibleTranslations={setVisibleTranslations}
             // Audio Props

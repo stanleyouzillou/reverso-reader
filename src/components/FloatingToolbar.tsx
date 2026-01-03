@@ -27,25 +27,25 @@ interface FloatingToolbarProps {
 export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
   sidebarCollapsed,
 }) => {
-  const {
-    fontSize,
-    setFontSize,
-    translationMode,
-    setTranslationMode,
-    readingMode,
-    setReadingMode,
-    showHintsEnabled,
-    setShowHintsEnabled,
-    theme,
-  } = useReaderSettings();
+  const fontSize = useReaderSettings((state) => state.fontSize);
+  const setFontSize = useReaderSettings((state) => state.setFontSize);
+  const translationMode = useReaderSettings((state) => state.translationMode);
+  const setTranslationMode = useReaderSettings(
+    (state) => state.setTranslationMode
+  );
+  const readingMode = useReaderSettings((state) => state.readingMode);
+  const setReadingMode = useReaderSettings((state) => state.setReadingMode);
+  const showHintsEnabled = useReaderSettings((state) => state.showHintsEnabled);
+  const setShowHintsEnabled = useReaderSettings(
+    (state) => state.setShowHintsEnabled
+  );
+  const theme = useReaderSettings((state) => state.theme);
 
-  const {
-    mode: viewMode,
-    setMode: setViewMode,
-    setDualModeOption,
-    highlightMode,
-    setHighlightMode,
-  } = useStore();
+  const viewMode = useStore((state) => state.mode);
+  const setViewMode = useStore((state) => state.setMode);
+  const setDualModeOption = useStore((state) => state.setDualModeOption);
+  const highlightMode = useStore((state) => state.highlightMode);
+  const setHighlightMode = useStore((state) => state.setHighlightMode);
   const [isTranslationMenuOpen, setIsTranslationMenuOpen] = useState(false);
   const [isHighlightMenuOpen, setIsHighlightMenuOpen] = useState(false);
 

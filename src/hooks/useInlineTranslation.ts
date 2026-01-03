@@ -17,7 +17,9 @@ export const useInlineTranslation = (): UseInlineTranslationReturn => {
   const [showTranslation, setShowTranslation] = useState(false);
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
-  const { saved, addToHistory: addToHistoryStore, toggleSaved } = useStore();
+  const saved = useStore((state) => state.saved);
+  const addToHistoryStore = useStore((state) => state.addToHistory);
+  const toggleSaved = useStore((state) => state.toggleSaved);
   const [isSaved, setIsSaved] = useState(false);
   
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
