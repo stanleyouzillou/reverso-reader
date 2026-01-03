@@ -91,7 +91,7 @@ export const useStore = create<State>()(
       });
 
       return {
-        mode: "single",
+        mode: "clean",
         sidebarMode: "vocabulary",
         highlightMode: "saved",
         history: [],

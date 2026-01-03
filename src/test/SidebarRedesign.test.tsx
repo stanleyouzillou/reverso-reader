@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { Sidebar } from "../components/Sidebar";
 import { FloatingToolbar } from "../components/FloatingToolbar";
-import { vi, describe, it, expect } from "vitest";
+import { vi, describe, it, expect, beforeEach } from "vitest";
 import { useStore } from "../store/useStore";
 
 // Mock the store
