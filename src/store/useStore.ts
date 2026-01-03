@@ -108,7 +108,7 @@ export const useStore = create<State>()(
         isPaused: true, // Start paused
         selectedVoice: null,
         selectedDictionaryWord: null,
-        sidebarCollapsed: false,
+        sidebarCollapsed: true,
         showShortcutToolbar: false,
         hoveredTokenId: null,
         hoveredSentenceIdx: null,
@@ -134,7 +134,18 @@ export const useStore = create<State>()(
         setShowShortcutToolbar: (show) => set({ showShortcutToolbar: show }),
         setHoveredTokenId: (id) => set({ hoveredTokenId: id }),
         setHoveredSentenceIdx: (idx) => set({ hoveredSentenceIdx: idx }),
-        setMinimalistTokenId: (id) => set({ minimalistTokenId: id }),
+        setMinimalistTokenId: (id) =>
+          set((state) => ({
+            minimalistTokenId: id,
+            minimalistTranslation:
+              id === null || id !== state.minimalistTokenId
+                ? null
+                : state.minimalistTranslation,
+            isMinimalistLoading:
+              id === null || id !== state.minimalistTokenId
+                ? false
+                : state.isMinimalistLoading,
+          })),
         setMinimalistTranslation: (translation) =>
           set({ minimalistTranslation: translation }),
         setIsMinimalistLoading: (loading) =>
@@ -237,9 +248,36 @@ export const useStore = create<State>()(
     },
     {
       name: "reverso-reader-storage",
+      storage: {
+        getItem: (name) => {
+          try {
+            const value = localStorage.getItem(name);
+            return value ? JSON.parse(value) : null;
+          } catch (e) {
+            console.error("Zustand getItem error:", e);
+            return null;
+          }
+        },
+        setItem: (name, value) => {
+          try {
+            localStorage.setItem(name, JSON.stringify(value));
+          } catch (e) {
+            console.error("Zustand setItem error:", e);
+            // Silently fail in private mode
+          }
+        },
+        removeItem: (name) => {
+          try {
+            localStorage.removeItem(name);
+          } catch (e) {
+            console.error("Zustand removeItem error:", e);
+            // Silently fail
+          }
+        },
+      },
       partialize: (state) => {
         const { translatedWords, lastActivity, ...rest } = state;
-        return rest;
+        return rest as State;
       },
       onRehydrateStorage: () => (state) => {
         if (state) {

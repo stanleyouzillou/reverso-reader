@@ -114,6 +114,33 @@ export const useReaderSettings = create<ReaderSettingsState>()(
     }),
     {
       name: "reader-settings",
+      storage: {
+        getItem: (name) => {
+          try {
+            const value = localStorage.getItem(name);
+            return value ? JSON.parse(value) : null;
+          } catch (e) {
+            console.error("Zustand settings getItem error:", e);
+            return null;
+          }
+        },
+        setItem: (name, value) => {
+          try {
+            localStorage.setItem(name, JSON.stringify(value));
+          } catch (e) {
+            console.error("Zustand settings setItem error:", e);
+            // Silently fail in private mode
+          }
+        },
+        removeItem: (name) => {
+          try {
+            localStorage.removeItem(name);
+          } catch (e) {
+            console.error("Zustand settings removeItem error:", e);
+            // Silently fail
+          }
+        },
+      },
     }
   )
 );

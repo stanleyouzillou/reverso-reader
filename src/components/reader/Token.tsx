@@ -389,6 +389,9 @@ export const Token: React.FC<TokenProps> = memo(
           return;
         }
 
+        if (mode === "clean") {
+          // In clean mode, we still allow word clicks if they are word tokens
+        }
         onWordClick(index);
       },
       [
@@ -406,6 +409,7 @@ export const Token: React.FC<TokenProps> = memo(
         setIsMinimalistLoading,
         minimalistSettings.popupDelay,
         sourceLanguage,
+        mode,
       ]
     );
 

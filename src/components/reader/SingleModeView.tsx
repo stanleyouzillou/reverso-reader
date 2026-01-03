@@ -243,7 +243,9 @@ export const SingleModeView: React.FC<SingleModeViewProps> = ({
               return (
                 <div key={originalIndex} className="mb-[2.5rem] group">
                   <div className="flex items-start gap-4">
-                    {mode === "learning" && (
+                    {(mode === "learning" ||
+                      mode === "clean" ||
+                      mode === "dual") && (
                       <div className="flex flex-col gap-1 mt-1">
                         <button
                           onClick={(e) => {

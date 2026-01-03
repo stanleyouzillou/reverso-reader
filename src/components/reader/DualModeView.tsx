@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { cn, tokenize, isWord } from "../../lib/utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Languages, Volume2 } from "lucide-react";
 import { ArticleMetadata } from "../../types";
 import { useReaderSettings } from "../../hooks/useReaderSettings";
 import { useStore } from "../../store/useStore";
@@ -490,79 +490,134 @@ export const DualModeView: React.FC<DualModeViewProps> = ({
               key={actualIdx}
               id={`paragraph-${actualIdx}`}
               className={cn(
-                "relative mb-4 group cursor-pointer p-2 rounded transition-colors"
+                "relative mb-4 group p-2 rounded transition-colors flex gap-4 items-start"
               )}
             >
-              {/* L2 Content (Sentences flowing inline) */}
-              <div className="text-slate-800 dark:text-slate-200 text-left transition-colors duration-200">
-                {sentencesInPara.length > 0 ? (
-                  sentencesInPara.map((s) => {
-                    const isSentActive = activeSentenceIdx === s.globalIdx;
-                    const l2Tokens = getL2Tokens(s.globalIdx, s.l2);
-
-                    return (
-                      <span
-                        key={s.globalIdx}
-                        className={cn(
-                          "transition-colors duration-200 rounded-sm",
-                          isSentActive
-                            ? "bg-slate-200 dark:bg-slate-800"
-                            : "hover:bg-slate-100 dark:hover:bg-slate-800/50"
-                        )}
-                        onMouseEnter={() => {
-                          if (translationMode !== "minimalist") {
-                            setHoveredSentenceIdx(s.globalIdx);
-                          }
-                        }}
-                        onMouseLeave={() => {
-                          if (translationMode !== "minimalist") {
-                            setHoveredSentenceIdx(null);
-                          }
-                        }}
-                      >
-                        {renderL2Tokens(s.globalIdx, l2Tokens)}
-                      </span>
-                    );
-                  })
-                ) : (
-                  // Fallback if no sentences mapped
-                  <span
-                    onClick={() => {
-                      const next = new Set(visibleTranslations);
-                      if (next.has(actualIdx)) next.delete(actualIdx);
-                      else next.add(actualIdx);
-                      setVisibleTranslations(next);
-                    }}
-                  >
-                    {para}
-                  </span>
-                )}
+              <div className="flex flex-col gap-1 mt-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const next = new Set(visibleTranslations);
+                    if (next.has(actualIdx)) next.delete(actualIdx);
+                    else next.add(actualIdx);
+                    setVisibleTranslations(next);
+                  }}
+                  className={cn(
+                    "flex-shrink-0 p-1.5 rounded-md transition-all duration-200",
+                    "text-slate-300 group-hover:text-slate-400 hover:text-blue-500 hover:bg-blue-50",
+                    "dark:text-slate-600 dark:group-hover:text-slate-500 dark:hover:text-blue-400 dark:hover:bg-blue-900/30",
+                    visibleTranslations.has(actualIdx) &&
+                      "text-blue-500 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30 opacity-100"
+                  )}
+                  aria-expanded={visibleTranslations.has(actualIdx)}
+                  aria-label={
+                    visibleTranslations.has(actualIdx)
+                      ? "Hide translation"
+                      : "Show translation"
+                  }
+                  title={
+                    visibleTranslations.has(actualIdx)
+                      ? "Hide translation"
+                      : "Show translation"
+                  }
+                >
+                  <Languages size={18} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const firstSentenceIdx = sentencesInPara[0]?.globalIdx;
+                    if (firstSentenceIdx !== undefined) {
+                      onPlaySentence?.(firstSentenceIdx);
+                    }
+                  }}
+                  className={cn(
+                    "flex-shrink-0 p-1.5 rounded-md transition-all duration-200",
+                    "text-slate-300 group-hover:text-slate-400 hover:text-blue-500 hover:bg-blue-50",
+                    "dark:text-slate-600 dark:group-hover:text-slate-500 dark:hover:text-blue-400 dark:hover:bg-blue-900/30"
+                  )}
+                  aria-label="Listen to paragraph"
+                  title="Listen to paragraph"
+                >
+                  <Volume2 size={18} />
+                </button>
               </div>
 
-              {/* L1 Content (Hidden/Popup) */}
-              <div
-                className={cn(
-                  "text-base text-slate-600 italic bg-blue-50/50 rounded-lg transition-all duration-300 overflow-hidden cursor-pointer",
-                  visibleTranslations.has(actualIdx)
-                    ? "max-h-[32rem] opacity-100 p-4 mt-2"
-                    : "max-h-0 opacity-0 p-0 mt-0 group-hover:max-h-[32rem] group-hover:opacity-100 group-hover:p-4 group-hover:mt-2"
-                )}
-                onClick={() => {
-                  // Toggle logic repeated
-                  const next = new Set(visibleTranslations);
-                  if (next.has(actualIdx)) next.delete(actualIdx);
-                  else next.add(actualIdx);
-                  setVisibleTranslations(next);
-                }}
-              >
-                {sentencesInPara.length > 0
-                  ? sentencesInPara.map((s) => (
-                      <span key={s.globalIdx}>
-                        {renderL1Sentence(s.l1, s.globalIdx)}
-                        <span className="select-none">&nbsp;</span>
-                      </span>
-                    ))
-                  : renderL1Sentence(l1Paragraphs[actualIdx] || "", actualIdx)}
+              <div className="flex-1 min-w-0">
+                {/* L2 Content (Sentences flowing inline) */}
+                <div className="text-slate-800 dark:text-slate-200 text-left transition-colors duration-200">
+                  {sentencesInPara.length > 0 ? (
+                    sentencesInPara.map((s) => {
+                      const isSentActive = activeSentenceIdx === s.globalIdx;
+                      const l2Tokens = getL2Tokens(s.globalIdx, s.l2);
+
+                      return (
+                        <span
+                          key={s.globalIdx}
+                          className={cn(
+                            "transition-colors duration-200 rounded-sm",
+                            isSentActive
+                              ? "bg-slate-200 dark:bg-slate-800"
+                              : "hover:bg-slate-100 dark:hover:bg-slate-800/50"
+                          )}
+                          onMouseEnter={() => {
+                            if (translationMode !== "minimalist") {
+                              setHoveredSentenceIdx(s.globalIdx);
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            if (translationMode !== "minimalist") {
+                              setHoveredSentenceIdx(null);
+                            }
+                          }}
+                        >
+                          {renderL2Tokens(s.globalIdx, l2Tokens)}
+                        </span>
+                      );
+                    })
+                  ) : (
+                    // Fallback if no sentences mapped
+                    <span
+                      onClick={() => {
+                        const next = new Set(visibleTranslations);
+                        if (next.has(actualIdx)) next.delete(actualIdx);
+                        else next.add(actualIdx);
+                        setVisibleTranslations(next);
+                      }}
+                    >
+                      {para}
+                    </span>
+                  )}
+                </div>
+
+                {/* L1 Content (Hidden/Popup) */}
+                <div
+                  className={cn(
+                    "text-base text-slate-600 italic bg-blue-50/50 rounded-lg transition-all duration-300 overflow-hidden cursor-pointer",
+                    visibleTranslations.has(actualIdx)
+                      ? "max-h-[32rem] opacity-100 p-4 mt-2"
+                      : "max-h-0 opacity-0 p-0 mt-0 group-hover:max-h-[32rem] group-hover:opacity-100 group-hover:p-4 group-hover:mt-2"
+                  )}
+                  onClick={() => {
+                    // Toggle logic repeated
+                    const next = new Set(visibleTranslations);
+                    if (next.has(actualIdx)) next.delete(actualIdx);
+                    else next.add(actualIdx);
+                    setVisibleTranslations(next);
+                  }}
+                >
+                  {sentencesInPara.length > 0
+                    ? sentencesInPara.map((s) => (
+                        <span key={s.globalIdx}>
+                          {renderL1Sentence(s.l1, s.globalIdx)}
+                          <span className="select-none">&nbsp;</span>
+                        </span>
+                      ))
+                    : renderL1Sentence(
+                        l1Paragraphs[actualIdx] || "",
+                        actualIdx
+                      )}
+                </div>
               </div>
             </div>
           );
