@@ -75,10 +75,10 @@ export const useReaderSettings = create<ReaderSettingsState>()(
       columnWidth: "centered",
       readingMode: "scrolling",
       translationProvider: "google",
-      translationMode: "inline",
+      translationMode: "minimalist",
       translationGranularity: "chunk",
       l2Language: "fr", // Default to French
-      showHintsEnabled: false,
+      showHintsEnabled: true,
       minimalistSettings: {
         enabled: true,
         popupDelay: 0,

@@ -329,48 +329,6 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         </div>
       </div>
 
-      {/* Bottom Font Controls (Floating near sidebar) */}
-      <div
-        className={cn(
-          "fixed bottom-[6rem] z-50 flex flex-col gap-[0.5rem] transition-all duration-300 ease-in-out",
-          sidebarCollapsed
-            ? "right-[3.5rem]"
-            : "right-[calc(min(20rem,80vw)+0.5rem)]",
-          "max-sm:bottom-[1rem] max-sm:right-[1rem]"
-        )}
-      >
-        <div className="flex flex-col gap-[0.5rem]">
-          {/* Larger Text Button (Now First) */}
-          <button
-            onClick={() => handleFontSizeChange(2)}
-            className={cn(
-              "w-[2rem] h-[2rem] rounded-[0.5rem] shadow-lg border transition-all active:scale-90 flex items-center justify-center",
-              theme === "dark"
-                ? "bg-[#333] border-[#444] text-slate-300 hover:text-white"
-                : "bg-white border-slate-100 text-slate-600 hover:text-blue-600"
-            )}
-            title="Increase text size"
-            aria-label="Increase text size"
-          >
-            <Type size={"1.125rem" as any} strokeWidth={3} />
-          </button>
-
-          {/* Smaller Text Button (Now Second) */}
-          <button
-            onClick={() => handleFontSizeChange(-2)}
-            className={cn(
-              "w-[2rem] h-[2rem] rounded-[0.5rem] shadow-lg border transition-all active:scale-90 flex items-center justify-center",
-              theme === "dark"
-                ? "bg-[#333] border-[#444] text-slate-300 hover:text-white"
-                : "bg-white border-slate-100 text-slate-600 hover:text-blue-600"
-            )}
-            title="Decrease text size"
-            aria-label="Decrease text size"
-          >
-            <Type size={"0.875rem" as any} strokeWidth={2.5} />
-          </button>
-        </div>
-      </div>
     </>
   );
 };

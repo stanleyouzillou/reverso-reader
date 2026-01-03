@@ -12,6 +12,7 @@ import { cn } from "../lib/utils";
 export const Layout: React.FC = () => {
   const [showStickyTitle, setShowStickyTitle] = useState(false);
   const sidebarCollapsed = useStore((state) => state.sidebarCollapsed);
+  const showShortcutToolbar = useStore((state) => state.showShortcutToolbar);
   const setSidebarCollapsed = useStore((state) => state.setSidebarCollapsed);
   const mainRef = useRef<HTMLElement>(null);
   const theme = useReaderSettings((state) => state.theme);
@@ -55,7 +56,9 @@ export const Layout: React.FC = () => {
           <ControlBar />
         </div>
 
-        <FloatingToolbar sidebarCollapsed={sidebarCollapsed} />
+        {showShortcutToolbar && (
+          <FloatingToolbar sidebarCollapsed={sidebarCollapsed} />
+        )}
 
         {/* Sidebar container */}
         <div className="relative h-full">
@@ -69,8 +72,8 @@ export const Layout: React.FC = () => {
                 "max-md:fixed max-md:inset-0 max-md:z-[60] max-md:w-full"
             )}
           >
-            <Sidebar 
-              collapsed={sidebarCollapsed} 
+            <Sidebar
+              collapsed={sidebarCollapsed}
               onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
             />
           </div>

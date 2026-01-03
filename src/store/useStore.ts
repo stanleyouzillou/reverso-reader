@@ -31,6 +31,7 @@ interface State {
   // Dictionary State
   selectedDictionaryWord: VocabItem | null;
   sidebarCollapsed: boolean;
+  showShortcutToolbar: boolean;
 
   // Hover Lookup State
   hoveredTokenId: string | null;
@@ -70,6 +71,7 @@ interface State {
   setSelectedVoice: (voice: string | null) => void;
   setSelectedDictionaryWord: (word: VocabItem | null) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  setShowShortcutToolbar: (show: boolean) => void;
   setHoveredTokenId: (id: string | null) => void;
   setHoveredSentenceIdx: (idx: number | null) => void;
   setMinimalistTokenId: (id: string | null) => void;
@@ -89,7 +91,7 @@ export const useStore = create<State>()(
       });
 
       return {
-        mode: "dual",
+        mode: "single",
         sidebarMode: "vocabulary",
         highlightMode: "saved",
         history: [],
@@ -107,6 +109,7 @@ export const useStore = create<State>()(
         selectedVoice: null,
         selectedDictionaryWord: null,
         sidebarCollapsed: false,
+        showShortcutToolbar: false,
         hoveredTokenId: null,
         hoveredSentenceIdx: null,
         minimalistTokenId: null,
@@ -128,6 +131,7 @@ export const useStore = create<State>()(
           set({ selectedDictionaryWord: word, lastActivity: Date.now() }),
         setSidebarCollapsed: (collapsed) =>
           set({ sidebarCollapsed: collapsed }),
+        setShowShortcutToolbar: (show) => set({ showShortcutToolbar: show }),
         setHoveredTokenId: (id) => set({ hoveredTokenId: id }),
         setHoveredSentenceIdx: (idx) => set({ hoveredSentenceIdx: idx }),
         setMinimalistTokenId: (id) => set({ minimalistTokenId: id }),

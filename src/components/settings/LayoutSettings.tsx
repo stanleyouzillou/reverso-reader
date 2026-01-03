@@ -1,14 +1,55 @@
 import React from "react";
-import { AlignCenter, Maximize2, ScrollText, BookOpen } from "lucide-react";
+import { AlignCenter, Maximize2, ScrollText, BookOpen, MousePointer2 } from "lucide-react";
 import { useReaderSettings } from "../../hooks/useReaderSettings";
+import { useStore } from "../../store/useStore";
 import { cn } from "../../lib/utils";
 
 export const LayoutSettings: React.FC = () => {
   const { columnWidth, setColumnWidth, readingMode, setReadingMode } =
     useReaderSettings();
+  const showShortcutToolbar = useStore((state) => state.showShortcutToolbar);
+  const setShowShortcutToolbar = useStore((state) => state.setShowShortcutToolbar);
 
   return (
     <div className="space-y-8">
+      {/* Shortcut Toolbar */}
+      <div>
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">
+          Shortcuts
+        </h3>
+        <button
+          onClick={() => setShowShortcutToolbar(!showShortcutToolbar)}
+          className={cn(
+            "w-full flex items-center justify-between p-3 rounded-xl border transition-all",
+            showShortcutToolbar
+              ? "bg-blue-50 border-blue-100 text-blue-900"
+              : "bg-white border-slate-100 text-slate-600 hover:border-slate-200"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div className={cn(
+              "p-2 rounded-lg",
+              showShortcutToolbar ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-400"
+            )}>
+              <MousePointer2 size={"1rem" as any} />
+            </div>
+            <div className="text-left">
+              <div className="text-sm font-bold">Shortcut Toolbar</div>
+              <div className="text-[0.75rem] opacity-70">Quick access to tools</div>
+            </div>
+          </div>
+          <div className={cn(
+            "w-10 h-6 rounded-full relative transition-colors duration-200",
+            showShortcutToolbar ? "bg-blue-600" : "bg-slate-200"
+          )}>
+            <div className={cn(
+              "absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-200",
+              showShortcutToolbar ? "translate-x-4" : "translate-x-0"
+            )} />
+          </div>
+        </button>
+      </div>
+
       {/* Column Width */}
       <div>
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">
